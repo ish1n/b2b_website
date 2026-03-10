@@ -9,12 +9,12 @@ export default function KpiCard({ icon: Icon, value, label, sublabel, onClick, c
             style={{ fontFamily: 'Poppins, sans-serif' }}
         >
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-        ${color === 'brand' ? 'bg-blue-100' : color === 'orange' ? 'bg-orange-100' : 'bg-green-100'}
+        ${color === 'brand' ? 'bg-blue-100' : color === 'orange' ? 'bg-orange-100' : color === 'purple' ? 'bg-purple-100' : 'bg-green-100'}
       `}>
                 {Icon && (
                     <Icon
                         size={22}
-                        className={color === 'brand' ? 'text-blue-600' : color === 'orange' ? 'text-orange-500' : 'text-green-600'}
+                        className={color === 'brand' ? 'text-blue-600' : color === 'orange' ? 'text-orange-500' : color === 'purple' ? 'text-purple-600' : 'text-green-600'}
                     />
                 )}
             </div>

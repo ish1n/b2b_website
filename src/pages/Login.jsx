@@ -19,7 +19,7 @@ export default function Login() {
         setSubmitting(true);
         const result = await login(email.trim(), password);
         if (result.success) {
-            navigate("/dashboard");
+            navigate(result.isAdmin ? "/admin" : "/dashboard");
         } else {
             setError(result.error || "Login failed. Please try again.");
         }

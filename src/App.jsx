@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import MonthOrders from "./pages/MonthOrders";
 import DayOrders from "./pages/DayOrders";
 import TenantMonths from "./pages/TenantMonths";
@@ -17,7 +19,10 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Protected */}
+          {/* Admin */}
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+
+          {/* Protected (Manager + Admin) */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/orders/months" element={<ProtectedRoute><MonthOrders /></ProtectedRoute>} />
           <Route path="/orders/months/:month" element={<ProtectedRoute><DayOrders /></ProtectedRoute>} />
