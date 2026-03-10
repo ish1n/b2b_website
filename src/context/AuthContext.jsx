@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback } from "react";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { db, auth } from "../firebase";
+import { hardcodedOrders, hardcodedManagers } from "../data/mockOrders";
 
 const AuthContext = createContext(null);
 
@@ -74,6 +75,30 @@ export function AuthProvider({ children }) {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // --- ADMIN HARDCODING INTERCEPT ---
+            // If Firebase succeeds and the email matches the CEO, inject hardcoded data
+            if (email.toLowerCase() === "ceo@andes.co.in") {
+                setIsAdmin(true);
+
+                // Set the admin profile
+                setPartner({
+                    name: "Andes Admin",
+                    location: "Admin Dashboard",
+                    id: user.uid
+                });
+
+                // Load the hardcoded managers (filtering out the admin themselves)
+                // This populates the "B2B Clients Overview" table in AdminDashboard
+                const clientsList = hardcodedManagers.filter(m => m.role !== "admin");
+                setAllManagers(clientsList);
+
+                // Inject the hardcoded orders mapped from the CSVs
+                setOrders(hardcodedOrders);
+
+                return { success: true, isAdmin: true };
+            }
+            // --- END ADMIN INTERCEPT ---
+
             // 2. Find the manager in b2b_managers using their Auth UID
             const managerRef = doc(db, "b2b_managers", user.uid);
             const managerSnap = await getDoc(managerRef);
@@ -86,7 +111,7 @@ export function AuthProvider({ children }) {
             const managerData = { id: managerSnap.id, ...managerSnap.data() };
             const friendlyName = getFriendlyName(managerData);
 
-            // 3. Check if user is an Admin
+            // 3. Check if user is an Admin (Firestore fallback for other admins)
             if (managerData.role === "admin") {
                 setIsAdmin(true);
 
