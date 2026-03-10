@@ -1,59 +1,56 @@
 import { FiDownload } from "react-icons/fi";
 
-export default function ExportCSV({ orders, filenamePrefix = "Andes_Orders" }) {
+export default function ExportCSV({ orders = [] }) {
     const handleExport = () => {
         if (!orders || orders.length === 0) return;
 
-        // Headers: [Date, Time, Tenant, Description, Status, Amount]
-        const headers = ["Date", "Time", "Tenant", "Description", "Status", "Amount"];
+        const headers = ["Date", "Order ID", "Tenant", "Details", "Items", "Amount", "Status", "Issue Type"];
 
         const rows = orders.map(o => {
             let dateStr = "—";
-            let timeStr = "—";
-
-            if (o.timestamp) {
+            if (o.date) {
+                dateStr = o.date;
+            } else if (o.timestamp) {
                 const dateObj = new Date(o.timestamp.seconds ? o.timestamp.seconds * 1000 : o.timestamp);
                 dateStr = dateObj.toLocaleDateString();
-                timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } else if (o.month && o.day) {
-                dateStr = `${o.day}/${o.month}/${new Date().getFullYear()}`;
+                dateStr = `${new Date().getFullYear()}-${String(o.month).padStart(2, '0')}-${String(o.day).padStart(2, '0')}`;
             }
-
-            const description = o.service || "—";
-            const amountStr = o.amount !== undefined ? o.amount.toString() : "0";
 
             return [
                 dateStr,
-                timeStr,
-                o.tenant || "—",
-                `"${description}"`, // Handle commas in description
+                `"${o.id || "—"}"`,
+                `"${o.tenant || "—"}"`,
+                `"${(o.service || "—").replace(/"/g, '""')}"`,
+                o.items || 0,
+                o.amount !== undefined ? o.amount.toString() : "0",
                 o.status || "—",
-                amountStr
+                `"${o.issueType || ""}"`
             ].join(",");
         });
 
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-        const encodedUri = encodeURI(csvContent);
-
-        const currentMonth = new Date().toLocaleString('default', { month: 'short' });
-        const currentYear = new Date().getFullYear();
-        const exportFilename = `${filenamePrefix}_${currentMonth}_${currentYear}.csv`;
+        const csvContent = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
 
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", exportFilename);
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.href = url;
+        link.setAttribute("download", `andes_orders_${dateStr}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     return (
         <button
             onClick={handleExport}
             disabled={!orders || orders.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E3F2FD] text-[#1976D2] border border-brand-200 font-semibold text-sm hover:bg-[#1976D2] hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
         >
-            <FiDownload size={16} className="text-[#1976D2]" />
+            <FiDownload size={14} />
             Export CSV
         </button>
     );

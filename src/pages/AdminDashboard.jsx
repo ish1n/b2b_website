@@ -1,18 +1,20 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getCategoryForTenant } from "../data/mockOrders";
 import TopNav from "../components/TopNav";
 import KpiCard from "../components/KpiCard";
 import StatusBar from "../components/StatusBar";
 import LoadingSpinner from "../components/LoadingSpinner";
+import OrderTable from "../components/OrderTable";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { FiPackage, FiUsers, FiBarChart2, FiSearch, FiArrowRight, FiBriefcase } from "react-icons/fi";
+import { FiPackage, FiUsers, FiBarChart2, FiSearch, FiArrowRight, FiBriefcase, FiFilter, FiAlertTriangle, FiCalendar } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 
-const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DATE_RANGE = "Mar 1 – Mar 10, 2026";
+const DAYS_IN_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const AVATAR_COLORS = ['#1976D2', '#7C3AED', '#059669', '#DC2626', '#D97706', '#0891B2', '#BE185D'];
 
@@ -20,8 +22,9 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white border-l-4 border-[#1976D2] shadow-lg rounded-xl p-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                <p className="text-[#1976D2] font-semibold text-xs mb-1">{label}</p>
+                <p className="text-[#1976D2] font-semibold text-xs mb-1">Mar {label}</p>
                 <p className="text-gray-800 font-bold text-sm">{payload[0].value} orders</p>
+                {payload[1] && <p className="text-gray-500 text-xs">₹{payload[1].value.toLocaleString()}</p>}
             </div>
         );
     }
@@ -32,85 +35,94 @@ export default function AdminDashboard() {
     const { partner, orders, allManagers, loading } = useAuth();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterTenant, setFilterTenant] = useState("All");
+    const [filterCategory, setFilterCategory] = useState("All");
 
     const stats = useMemo(() => {
-        const totalOrders = orders.length;
-        const totalRevenue = orders.reduce((s, o) => s + (o.amount || 0), 0);
-        const tenants = [...new Set(orders.map(o => o.tenant))].filter(Boolean);
-        const delivered = orders.filter(o => o.status === 'Delivered').length;
-        const confirmed = orders.filter(o => o.status === 'Confirmed').length;
-        const pending = orders.filter(o => o.status === 'Pending').length;
+        // Separate issues from regular orders for KPI calculations
+        const regularOrders = orders.filter(o => o.tenant !== "Issues & Complaints");
+        const issueOrders = orders.filter(o => o.tenant === "Issues & Complaints" || o.hasIssue);
 
-        // Trends
-        const currentMonth = new Date().getMonth() + 1;
-        const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-        const currOrdersData = orders.filter(o => o.month === currentMonth);
-        const prevOrdersData = orders.filter(o => o.month === prevMonth);
+        const totalOrders = regularOrders.length;
+        const totalRevenue = regularOrders.reduce((s, o) => s + (o.amount || 0), 0);
+        const tenants = [...new Set(regularOrders.map(o => o.tenant))].filter(Boolean);
+        const delivered = regularOrders.filter(o => o.status === 'Delivered').length;
+        const confirmed = regularOrders.filter(o => o.status === 'Confirmed').length;
+        const pending = regularOrders.filter(o => o.status === 'Pending').length;
 
-        const diffOrders = currOrdersData.length - prevOrdersData.length;
-        const ordersTrend = diffOrders > 0
-            ? { direction: 'up', text: `↑ +${diffOrders} this month` }
-            : diffOrders < 0
-                ? { direction: 'down', text: `↓ ${diffOrders} this month` }
-                : { direction: 'same', text: `— No change` };
+        // Daily chart (Mar 1-10)
+        const dailyChartData = DAYS_IN_RANGE.map(day => {
+            const dayOrders = regularOrders.filter(o => o.day === day);
+            return {
+                day,
+                orders: dayOrders.length,
+                revenue: dayOrders.reduce((sum, o) => sum + (o.amount || 0), 0)
+            };
+        });
 
-        const currRev = currOrdersData.reduce((sum, o) => sum + (o.amount || 0), 0);
-        const prevRev = prevOrdersData.reduce((sum, o) => sum + (o.amount || 0), 0);
-        const diffRev = currRev - prevRev;
-        const revTrend = diffRev > 0
-            ? { direction: 'up', text: `↑ +₹${diffRev.toLocaleString()} this month` }
-            : diffRev < 0
-                ? { direction: 'down', text: `↓ -₹${Math.abs(diffRev).toLocaleString()} this month` }
-                : { direction: 'same', text: `— No change` };
-
-        // Monthly chart
-        const monthMap = {};
-        for (let m = 1; m <= 12; m++) monthMap[m] = 0;
-        orders.forEach(o => { if (o.month) monthMap[o.month]++; });
-        const chartData = Object.entries(monthMap)
-            .map(([m, count]) => ({ month: MONTH_NAMES[+m], orders: count }));
+        // Category breakdown
+        const categoryMap = {};
+        regularOrders.forEach(o => {
+            const cat = getCategoryForTenant(o.tenant);
+            if (!categoryMap[cat.key]) {
+                categoryMap[cat.key] = { label: cat.label, color: cat.color, orders: 0, revenue: 0 };
+            }
+            categoryMap[cat.key].orders++;
+            categoryMap[cat.key].revenue += (o.amount || 0);
+        });
+        const categoryBreakdown = Object.values(categoryMap).sort((a, b) => b.revenue - a.revenue);
 
         // Client stats
-        const clientStats = allManagers.map(mgr => {
-            const partnerNames = mgr.partnernames || [];
-            const clientOrders = orders.filter(o => partnerNames.includes(o.tenant));
-            const clientRevenue = clientOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+        const clientStats = allManagers
+            .filter(m => m.role !== "admin")
+            .map(mgr => {
+                const partnerNames = mgr.partnernames || [];
+                const clientOrders = orders.filter(o => partnerNames.includes(o.tenant));
+                const clientRevenue = clientOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
-            let lastOrder = null;
-            clientOrders.forEach(o => {
-                if (o.date) {
-                    const d = new Date(o.date);
-                    if (!lastOrder || d > lastOrder) lastOrder = d;
-                }
-            });
+                let lastOrder = null;
+                clientOrders.forEach(o => {
+                    if (o.date) {
+                        const d = new Date(o.date);
+                        if (!lastOrder || d > lastOrder) lastOrder = d;
+                    }
+                });
 
-            return {
-                id: mgr.id,
-                name: mgr.name,
-                email: mgr.email || "—",
-                partners: partnerNames,
-                partnerCount: partnerNames.length,
-                totalOrders: clientOrders.length,
-                totalRevenue: clientRevenue,
-                lastOrder
-            };
-        }).sort((a, b) => b.totalOrders - a.totalOrders);
+                return {
+                    id: mgr.id,
+                    name: mgr.name,
+                    email: mgr.email || "—",
+                    partners: partnerNames,
+                    partnerCount: partnerNames.length,
+                    totalOrders: clientOrders.length,
+                    totalRevenue: clientRevenue,
+                    lastOrder
+                };
+            }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+        const availableTenants = [...new Set(orders.map(o => o.tenant))].filter(Boolean).sort();
 
         return {
             totalOrders, totalRevenue, tenants, delivered, confirmed, pending,
-            chartData, clientStats, ordersTrend, revTrend,
-            totalClients: allManagers.length
+            dailyChartData, categoryBreakdown, clientStats,
+            issueOrders, totalClients: allManagers.filter(m => m.role !== 'admin').length,
+            availableTenants
         };
     }, [orders, allManagers]);
+
+    // Filtered orders for table
+    const filteredDetailedOrders = useMemo(() => {
+        return orders.filter(order => {
+            const matchTenant = filterTenant === "All" || order.tenant === filterTenant;
+            const matchCategory = filterCategory === "All" || getCategoryForTenant(order.tenant).key === filterCategory;
+            return matchTenant && matchCategory;
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }, [orders, filterTenant, filterCategory]);
 
     const filteredClients = stats.clientStats.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    const todayDateStr = new Intl.DateTimeFormat('en-US', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-    }).format(new Date());
 
     if (loading) return <LoadingSpinner fullscreen />;
 
@@ -125,19 +137,45 @@ export default function AdminDashboard() {
                         <div className="absolute right-[-20%] top-[-40%] w-64 h-64 bg-white opacity-10 rounded-full" />
                         <div className="absolute right-[10%] bottom-[-50%] w-56 h-56 bg-white opacity-20 rounded-full" />
                     </div>
-                    <div className="relative z-10 flex items-center justify-between">
-                        <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-sm">
-                                    Admin
-                                </span>
-                            </div>
-                            <p className="text-white/80 text-sm font-medium mb-1">Welcome back,</p>
-                            <h1 className="text-2xl font-bold mb-1">{partner?.name}</h1>
-                            <p className="text-blue-200 text-sm font-light">{todayDateStr}</p>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider backdrop-blur-sm">
+                                Admin
+                            </span>
                         </div>
+                        <p className="text-white/80 text-sm font-medium mb-1">Welcome back,</p>
+                        <h1 className="text-2xl font-bold">{partner?.name}</h1>
                     </div>
                 </div>
+
+                {/* Issues Alert Panel */}
+                {stats.issueOrders.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-8">
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                                <FiAlertTriangle size={16} className="text-red-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-red-800">{stats.issueOrders.length} Open Issue{stats.issueOrders.length !== 1 ? 's' : ''}</h3>
+                                <p className="text-xs text-red-500">Requires attention</p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {stats.issueOrders.map(issue => (
+                                <div key={issue.id} className="bg-white rounded-xl px-4 py-3 border border-red-100 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap flex-shrink-0">
+                                        {issue.issueType || "Issue"}
+                                    </span>
+                                    <p className="text-sm text-gray-700 flex-1">{issue.service}</p>
+                                    <div className="flex items-center gap-3 text-xs text-gray-400 flex-shrink-0">
+                                        <span>{issue.date}</span>
+                                        {issue.reportedBy && <span>by {issue.reportedBy}</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -145,15 +183,15 @@ export default function AdminDashboard() {
                         icon={FiPackage}
                         value={stats.totalOrders}
                         label="Total Orders"
+                        sublabel="Excl. issues"
                         color="brand"
-                        trend={stats.ordersTrend}
                     />
                     <KpiCard
                         icon={BiRupee}
                         value={`₹${stats.totalRevenue.toLocaleString()}`}
                         label="Total Revenue"
+                        sublabel={DATE_RANGE}
                         color="orange"
-                        trend={stats.revTrend}
                     />
                     <KpiCard
                         icon={FiBriefcase}
@@ -164,56 +202,114 @@ export default function AdminDashboard() {
                     <KpiCard
                         icon={FiUsers}
                         value={stats.tenants.length}
-                        label="Total Tenants"
+                        label="Active Tenants"
                         color="green"
                     />
                 </div>
 
+                {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Bar Chart */}
+                    {/* Daily Bar Chart */}
                     <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                        <h2 className="text-base font-bold text-gray-900 mb-1">Monthly Orders (All Clients)</h2>
-                        <p className="text-xs text-gray-400 mb-5">Aggregated orders across all B2B partners</p>
-                        {stats.chartData.some(d => d.orders > 0) ? (
-                            <ResponsiveContainer width="100%" height={220}>
-                                <BarChart data={stats.chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
-                                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F0F7FF' }} />
-                                    <Bar dataKey="orders" fill="#0D47A1" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-48 flex flex-col items-center justify-center text-gray-400 text-sm">
-                                <FiBarChart2 size={32} className="text-gray-300 mb-2" />
-                                No orders yet
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h2 className="text-base font-bold text-gray-900">Daily Orders</h2>
+                                <p className="text-xs text-gray-400">{DATE_RANGE}</p>
                             </div>
-                        )}
+                        </div>
+                        <ResponsiveContainer width="100%" height={220}>
+                            <BarChart data={stats.dailyChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
+                                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 11, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F0F7FF' }} />
+                                <Bar dataKey="orders" fill="#0D47A1" radius={[6, 6, 0, 0]} maxBarSize={45} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
 
-                    {/* Status Breakdown */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
-                        <div>
+                    {/* Right Column — Status + Categories */}
+                    <div className="space-y-6">
+                        {/* Status Breakdown */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                             <h2 className="text-base font-bold text-gray-900 mb-1">Order Status</h2>
-                            <p className="text-xs text-gray-400 mb-6">Breakdown across all clients</p>
-                            <div className="space-y-5">
+                            <p className="text-xs text-gray-400 mb-5">Across all tenants</p>
+                            <div className="space-y-4">
                                 {stats.delivered > 0 && <StatusBar label="Delivered" value={stats.delivered} total={stats.totalOrders} color="green" />}
                                 {stats.confirmed > 0 && <StatusBar label="Confirmed" value={stats.confirmed} total={stats.totalOrders} color="brand" />}
                                 {stats.pending > 0 && <StatusBar label="Pending" value={stats.pending} total={stats.totalOrders} color="orange" />}
                             </div>
                         </div>
-                        <div className="mt-auto pt-4 border-t border-gray-100">
-                            <div className="flex justify-between items-center text-xs text-gray-500">
-                                <span className="uppercase font-semibold tracking-wider">Total Orders</span>
-                                <span className="font-bold text-gray-800 text-lg">{stats.totalOrders}</span>
+
+                        {/* Category Breakdown */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                            <h2 className="text-base font-bold text-gray-900 mb-4">Revenue by Category</h2>
+                            <div className="space-y-3">
+                                {stats.categoryBreakdown.map(cat => (
+                                    <div key={cat.label} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                                            <span className="text-xs font-medium text-gray-600">{cat.label}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-sm font-bold text-gray-800">₹{cat.revenue.toLocaleString()}</span>
+                                            <span className="text-[10px] text-gray-400 ml-1.5">({cat.orders})</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Detailed Orders Log */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
+                    <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Detailed Order Log</h2>
+                            <p className="text-xs text-gray-500 mt-1">All orders from {DATE_RANGE}. Issues are highlighted in red.</p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            {/* Category Filter */}
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                <FiFilter className="text-gray-400" size={14} />
+                                <select
+                                    className="bg-transparent text-sm text-gray-700 outline-none cursor-pointer"
+                                    value={filterCategory}
+                                    onChange={(e) => { setFilterCategory(e.target.value); setFilterTenant("All"); }}
+                                >
+                                    <option value="All">All Categories</option>
+                                    <option value="STUDENT_LAUNDRY">Student Laundry (B2B)</option>
+                                    <option value="LINEN_SERVICES">Linen Services (B2B)</option>
+                                    <option value="B2C_RETAIL">Retail Customers (B2C)</option>
+                                    <option value="AIRBNB">Airbnb Services</option>
+                                    <option value="ISSUES">Issues & Complaints</option>
+                                </select>
+                            </div>
+
+                            {/* Tenant Filter */}
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                <FiFilter className="text-gray-400" size={14} />
+                                <select
+                                    className="bg-transparent text-sm text-gray-700 outline-none cursor-pointer"
+                                    value={filterTenant}
+                                    onChange={(e) => setFilterTenant(e.target.value)}
+                                >
+                                    <option value="All">All Hostels / Clients</option>
+                                    {stats.availableTenants.map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <OrderTable orders={filteredDetailedOrders} showTenant={true} />
+                </div>
+
                 {/* Clients Table */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                         <div>
                             <h2 className="text-base font-bold text-gray-900">B2B Clients Overview</h2>
