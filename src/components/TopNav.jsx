@@ -1,0 +1,56 @@
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { FiLogOut, FiMapPin } from "react-icons/fi";
+import BrandLogo from "./BrandLogo";
+
+export default function TopNav() {
+    const { partner, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+    };
+
+    return (
+        <nav className="sticky top-0 z-50 bg-white border-b border-brand-100 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                {/* Logo */}
+                <div className="flex items-center gap-3">
+                    <BrandLogo className="w-10 h-10 text-[#1976D2]" />
+                    <div>
+                        <span className="font-bold text-[#1976D2] text-lg leading-none" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                            Andes
+                        </span>
+                        <span className="block text-[10px] text-gray-400 leading-none font-medium tracking-wider uppercase">
+                            B2B Portal
+                        </span>
+                    </div>
+                </div>
+
+                {/* Partner Info */}
+                <div className="hidden sm:flex flex-col items-center text-center">
+                    <span className="font-semibold text-gray-800 text-sm leading-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                        {partner?.name}
+                    </span>
+                    {partner?.location && (
+                        <span className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                            <FiMapPin size={10} />
+                            {partner.location}
+                        </span>
+                    )}
+                </div>
+
+                {/* Sign Out */}
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E3F2FD] text-[#1976D2] border border-brand-200 font-semibold text-sm hover:bg-[#1976D2] hover:text-white transition-all duration-200"
+                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                >
+                    <FiLogOut size={15} />
+                    <span className="hidden sm:inline">Sign Out</span>
+                </button>
+            </div>
+        </nav>
+    );
+}
