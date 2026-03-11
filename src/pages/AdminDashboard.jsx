@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "../firebase";
 import { useHostelAuth } from "../context/HostelAuthContext";
 import { getCategoryForProperty } from "../data/hostelOrders";
 import { CLIENT_CREDENTIALS } from "../data/hostelAuth";
@@ -34,20 +35,25 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [dateFrom, setDateFrom] = useState("2026-03-01");
-  const [dateTo, setDateTo] = useState(new Date().toISOString().split("T")[0]);
+  const [dateTo, setDateTo] = useState(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]);
   const [extraOrders, setExtraOrders] = useState([]);
 
-  // Listen to Firestore for admin edits
+  // Listen to Firestore for admin edits — wait for Firebase Auth to be ready first
   useEffect(() => {
-    const editsRef = collection(db, "b2b_admin_edits");
-    const unsub = onSnapshot(editsRef, (snapshot) => {
-      const edits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log("Firebase edits loaded:", edits);
-      setExtraOrders(edits);
-    }, (error) => {
-      console.error("Error fetching admin edits:", error);
+    let unsubSnapshot = () => {};
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      // Start listening once auth state is resolved (user or null)
+      unsubSnapshot(); // clean up any previous listener
+      const editsRef = collection(db, "b2b_admin_edits");
+      unsubSnapshot = onSnapshot(editsRef, (snapshot) => {
+        const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log("Firebase edits loaded:", edits);
+        setExtraOrders(edits);
+      }, (error) => {
+        console.error("Error fetching admin edits:", error);
+      });
     });
-    return () => unsub();
+    return () => { unsubAuth(); unsubSnapshot(); };
   }, []);
 
   const handleAddOrder = useCallback(async (order) => {
