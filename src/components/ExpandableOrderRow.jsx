@@ -56,9 +56,6 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
             ) : <span className="text-gray-400 text-sm">—</span>}
           </div>
         </td>
-        <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-          {order.amount > 0 ? `₹${order.amount.toLocaleString("en-IN")}` : "—"}
-        </td>
         <td className="px-4 py-3">
           <span
             className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
@@ -80,16 +77,11 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
       {/* Expanded detail panel */}
       {open && (
         <tr className="bg-gradient-to-br from-brand-50/40 to-white">
-          <td colSpan={showProperty ? 9 : 8} className="px-6 py-5">
+          <td colSpan={showProperty ? 8 : 7} className="px-6 py-5">
             {/* Key metrics row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Property" value={order.property} />
               <MetricCard label="Category" value={cat.label} />
-              <MetricCard
-                label="Amount"
-                value={order.amount > 0 ? `₹${order.amount.toLocaleString("en-IN")}` : "N/A"}
-                highlight
-              />
               <MetricCard label="Status" value={order.status}
                 badgeClass={
                   order.status === "Delivered" ? "text-emerald-700" :
