@@ -4,7 +4,7 @@ export default function ExportCSV({ orders = [] }) {
     const handleExport = () => {
         if (!orders || orders.length === 0) return;
 
-        const headers = ["Date", "Order ID", "Tenant", "Details", "Items", "Amount", "Status", "Issue Type"];
+        const headers = ["Date", "Order ID", "Property", "Category", "Clothes", "Weight", "Students", "Amount", "Status", "Issue Type"];
 
         const rows = orders.map(o => {
             let dateStr = "—";
@@ -20,9 +20,11 @@ export default function ExportCSV({ orders = [] }) {
             return [
                 dateStr,
                 `"${o.id || "—"}"`,
-                `"${o.tenant || "—"}"`,
-                `"${(o.service || "—").replace(/"/g, '""')}"`,
-                o.items || 0,
+                `"${o.property || o.tenant || "—"}"`,
+                `"${o.category || "—"}"`,
+                o.items ?? "",
+                o.weight ?? "",
+                o.studentCount ?? "",
                 o.amount !== undefined ? o.amount.toString() : "0",
                 o.status || "—",
                 `"${o.issueType || ""}"`

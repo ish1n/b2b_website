@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useHostelAuth } from "../context/HostelAuthContext";
 import { getCategoryForTenant } from "../data/mockOrders";
+import { CLIENT_CREDENTIALS } from "../data/hostelAuth";
 import TopNav from "../components/TopNav";
 import KpiCard from "../components/KpiCard";
 import StatusBar from "../components/StatusBar";
@@ -32,7 +33,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function AdminDashboard() {
-    const { partner, orders, allManagers, loading } = useAuth();
+    const { client, orders } = useHostelAuth();
+    const partner = client;
+    const allManagers = CLIENT_CREDENTIALS.filter(c => c.id !== 'admin-1');
+    const loading = false;
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
     const [filterTenant, setFilterTenant] = useState("All");
@@ -40,12 +44,12 @@ export default function AdminDashboard() {
 
     const stats = useMemo(() => {
         // Separate issues from regular orders for KPI calculations
-        const regularOrders = orders.filter(o => o.tenant !== "Issues & Complaints");
-        const issueOrders = orders.filter(o => o.tenant === "Issues & Complaints" || o.hasIssue);
+        const regularOrders = orders.filter(o => o.property !== "Issues" && o.category !== "ISSUES");
+        const issueOrders = orders.filter(o => o.property === "Issues" || o.category === "ISSUES");
 
         const totalOrders = regularOrders.length;
         const totalRevenue = regularOrders.reduce((s, o) => s + (o.amount || 0), 0);
-        const tenants = [...new Set(regularOrders.map(o => o.tenant))].filter(Boolean);
+        const tenants = [...new Set(regularOrders.map(o => o.property))].filter(Boolean);
         const delivered = regularOrders.filter(o => o.status === 'Delivered').length;
         const confirmed = regularOrders.filter(o => o.status === 'Confirmed').length;
         const pending = regularOrders.filter(o => o.status === 'Pending').length;
@@ -63,7 +67,7 @@ export default function AdminDashboard() {
         // Category breakdown
         const categoryMap = {};
         regularOrders.forEach(o => {
-            const cat = getCategoryForTenant(o.tenant);
+            const cat = getCategoryForTenant(o.property || o.tenant);
             if (!categoryMap[cat.key]) {
                 categoryMap[cat.key] = { label: cat.label, color: cat.color, orders: 0, revenue: 0 };
             }
@@ -76,8 +80,8 @@ export default function AdminDashboard() {
         const clientStats = allManagers
             .filter(m => m.role !== "admin")
             .map(mgr => {
-                const partnerNames = mgr.partnernames || [];
-                const clientOrders = orders.filter(o => partnerNames.includes(o.tenant));
+                const partnerNames = mgr.properties || mgr.partnernames || [];
+                const clientOrders = orders.filter(o => partnerNames.includes(o.property || o.tenant));
                 const clientRevenue = clientOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
                 let lastOrder = null;
@@ -100,7 +104,7 @@ export default function AdminDashboard() {
                 };
             }).sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-        const availableTenants = [...new Set(orders.map(o => o.tenant))].filter(Boolean).sort();
+        const availableTenants = [...new Set(orders.map(o => o.property || o.tenant))].filter(Boolean).sort();
 
         return {
             totalOrders, totalRevenue, tenants, delivered, confirmed, pending,
@@ -113,8 +117,8 @@ export default function AdminDashboard() {
     // Filtered orders for table
     const filteredDetailedOrders = useMemo(() => {
         return orders.filter(order => {
-            const matchTenant = filterTenant === "All" || order.tenant === filterTenant;
-            const matchCategory = filterCategory === "All" || getCategoryForTenant(order.tenant).key === filterCategory;
+            const matchTenant = filterTenant === "All" || (order.property || order.tenant) === filterTenant;
+            const matchCategory = filterCategory === "All" || getCategoryForTenant(order.property || order.tenant).key === filterCategory;
             return matchTenant && matchCategory;
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
     }, [orders, filterTenant, filterCategory]);
@@ -376,9 +380,9 @@ export default function AdminDashboard() {
                                             <td className="px-4 py-3 text-sm text-gray-600 font-semibold">{client.totalOrders}</td>
                                             <td className="px-4 py-3 text-sm font-medium text-gray-800">₹{client.totalRevenue.toLocaleString()}</td>
                                             <td className="px-4 py-3 text-right">
-                                                {client.partners.length > 0 && (
+                                                {(client.properties || client.partners || []).length > 0 && (
                                                     <button
-                                                        onClick={() => navigate(`/tenants/${encodeURIComponent(client.partners[0])}/months`)}
+                                                        onClick={() => {}}
                                                         className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#E8EAF6] text-[#0D47A1] text-xs font-semibold border border-indigo-100 hover:bg-indigo-100 transition-all"
                                                     >
                                                         View <FiArrowRight size={12} />

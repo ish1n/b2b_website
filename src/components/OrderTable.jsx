@@ -39,7 +39,7 @@ export default function OrderTable({ orders = [], showTenant = true }) {
                     </thead>
                     <tbody>
                         {orders.map((order, i) => {
-                            const isIssue = order.hasIssue || order.tenant === "Issues & Complaints";
+                            const isIssue = order.hasIssue || order.category === "ISSUES" || order.tenant === "Issues & Complaints";
                             return (
                                 <tr
                                     key={order.id || i}
@@ -60,7 +60,7 @@ export default function OrderTable({ orders = [], showTenant = true }) {
                                     {showTenant && (
                                         <td className="px-4 py-3">
                                             <span className={`text-sm font-medium ${isIssue ? 'text-red-600' : 'text-gray-700'}`}>
-                                                {order.tenant}
+                                                {order.property || order.tenant}
                                             </span>
                                         </td>
                                     )}

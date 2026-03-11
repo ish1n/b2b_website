@@ -1,19 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { HostelAuthProvider } from "./context/HostelAuthContext";
 import AdminRoute from "./components/AdminRoute";
+import ClientProtectedRoute from "./components/ClientProtectedRoute";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import MonthOrders from "./pages/MonthOrders";
-import DayOrders from "./pages/DayOrders";
-import TenantMonths from "./pages/TenantMonths";
-import TenantDays from "./pages/TenantDays";
+import ClientDashboard from "./pages/ClientDashboard";
+import ClientCategoryOrders from "./pages/ClientCategoryOrders";
+import ClientOrderDetail from "./pages/ClientOrderDetail";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
+      <HostelAuthProvider>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -22,17 +20,15 @@ export default function App() {
           {/* Admin */}
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
-          {/* Protected (Manager + Admin) */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/orders/months" element={<ProtectedRoute><MonthOrders /></ProtectedRoute>} />
-          <Route path="/orders/months/:month" element={<ProtectedRoute><DayOrders /></ProtectedRoute>} />
-          <Route path="/tenants/:tenantName/months" element={<ProtectedRoute><TenantMonths /></ProtectedRoute>} />
-          <Route path="/tenants/:tenantName/months/:month" element={<ProtectedRoute><TenantDays /></ProtectedRoute>} />
+          {/* Client Portal */}
+          <Route path="/client/dashboard" element={<ClientProtectedRoute><ClientDashboard /></ClientProtectedRoute>} />
+          <Route path="/client/category/:categoryKey" element={<ClientProtectedRoute><ClientCategoryOrders /></ClientProtectedRoute>} />
+          <Route path="/client/order/:orderId" element={<ClientProtectedRoute><ClientOrderDetail /></ClientProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
-      </AuthProvider>
+      </HostelAuthProvider>
     </BrowserRouter>
   );
 }

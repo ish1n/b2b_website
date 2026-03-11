@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useHostelAuth } from "../context/HostelAuthContext";
 import { FiEye, FiEyeOff, FiMail, FiLock, FiLoader, FiPackage, FiBarChart2, FiUsers, FiShield } from "react-icons/fi";
 import BrandLogo from "../components/BrandLogo";
 
@@ -10,16 +10,23 @@ export default function Login() {
     const [showPass, setShowPass] = useState(false);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const { login } = useAuth();
+    const { login } = useHostelAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setSubmitting(true);
-        const result = await login(email.trim(), password);
+
+        // All auth is now hardcoded — check against hostelAuth credentials
+        const result = login(email.trim(), password);
+
         if (result.success) {
-            navigate(result.isAdmin ? "/admin" : "/dashboard");
+            if (result.role === "admin") {
+                navigate("/admin");
+            } else {
+                navigate("/client/dashboard");
+            }
         } else {
             setError(result.error || "Login failed. Please try again.");
         }
