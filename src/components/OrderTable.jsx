@@ -1,4 +1,4 @@
-import { FiPackage, FiAlertTriangle } from "react-icons/fi";
+import { FiPackage, FiAlertTriangle, FiTrash2 } from "react-icons/fi";
 import ExportCSV from "./ExportCSV";
 
 const STATUS_BADGE = {
@@ -7,7 +7,7 @@ const STATUS_BADGE = {
     Pending: 'bg-orange-100 text-[#FF6B35]',
 };
 
-export default function OrderTable({ orders = [], showTenant = true }) {
+export default function OrderTable({ orders = [], showTenant = true, onDelete }) {
     if (orders.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -29,12 +29,12 @@ export default function OrderTable({ orders = [], showTenant = true }) {
                     <thead>
                         <tr className="bg-[#f8fcff]">
                             <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tl-xl">Date</th>
-                            <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Order ID</th>
                             {showTenant && <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Tenant</th>}
                             <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Order Details</th>
-                            <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Items</th>
+                            <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Clothes</th>
                             <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Amount</th>
                             <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Status</th>
+                            {onDelete && <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Action</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -50,12 +50,6 @@ export default function OrderTable({ orders = [], showTenant = true }) {
                                 >
                                     <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
                                         {order.date || `${order.day}/${order.month}`}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm font-semibold text-[#1976D2]">
-                                        <div className="flex items-center gap-1.5">
-                                            {isIssue && <FiAlertTriangle size={13} className="text-red-500 flex-shrink-0" />}
-                                            {order.id}
-                                        </div>
                                     </td>
                                     {showTenant && (
                                         <td className="px-4 py-3">
@@ -81,6 +75,13 @@ export default function OrderTable({ orders = [], showTenant = true }) {
                                             {order.status}
                                         </span>
                                     </td>
+                                    {onDelete && (
+                                        <td className="px-4 py-3 text-right">
+                                            <button onClick={() => onDelete(order)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                <FiTrash2 size={14} />
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}

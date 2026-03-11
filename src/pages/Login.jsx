@@ -22,7 +22,7 @@ export default function Login() {
         setSubmitting(true);
 
         // All auth is now hardcoded — check against hostelAuth credentials
-        const result = login(email.trim(), password);
+        const result = await login(email.trim(), password);
 
         if (result.success) {
             if (result.role === "admin") {
