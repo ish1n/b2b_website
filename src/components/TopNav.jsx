@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useHostelAuth } from "../context/HostelAuthContext";
 import { FiLogOut, FiMapPin, FiShield } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 
 export default function TopNav() {
-    const { partner, isAdmin, logout } = useAuth();
+    const { client: partner, isAdmin, logout } = useHostelAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -13,7 +13,7 @@ export default function TopNav() {
     };
 
     const handleLogoClick = () => {
-        navigate(isAdmin ? "/admin" : "/dashboard");
+        navigate(isAdmin ? "/admin" : "/client/dashboard");
     };
 
     return (

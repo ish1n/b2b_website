@@ -1,9 +1,9 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useHostelAuth } from "../context/HostelAuthContext";
 
 export default function AdminRoute({ children }) {
-    const { partner, isAdmin } = useAuth();
-    if (!partner) return <Navigate to="/login" replace />;
-    if (!isAdmin) return <Navigate to="/dashboard" replace />;
+    const { client, isAdmin } = useHostelAuth();
+    if (!client) return <Navigate to="/login" replace />;
+    if (!isAdmin) return <Navigate to="/client/dashboard" replace />;
     return children;
 }
