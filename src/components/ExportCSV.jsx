@@ -36,7 +36,7 @@ export default function ExportCSV({ orders = [] }) {
         const url = URL.createObjectURL(blob);
 
         const link = document.createElement("a");
-        const dateStr = new Date().toISOString().split('T')[0];
+        const dateStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
         link.href = url;
         link.setAttribute("download", `andes_orders_${dateStr}.csv`);
         document.body.appendChild(link);

@@ -65,7 +65,7 @@ export default function AdminExpensesTab() {
             dateStr = typeof raw.date === "string"
               ? raw.date
               : raw.date.toDate
-                ? raw.date.toDate().toISOString().split("T")[0]
+                ? new Date(raw.date.toDate().getTime() - raw.date.toDate().getTimezoneOffset() * 60000).toISOString().split("T")[0]
                 : "";
           }
           return { id: d.id, ...raw, date: dateStr };
@@ -141,7 +141,7 @@ export default function AdminExpensesTab() {
   /* ─── Form helpers ─── */
   const openNew = () => {
     setEditingId(null);
-    setForm({ ...emptyForm, date: new Date().toISOString().split("T")[0] });
+    setForm({ ...emptyForm, date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0] });
     setErrors({});
     setShowModal(true);
   };
@@ -327,7 +327,8 @@ export default function AdminExpensesTab() {
                 const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",")).join("\n");
                 const blob = new Blob([csv], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement("a"); a.href = url; a.download = `expenses_${new Date().toISOString().split("T")[0]}.csv`; a.click();
+                const localDateObj = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+                const a = document.createElement("a"); a.href = url; a.download = `expenses_${localDateObj.toISOString().split("T")[0]}.csv`; a.click();
                 URL.revokeObjectURL(url);
               }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">
                 <Download size={14} /> Export CSV
