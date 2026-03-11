@@ -43,7 +43,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
       property: "Issues",
       category: "ISSUES",
       type: "issue",
-      date: form.date || new Date().toISOString().split("T")[0],
+      date: form.date || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       amount: 0,
       service: form.description,
       issueType: form.issueType,

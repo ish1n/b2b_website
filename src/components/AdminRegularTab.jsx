@@ -70,7 +70,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       category: "B2C_RETAIL",
       type: "regular",
       channel: form.channel,
-      date: form.pickupDate || new Date().toISOString().split("T")[0],
+      date: form.pickupDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       amount: parseFloat(form.amount) || 0,
       status: "Confirmed",
       items: parseInt(form.clothes) || 1,
