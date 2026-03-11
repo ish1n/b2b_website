@@ -11,11 +11,11 @@ import { MdScale } from "react-icons/md";
 // CSV export helper
 function exportCSV(rows, filename) {
   if (!rows.length) return;
-  const headers = ["Order ID","Date","Property","Category","Clothes","Weight","Students","Amount","Status","Customer","Phone"];
+  const headers = ["Order ID","Date","Property","Category","Clothes","Weight","Students","Status","Customer","Phone"];
   const csvRows = [
     headers.join(","),
     ...rows.map((o) =>
-      [o.id,o.date,`"${o.property}"`,o.category,o.items??"",o.weight??"",o.studentCount??"",o.amount||0,o.status,`"${o.customerName||""}"`,o.customerNumber||""].join(",")
+      [o.id,o.date,`"${o.property}"`,o.category,o.items??"",o.weight??"",o.studentCount??"",o.status,`"${o.customerName||""}"`,o.customerNumber||""].join(",")
     ),
   ];
   const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
@@ -52,7 +52,6 @@ export default function ClientCategoryOrders() {
     return list.sort((a, b) => b.date.localeCompare(a.date));
   }, [categoryOrders, propertyFilter, statusFilter, dateFrom, dateTo]);
 
-  const totalRevenue = filtered.reduce((s, o) => s + (o.amount || 0), 0);
   const totalItems = filtered.reduce((s, o) => s + (o.items || 0), 0);
   const totalWeight = filtered.reduce((s, o) => s + (o.weight || 0), 0);
   const uniqueStatuses = [...new Set(categoryOrders.map((o) => o.status))];
@@ -89,9 +88,8 @@ export default function ClientCategoryOrders() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Summary stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SummaryCard label="Orders" value={filtered.length} color={cat.color} Icon={FiPackage} />
-          <SummaryCard label="Revenue" value={`₹${totalRevenue.toLocaleString("en-IN")}`} color="#059669" Icon={BiRupee} />
           <SummaryCard label="Items" value={totalItems} color="#7C3AED" Icon={FiShoppingBag} />
           <SummaryCard label="Weight" value={`${totalWeight.toFixed(1)} KG`} color="#D97706" Icon={MdScale} />
         </div>

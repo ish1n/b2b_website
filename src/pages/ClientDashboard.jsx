@@ -18,7 +18,7 @@ import {
 // ── CSV export helper ──
 function exportCSV(rows, filename) {
   if (!rows.length) return;
-  const headers = ["Order ID", "Date", "Property", "Category", "Clothes", "Weight", "Students", "Amount", "Status", "Customer", "Phone"];
+  const headers = ["Order ID", "Date", "Property", "Category", "Clothes", "Weight", "Students", "Status", "Customer", "Phone"];
   const csvRows = [
     headers.join(","),
     ...rows.map((o) =>
@@ -30,7 +30,6 @@ function exportCSV(rows, filename) {
         o.items ?? "",
         o.weight ?? "",
         o.studentCount ?? "",
-        o.amount || 0,
         o.status,
         `"${o.customerName || ""}"`,
         o.customerNumber || "",
@@ -80,7 +79,6 @@ export default function ClientDashboard() {
 
   // KPIs
   const totalOrders = filtered.length;
-  const totalRevenue = filtered.reduce((s, o) => s + (o.amount || 0), 0);
   const totalItems = filtered.reduce((s, o) => s + (o.items || 0), 0);
   const totalWeight = filtered.reduce((s, o) => s + (o.weight || 0), 0);
   const uniqueStatuses = [...new Set(orders.map((o) => o.status))];
@@ -89,9 +87,8 @@ export default function ClientDashboard() {
   const categoryStats = useMemo(() => {
     const map = {};
     filtered.forEach((o) => {
-      if (!map[o.category]) map[o.category] = { count: 0, revenue: 0, items: 0 };
+      if (!map[o.category]) map[o.category] = { count: 0, items: 0 };
       map[o.category].count++;
-      map[o.category].revenue += o.amount || 0;
       map[o.category].items += o.items || 0;
     });
     return Object.entries(map).map(([key, val]) => ({
@@ -99,21 +96,6 @@ export default function ClientDashboard() {
       ...(CATEGORIES[key] || {}),
       ...val,
     }));
-  }, [filtered]);
-
-  // Revenue by date chart data
-  const chartData = useMemo(() => {
-    const byDate = {};
-    filtered.forEach((o) => {
-      if (!byDate[o.date]) byDate[o.date] = 0;
-      byDate[o.date] += o.amount || 0;
-    });
-    return Object.entries(byDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, revenue]) => ({
-        date: date.slice(5), // MM-DD
-        revenue,
-      }));
   }, [filtered]);
 
   const hasActiveFilters = propertyFilter !== "all" || statusFilter !== "all" || dateFrom || dateTo;
@@ -165,7 +147,6 @@ export default function ClientDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: "Total Orders", value: totalOrders, color: "#1976D2", Icon: FiPackage },
-            { label: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, color: "#059669", Icon: BiRupee },
             { label: "Total Items", value: totalItems.toLocaleString(), color: "#7C3AED", Icon: FiShoppingBag },
             { label: "Total Weight", value: `${totalWeight.toFixed(1)} KG`, color: "#D97706", Icon: MdScale },
           ].map((kpi) => (
@@ -277,14 +258,10 @@ export default function ClientDashboard() {
                       {cat.label}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-2 gap-2 text-center">
                     <div>
                       <p className="text-xs text-gray-400 font-medium">Orders</p>
                       <p className="text-lg font-bold" style={{ color: cat.color }}>{cat.count}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-medium">Revenue</p>
-                      <p className="text-sm font-bold text-gray-700">₹{cat.revenue.toLocaleString("en-IN")}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-400 font-medium">Items</p>
@@ -294,25 +271,6 @@ export default function ClientDashboard() {
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Revenue Chart */}
-        {chartData.length > 1 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-base font-bold text-gray-800 mb-4">Revenue by Date</h2>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={chartData} barSize={28}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#6B7280" }} />
-                <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip
-                  formatter={(v) => [`₹${v.toLocaleString("en-IN")}`, "Revenue"]}
-                  contentStyle={{ borderRadius: 12, border: "1px solid #E5E7EB", fontSize: 13 }}
-                />
-                <Bar dataKey="revenue" fill="#1976D2" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         )}
 
@@ -345,7 +303,6 @@ export default function ClientDashboard() {
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center gap-1.5"><FiUsers size={14} className="text-gray-400" /> Students</div>
                   </th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-10"></th>
                 </tr>

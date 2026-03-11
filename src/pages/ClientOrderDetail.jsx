@@ -20,7 +20,6 @@ function exportSingleCSV(order) {
     ["Clothes", order.items ?? ""],
     ["Weight", order.weight ?? ""],
     ["Students", order.studentCount ?? ""],
-    ["Amount", order.amount || 0],
     ["Status", order.status],
   ];
   if (order.customerName) rows.push(["Customer", order.customerName]);
@@ -83,7 +82,6 @@ export default function ClientOrderDetail() {
         </div>
       ) 
     },
-    { icon: <BiRupee />, label: "Amount", value: order.amount > 0 ? `₹${order.amount.toLocaleString("en-IN")}` : "N/A" },
     { label: "Items", value: order.items ?? "—" },
     { icon: <FiCheckCircle />, label: "Status", value: order.status, statusBadge: true },
   ];
