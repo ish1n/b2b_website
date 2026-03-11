@@ -102,7 +102,7 @@ export const ADMIN_CREDENTIAL = {
   id: "admin-1",
   name: "Andes Admin",
   email: "ceo@andes.co.in",
-  password: "AndesAdmin@2024",
+  password: "aryan2026@#",
   role: "admin",
 };
 
