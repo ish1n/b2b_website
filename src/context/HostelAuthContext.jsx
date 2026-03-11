@@ -38,6 +38,12 @@ export function HostelAuthProvider({ children }) {
     return result;
   }, []);
 
+  const setAuthenticatedUser = useCallback((clientData) => {
+    setClient(clientData);
+    setIsAdmin(clientData.role === "admin");
+    sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
+  }, []);
+
   const logout = useCallback(() => {
     setClient(null);
     setIsAdmin(false);
@@ -45,7 +51,7 @@ export function HostelAuthProvider({ children }) {
   }, []);
 
   return (
-    <HostelAuthContext.Provider value={{ client, orders, isAdmin, login, logout }}>
+    <HostelAuthContext.Provider value={{ client, orders, isAdmin, login, logout, setAuthenticatedUser }}>
       {children}
     </HostelAuthContext.Provider>
   );

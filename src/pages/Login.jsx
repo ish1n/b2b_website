@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useHostelAuth } from "../context/HostelAuthContext";
 import { FiEye, FiEyeOff, FiMail, FiLock, FiLoader, FiPackage, FiBarChart2, FiUsers, FiShield } from "react-icons/fi";
 import BrandLogo from "../components/BrandLogo";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -10,7 +13,7 @@ export default function Login() {
     const [showPass, setShowPass] = useState(false);
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const { login } = useHostelAuth();
+    const { login, setAuthenticatedUser } = useHostelAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -28,7 +31,39 @@ export default function Login() {
                 navigate("/client/dashboard");
             }
         } else {
-            setError(result.error || "Login failed. Please try again.");
+            // Fallback to Firebase Auth for existing admins/managers
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+                const user = userCredential.user;
+                
+                // Fetch the user document to determine role
+                const userDoc = await getDoc(doc(db, "b2b_partners", user.uid));
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    
+                    // Inject Firebase user into our active context so AdminRoute doesn't drop them
+                    setAuthenticatedUser({
+                        id: user.uid,
+                        name: userData.name || "Admin",
+                        email: user.email,
+                        role: userData.role || "admin",
+                        properties: userData.partnernames || [],
+                    });
+
+                    if (userData.role === 'admin') {
+                        navigate('/admin');
+                    } else {
+                        // Legacy managers go to original dashboard
+                        navigate('/dashboard'); 
+                    }
+                } else {
+                    setError("User profile not found in system.");
+                }
+            } catch (err) {
+                console.error("Firebase Login Error:", err);
+                setError("Invalid email or password.");
+            }
         }
         setSubmitting(false);
     };
