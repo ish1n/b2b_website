@@ -1,9 +1,9 @@
+// src/components/ExpandableOrderRow.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CATEGORIES } from "../data/hostelOrders";
 import { FiChevronUp, FiChevronDown, FiArrowRight, FiShoppingBag, FiUsers } from "react-icons/fi";
 import { MdScale } from "react-icons/md";
-import { BiRupee } from "react-icons/bi";
 
 export default function ExpandableOrderRow({ order, showProperty = false }) {
   const [open, setOpen] = useState(false);
@@ -58,13 +58,14 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
         </td>
         <td className="px-4 py-3 text-center">
           <span
-            className={`inline-block text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-              order.status === "Delivered"
+            className={`inline-block text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${order.status === "Delivered"
                 ? "bg-green-100 text-green-700"
-                : order.status === "Pending"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-gray-100 text-gray-600"
-            }`}
+                : order.status === "Resolved"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : order.status === "Pending"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-gray-100 text-gray-600"
+              }`}
           >
             {order.status}
           </span>
@@ -85,7 +86,8 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
               <MetricCard label="Status" value={order.status}
                 badgeClass={
                   order.status === "Delivered" ? "text-emerald-700" :
-                  order.status === "Pending" ? "text-amber-600" : "text-gray-600"
+                    order.status === "Resolved" ? "text-emerald-700" :
+                      order.status === "Pending" ? "text-amber-600" : "text-gray-600"
                 }
               />
               {order.customerName ? <MetricCard label="Customer" value={order.customerName} /> : null}

@@ -101,7 +101,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               +12.5% vs Last Period
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280} debounce={100}>
+          <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
             <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">

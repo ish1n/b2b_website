@@ -57,7 +57,7 @@ export default function AdminExpensesTab() {
 
   /* ─── Firestore listener ─── */
   useEffect(() => {
-    let unsubSnapshot = () => {};
+    let unsubSnapshot = () => { };
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       unsubSnapshot();
       if (user) {
@@ -254,21 +254,21 @@ export default function AdminExpensesTab() {
       {/* Control Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm gap-1 overflow-x-auto no-scrollbar max-w-full">
-           <div className="flex items-center px-3 border-r border-gray-100 mr-2">
-              <CalendarDays size={16} className="text-slate-400" />
-           </div>
-           <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} 
-             className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
-             {MONTHS.map((m) => <option key={m} value={m}>{m} Period</option>)}
-           </select>
-           <div className="h-4 w-px bg-gray-200 mx-2 self-center" />
-           <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} 
-             className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
-             <option value="All">All Categories</option>
-             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-           </select>
+          <div className="flex items-center px-3 border-r border-gray-100 mr-2">
+            <CalendarDays size={16} className="text-slate-400" />
+          </div>
+          <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
+            className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
+            {MONTHS.map((m) => <option key={m} value={m}>{m} Period</option>)}
+          </select>
+          <div className="h-4 w-px bg-gray-200 mx-2 self-center" />
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
+            className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
+            <option value="All">All Categories</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
-        <button onClick={openNew} 
+        <button onClick={openNew}
           className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 bg-blue-600 text-white text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
           <Plus size={18} /> Record Expense
         </button>
@@ -301,7 +301,7 @@ export default function AdminExpensesTab() {
           </div>
           <p className="text-[20px] font-black text-[#0F172A] tracking-tight truncate mb-1">{kpis.topCat}</p>
           <div className="flex items-center gap-2 mt-auto">
-             <span className="text-[12px] font-bold text-amber-600">Highest Category Spending</span>
+            <span className="text-[12px] font-bold text-amber-600">Highest Category Spending</span>
           </div>
         </div>
 
@@ -317,7 +317,7 @@ export default function AdminExpensesTab() {
             <span>{kpis.monthTotal.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
-             <span className="text-[12px] font-bold text-emerald-600 uppercase tracking-wider">{new Date().toLocaleString("default", { month: "long" })} Run Rate</span>
+            <span className="text-[12px] font-bold text-emerald-600 uppercase tracking-wider">{new Date().toLocaleString("default", { month: "long" })} Run Rate</span>
           </div>
         </div>
       </div>
@@ -333,8 +333,8 @@ export default function AdminExpensesTab() {
           </div>
           {areaData.length === 0 ? (
             <div className="h-[280px] flex flex-col items-center justify-center text-slate-300">
-               <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-3"><BarChart3 size={24}/></div>
-               <p className="text-[13px] font-bold">No historical data found</p>
+              <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-3"><BarChart3 size={24} /></div>
+              <p className="text-[13px] font-bold">No historical data found</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={280} debounce={100}>
@@ -348,11 +348,11 @@ export default function AdminExpensesTab() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: "#94a3b8" }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: "#94a3b8" }} tickFormatter={(v) => `₹${v}`} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                   labelStyle={{ fontWeight: 800, color: '#0F172A', marginBottom: '4px', fontSize: '12px' }}
                   itemStyle={{ fontWeight: 700, fontSize: '12px' }}
-                  formatter={(v) => [`₹${v.toLocaleString()}`, "Payment Amount"]} 
+                  formatter={(v) => [`₹${v.toLocaleString()}`, "Payment Amount"]}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#3B82F6" fill="url(#expGrad)" strokeWidth={3} animationDuration={1500} />
               </AreaChart>
@@ -361,7 +361,7 @@ export default function AdminExpensesTab() {
         </div>
 
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6 min-w-0">
-           <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8">
             <h3 className="text-[15px] font-black text-[#0F172A] tracking-tight flex items-center gap-2">
               <PieChartIcon size={18} className="text-amber-500" /> Sector Allocation
             </h3>
@@ -377,10 +377,10 @@ export default function AdminExpensesTab() {
                     <Cell key={entry.name} fill={CAT_COLORS[entry.name] || "#94a3b8"} stroke="none" />
                   ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                   itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                  formatter={(v) => `₹${v.toLocaleString()}`} 
+                  formatter={(v) => `₹${v.toLocaleString()}`}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -396,21 +396,21 @@ export default function AdminExpensesTab() {
             <p className="text-[12px] font-medium text-slate-400 uppercase tracking-widest">{filtered.length} total entries</p>
           </div>
           {filtered.length > 0 && (
-             <button onClick={() => {
-                const headers = ["Date", "Payee", "Description", "Category", "Amount"];
-                const rows = filtered.map(e => [e.date, e.payee, e.description, e.category, e.amount]);
-                const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",")).join("\n");
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const localDateObj = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-                const a = document.createElement("a"); a.href = url; a.download = `corporate_expenses_${localDateObj.toISOString().split("T")[0]}.csv`; a.click();
-                URL.revokeObjectURL(url);
-              }} className="flex items-center gap-2 px-4 py-2 bg-white text-[12px] font-black text-slate-600 border border-gray-200 rounded-xl hover:bg-slate-50 transition shadow-sm active:scale-95 uppercase tracking-wider">
-                <Download size={14} /> Download CSV
-             </button>
+            <button onClick={() => {
+              const headers = ["Date", "Payee", "Description", "Category", "Amount"];
+              const rows = filtered.map(e => [e.date, e.payee, e.description, e.category, e.amount]);
+              const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(",")).join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const localDateObj = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+              const a = document.createElement("a"); a.href = url; a.download = `corporate_expenses_${localDateObj.toISOString().split("T")[0]}.csv`; a.click();
+              URL.revokeObjectURL(url);
+            }} className="flex items-center gap-2 px-4 py-2 bg-white text-[12px] font-black text-slate-600 border border-gray-200 rounded-xl hover:bg-slate-50 transition shadow-sm active:scale-95 uppercase tracking-wider">
+              <Download size={14} /> Download CSV
+            </button>
           )}
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
             <thead className="bg-[#F8FAFC]">
@@ -435,18 +435,18 @@ export default function AdminExpensesTab() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-20">
-                     <div className="flex flex-col items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 text-slate-200"><FileText size={32}/></div>
-                        <p className="text-[15px] font-black text-slate-400">Ledger is empty for this period</p>
-                        <p className="text-[12px] font-medium text-slate-300 mt-1 uppercase tracking-widest">Awaiting financial entry points</p>
-                     </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 text-slate-200"><FileText size={32} /></div>
+                      <p className="text-[15px] font-black text-slate-400">Ledger is empty for this period</p>
+                      <p className="text-[12px] font-medium text-slate-300 mt-1 uppercase tracking-widest">Awaiting financial entry points</p>
+                    </div>
                   </td>
                 </tr>
               ) : filtered.map((e) => (
                 <tr key={e.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
                   <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{e.date}</td>
                   <td className="px-6 py-4">
-                     <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{e.payee}</p>
+                    <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{e.payee}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CAT_COLORS[e.category] || "#94a3b8") + "15", color: CAT_COLORS[e.category] || "#94a3b8" }}>
@@ -454,9 +454,9 @@ export default function AdminExpensesTab() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                     <p className="text-[13px] font-medium text-slate-600 italic truncate max-w-[250px]" title={e.description}>{e.description}</p>
+                    <p className="text-[13px] font-medium text-slate-600 italic truncate max-w-[250px]" title={e.description}>{e.description}</p>
                   </td>
-                   <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-0.5 text-[15px] font-black text-[#0F172A] tracking-tight">
                       <BiRupee size={14} className="mb-0.5" />
                       <span>{e.amount?.toLocaleString()}</span>
@@ -512,19 +512,19 @@ export default function AdminExpensesTab() {
                 <X size={26} />
               </button>
             </div>
-            
+
             <div className="p-8 space-y-6 overflow-y-auto">
               <div className="grid grid-cols-2 gap-5">
                 <div className="col-span-2">
-                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Expenditure (INR) *</label>
-                   <div className="relative">
-                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[18px]">
-                       <BiRupee size={22} />
-                     </div>
-                     <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                       className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
-                   </div>
-                   {errors.amount && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.amount}</p>}
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Expenditure (INR) *</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[18px]">
+                      <BiRupee size={22} />
+                    </div>
+                    <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                      className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
+                  </div>
+                  {errors.amount && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.amount}</p>}
                 </div>
 
                 <div className="col-span-2">
@@ -561,32 +561,32 @@ export default function AdminExpensesTab() {
               </div>
 
               <div className="pt-4 border-t border-slate-50">
-                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Evidential Documentation</label>
-                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/20 transition-all group">
-                   {form.file ? (
-                     <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><ImageIcon size={24}/></div>
-                        <span className="text-[13px] font-black text-slate-700">{form.file.name}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to swap file</span>
-                     </div>
-                   ) : (
-                     <div className="flex flex-col items-center text-slate-400 group-hover:text-blue-500">
-                        <Upload size={28} className="mb-2" />
-                        <span className="text-[12px] font-black uppercase tracking-widest">Link digital receipt</span>
-                        <span className="text-[10px] font-medium text-slate-300 mt-0.5">JPG, PNG or PDF formats supported</span>
-                     </div>
-                   )}
-                   <input type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} />
-                 </label>
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Evidential Documentation</label>
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/20 transition-all group">
+                  {form.file ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><ImageIcon size={24} /></div>
+                      <span className="text-[13px] font-black text-slate-700">{form.file.name}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to swap file</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center text-slate-400 group-hover:text-blue-500">
+                      <Upload size={28} className="mb-2" />
+                      <span className="text-[12px] font-black uppercase tracking-widest">Link digital receipt</span>
+                      <span className="text-[10px] font-medium text-slate-300 mt-0.5">JPG, PNG or PDF formats supported</span>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} />
+                </label>
               </div>
             </div>
 
             <div className="p-8 border-t border-slate-50 bg-slate-50/20 flex gap-4 mt-auto">
-               <button onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
-               <button onClick={handleSubmit} disabled={submitting}
+              <button onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
+              <button onClick={handleSubmit} disabled={submitting}
                 className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
                 {submitting ? <Loader2 size={18} className="animate-spin" /> : editingId ? 'Update Record' : 'Commit to Ledger'}
-               </button>
+              </button>
             </div>
           </div>
         </div>

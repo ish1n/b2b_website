@@ -170,7 +170,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
                <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
             </div>
-            <ResponsiveContainer width="100%" height={280} debounce={100}>
+            <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
               <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />

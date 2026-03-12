@@ -216,49 +216,51 @@ export default function AdminDashboard() {
         />
 
         <div className="p-8">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                <KpiCard 
-                    label="Total Revenue" 
-                    value={`₹${stats.totalRevenue.toLocaleString()}`} 
-                    icon={BiRupee} 
-                    color="blue" 
-                    trend={{ direction: 'up', text: '12% inc' }}
-                    sparklineData={stats.sparklines.revenue}
-                />
-                <KpiCard 
-                    label="Total Orders" 
-                    value={stats.totalOrders} 
-                    icon={FiTrendingUp} 
-                    color="purple" 
-                    trend={{ direction: 'up', text: '5% inc' }}
-                    sparklineData={stats.sparklines.orders}
-                />
-                <KpiCard 
-                    label="KG Processed" 
-                    value={`${stats.totalKg.toFixed(1)}`} 
-                    icon={GiWeight} 
-                    color="green" 
-                    trend={{ direction: 'down', text: '2% dec' }}
-                    sparklineData={stats.sparklines.kg}
-                />
-                <KpiCard 
-                    label="B2B Clients" 
-                    value={stats.totalClients} 
-                    icon={FiUsers} 
-                    color="amber" 
-                    trend={{ direction: 'up', text: 'New +2' }}
-                    sparklineData={stats.sparklines.clients}
-                />
-                <KpiCard 
-                    label="Open Issues" 
-                    value={stats.openIssuesCount} 
-                    icon={FiAlertCircle} 
-                    color="red" 
-                    trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
-                    sparklineData={stats.sparklines.issues}
-                />
-            </div>
+            {/* KPI Cards - Hidden on Issues and Expenses tabs to reduce clutter */}
+            {activeTab !== "issues" && activeTab !== "expenses" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                    <KpiCard 
+                        label="Total Revenue" 
+                        value={`₹${stats.totalRevenue.toLocaleString()}`} 
+                        icon={BiRupee} 
+                        color="blue" 
+                        trend={{ direction: 'up', text: '12% inc' }}
+                        sparklineData={stats.sparklines.revenue}
+                    />
+                    <KpiCard 
+                        label="Total Orders" 
+                        value={stats.totalOrders} 
+                        icon={FiTrendingUp} 
+                        color="purple" 
+                        trend={{ direction: 'up', text: '5% inc' }}
+                        sparklineData={stats.sparklines.orders}
+                    />
+                    <KpiCard 
+                        label="KG Processed" 
+                        value={`${stats.totalKg.toFixed(1)}`} 
+                        icon={GiWeight} 
+                        color="green" 
+                        trend={{ direction: 'down', text: '2% dec' }}
+                        sparklineData={stats.sparklines.kg}
+                    />
+                    <KpiCard 
+                        label="B2B Clients" 
+                        value={stats.totalClients} 
+                        icon={FiUsers} 
+                        color="amber" 
+                        trend={{ direction: 'up', text: 'New +2' }}
+                        sparklineData={stats.sparklines.clients}
+                    />
+                    <KpiCard 
+                        label="Open Issues" 
+                        value={stats.openIssuesCount} 
+                        icon={FiAlertCircle} 
+                        color="red" 
+                        trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
+                        sparklineData={stats.sparklines.issues}
+                    />
+                </div>
+            )}
 
             {/* Tab Content */}
             <div className="animate-fade-in">

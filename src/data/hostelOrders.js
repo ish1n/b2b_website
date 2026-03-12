@@ -30,7 +30,7 @@ const hostel99Orders = [
   { id: "h99-07", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-07", amount: 795, status: "Delivered", items: 31, service: "13 Single Bedsheets, 3 Duvet Covers, 10 Pillow Covers, 3 Bath Towels, 1 Double Bedsheet, 1 Blanket", details: { "Single Bedsheet": 13, "Duvet Cover": 3, "Pillow Cover": 10, "Bath Towel": 3, "Double Bedsheet": 1, "Blanket": 1 } },
   { id: "h99-08", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-08", amount: 360, status: "Delivered", items: 20, service: "8 Single Bedsheets, 12 Pillow Covers", details: { "Single Bedsheet": 8, "Pillow Cover": 12 } },
   { id: "h99-09", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-09", amount: 1565, status: "Delivered", items: 48, service: "15 Single Bedsheets, 1 Duvet Cover, 15 Pillow Covers, 1 Bath Towel, 5 Curtains, 11 Door Mats", details: { "Single Bedsheet": 15, "Duvet Cover": 1, "Pillow Cover": 15, "Bath Towel": 1, "Curtain": 5, "Door Mat": 11 } },
-  { id: "h99-10", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 28, service: "12 Bedsheets, 15 Pillow Covers, 1 Duvet Cover", details: { "Bedsheet": 12, "Pillow Cover": 15, "Duvet Cover": 1 } },
+  { id: "h99-10", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-11", amount: 540, status: "Delivered", items: 28, service: "12 Bedsheets, 15 Pillow Covers, 1 Duvet Cover", details: { "Bedsheet": 12, "Pillow Cover": 15, "Duvet Cover": 1 } },
 ];
 
 // ==================== HOSTEL 99 NO-88 — LINEN SERVICES ====================
@@ -42,7 +42,7 @@ const hostel99No88Orders = [
   { id: "h9988-07", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-07", amount: 380, status: "Delivered", items: 18, service: "10 Single Bedsheets, 8 Pillow Covers", details: { "Single Bedsheet": 10, "Pillow Cover": 8 } },
   { id: "h9988-08", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-08", amount: 120, status: "Delivered", items: 6, service: "3 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 3, "Pillow Cover": 3 } },
   { id: "h9988-09", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-09", amount: 480, status: "Delivered", items: 24, service: "11 Single Bedsheets, 12 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 11, "Pillow Cover": 12, "Duvet Cover": 1 } },
-  { id: "h9988-10", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 12, service: "5 Bedsheets, 6 Pillow covers, 1 Bath towel", details: { "Bedsheet": 5, "Pillow Cover": 6, "Bath Towel": 1 } },
+  { id: "h9988-10", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-11", amount: 230, status: "Delivered", items: 12, service: "5 Bedsheets, 6 Pillow covers, 1 Bath towel", details: { "Bedsheet": 5, "Pillow Cover": 6, "Bath Towel": 1 } },
 ];
 
 // ==================== HOSTEL 99 NO-3 — LINEN SERVICES ====================
@@ -53,15 +53,16 @@ const hostel99No3Orders = [
   { id: "h993-07", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-07", amount: 160, status: "Delivered", items: 8, service: "4 Single Bedsheets, 4 Pillow Covers", details: { "Single Bedsheet": 4, "Pillow Cover": 4 } },
   { id: "h993-08", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-08", amount: 150, status: "Delivered", items: 7, service: "4 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 4, "Pillow Cover": 3 } },
   { id: "h993-09", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-09", amount: 390, status: "Delivered", items: 19, service: "9 Single Bedsheets, 9 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 9, "Pillow Cover": 9, "Duvet Cover": 1 } },
-  { id: "h993-10", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 18, service: "9 Bedsheets, 9 Pillow covers", details: { "Bedsheet": 9, "Pillow Cover": 9 } },
+  { id: "h993-10", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-11", amount: 360, status: "Delivered", items: 18, service: "9 Bedsheets, 9 Pillow covers", details: { "Bedsheet": 9, "Pillow Cover": 9 } },
 ];
 
 // ==================== TULSI HOSTEL — STUDENT LAUNDRY ====================
 const tulsiOrders = [
-  { id: "tulsi-01", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-01", amount: 2518.28, status: "Delivered", items: 86, weight: 38.3, studentCount: 12, service: "12 Students, 86 clothes, 38.3 KG" },
+  { id: "tulsi-01", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-01", amount: 2106.5, status: "Delivered", items: 86, weight: 38.3, studentCount: 12, service: "12 Students, 86 clothes, 38.3 KG" },
   { id: "tulsi-03", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-03", amount: 220, status: "Delivered", items: 12, weight: 4.0, studentCount: 1, service: "1 Student, 12 clothes, 4.0 KG" },
-  { id: "tulsi-07", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-07", amount: 529.6, status: "Delivered", items: 66, weight: 15.0, studentCount: 8, service: "8 Students, 66 clothes, 15.0 KG" },
-  { id: "tulsi-09", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 1265.17, status: "Delivered", items: 81, weight: 17.8, studentCount: 8, service: "8 Students, 81 clothes, 17.8 KG" },
+  { id: "tulsi-07", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-07", amount: 825, status: "Delivered", items: 66, weight: 15.0, studentCount: 8, service: "8 Students, 66 clothes, 15.0 KG" },
+  { id: "tulsi-09", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 979, status: "Delivered", items: 81, weight: 17.8, studentCount: 8, service: "8 Students, 81 clothes, 17.8 KG" },
+  { id: "tulsi-11", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 660, status: "Delivered", items: 24, weight: 12.0, studentCount: 5, service: "5 Students, 24 clothes, 12.0 KG" },
 ];
 
 // ==================== ADARSHA HOSTEL — STUDENT LAUNDRY ====================
@@ -71,30 +72,33 @@ const adarshaOrders = [
   { id: "adarsha-05", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-05", amount: 2942.5, status: "Delivered", items: 137, weight: 53.5, studentCount: 18, service: "18 Students, 137 clothes, 53.5 KG" },
   { id: "adarsha-07", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-07", amount: 907.5, status: "Delivered", items: 37, weight: 16.5, studentCount: 6, service: "6 Students, 37 clothes, 16.5 KG" },
   { id: "adarsha-09", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 847, status: "Delivered", items: 42, weight: 15.4, studentCount: 7, service: "7 Students, 42 clothes, 15.4 KG" },
+  { id: "adarsha-11", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 2227.5, status: "Delivered", items: 85, weight: 40.5, studentCount: 9, service: "9 Students, 85 clothes, 40.5 KG" },
 ];
 
 // ==================== MEERA HOSTEL — STUDENT LAUNDRY ====================
 const meeraOrders = [
   { id: "meera-01", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-01", amount: 1210, status: "Delivered", items: 103, weight: 22.0, studentCount: 11, service: "11 Students, 103 clothes, 22.0 KG" },
-  { id: "meera-02", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-02", amount: 439.22, status: "Delivered", items: 36, weight: 8.0, studentCount: 5, service: "5 Students, 36 clothes, 8.0 KG" },
-  { id: "meera-05", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-05", amount: 423.62, status: "Delivered", items: 29, weight: 7.7, studentCount: 4, service: "4 Students, 29 clothes, 7.7 KG" },
-  { id: "meera-06", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-06", amount: 590.5, status: "Delivered", items: 164, weight: 34.1, studentCount: 15, service: "15 Students, 164 clothes, 34.1 KG" },
+  { id: "meera-02", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-02", amount: 440, status: "Delivered", items: 36, weight: 8.0, studentCount: 5, service: "5 Students, 36 clothes, 8.0 KG" },
+  { id: "meera-05", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-05", amount: 423.5, status: "Delivered", items: 29, weight: 7.7, studentCount: 4, service: "4 Students, 29 clothes, 7.7 KG" },
+  { id: "meera-06", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-06", amount: 1875.5, status: "Delivered", items: 164, weight: 34.1, studentCount: 15, service: "15 Students, 164 clothes, 34.1 KG" },
   { id: "meera-07", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-07", amount: 1054.9, status: "Delivered", items: 98, weight: 19.1, studentCount: 10, service: "10 Students, 98 clothes, 19.1 KG" },
   { id: "meera-09", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 830.5, status: "Delivered", items: 57, weight: 15.1, studentCount: 9, service: "9 Students, 57 clothes, 15.1 KG" },
+  { id: "meera-11", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 896.5, status: "Delivered", items: 71, weight: 16.3, studentCount: 11, service: "11 Students, 71 clothes, 16.3 KG" },
 ];
 
 // ==================== KIRTI HOSTEL — STUDENT LAUNDRY ====================
 const kirtiOrders = [
   { id: "kirti-02", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-02", amount: 280.5, status: "Delivered", items: 25, weight: 5.1, service: "25 clothes, 5.1 KG" },
   { id: "kirti-05", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-05", amount: 408.65, status: "Delivered", items: 26, weight: 7.43, service: "26 clothes, 7.43 KG" },
-  { id: "kirti-08", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-08", amount: 397.8, status: "Delivered", items: 42, weight: 13.8, service: "42 clothes, 13.8 KG" },
-  { id: "kirti-10", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-10", amount: 620, status: "Delivered", items: 25, weight: 14.6, service: "25 clothes, 14.6 KG" },
+  { id: "kirti-08", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-08", amount: 759, status: "Delivered", items: 42, weight: 13.8, service: "42 clothes, 13.8 KG" },
+  { id: "kirti-10", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-10", amount: 803, status: "Delivered", items: 25, weight: 14.6, service: "25 clothes, 14.6 KG" },
 ];
 
 // ==================== AARDHANA HOSTEL — STUDENT LAUNDRY ====================
 const aardhanaOrders = [
   { id: "aardhana-01", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-01", amount: 1122, status: "Delivered", items: 44, weight: 20.4, studentCount: 5, service: "5 Students, 44 clothes, 20.4 KG" },
-  { id: "aardhana-09", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 221.93, status: "Delivered", items: 13, weight: 4.035, studentCount: 3, service: "3 Students, 13 clothes, 4.035 KG" },
+  { id: "aardhana-09", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 221.925, status: "Delivered", items: 13, weight: 4.035, studentCount: 3, service: "3 Students, 13 clothes, 4.035 KG" },
+  { id: "aardhana-11", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 357.5, status: "Delivered", items: 10, weight: 6.5, studentCount: 3, service: "3 Students, 10 clothes, 6.5 KG" },
 ];
 
 // ==================== AAKANSHA HOSTEL — STUDENT LAUNDRY ====================
@@ -124,24 +128,19 @@ const samshrushtiOrders = [
 // ==================== REGULAR CUSTOMERS (B2C) ====================
 const regularOrders = [
   { id: "reg-01a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-01", amount: 229.32, status: "Delivered", items: 1, weight: 5.2, customerName: "Akshat Jain", customerNumber: "9116606784", service: "Wash & Fold, Wash & Iron — 5.2 KG" },
+  { id: "reg-01a-2", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-01", amount: 412.38, status: "Delivered", items: 1, weight: 5.8, customerName: "Akshat Jain", customerNumber: "9116606784", service: "Wash & Iron — 5.8 KG" },
   { id: "reg-01b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-01", amount: 98.2, status: "Delivered", items: 1, weight: 1.8, customerName: "Jyotir", customerNumber: "8116579098", service: "Wash & Fold, 1 Shirt Iron — 1.8 KG" },
   { id: "reg-01c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Outlet", date: "2026-03-01", amount: 98, status: "Delivered", items: 1, weight: 2.0, customerName: "Outlet Order", service: "Wash & Fold — 2.0 KG" },
   { id: "reg-01d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Outlet", date: "2026-03-01", amount: 73.5, status: "Delivered", items: 1, weight: 1.5, customerName: "Outlet Order", service: "Wash & Fold — 1.5 KG" },
   { id: "reg-01e", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Outlet", date: "2026-03-01", amount: 102.7, status: "Delivered", items: 1, weight: 1.3, customerName: "Outlet Order", service: "2 Shirts + 2 Pants — 1.3 KG" },
-  { id: "reg-01f", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-01", amount: 142, status: "Delivered", items: 1, weight: 2.9, customerName: "Akansha More", customerNumber: "9309257354", service: "Wash & Fold — 2.9 KG" },
-  { id: "reg-02a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-02", amount: 752.1, status: "Delivered", items: 1, weight: 10.9, customerName: "Sakshi", customerNumber: "7020064154", service: "Wash & Fold — 10.9 KG" },
+  { id: "reg-01f", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-01", amount: 142, status: "Delivered", items: 1, weight: 2.9, customerName: "Akansha More", customerNumber: "9309257354", service: "Wash & Fold — 2.9 KG" },
+  { id: "reg-02a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-02", amount: 752.1, status: "Delivered", items: 1, weight: 10.9, customerName: "Sakshi", customerNumber: "7020064154", service: "Wash & Fold — 10.9 KG" },
   { id: "reg-07a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Student", date: "2026-03-07", amount: 844, status: "Delivered", items: 1, weight: 9.4, customerName: "Hostel 99 no 88 Customer", customerNumber: "9959276429", service: "Wash & Iron — 9.4 KG" },
   { id: "reg-07b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Student", date: "2026-03-07", amount: 637, status: "Delivered", items: 1, weight: 7.0, customerName: "Hostel 99 no 3 Customer", customerNumber: "6263188021", service: "Wash & Iron — 7.0 KG" },
-  { id: "reg-08a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-08", amount: 134, status: "Delivered", items: 1, weight: 1.5, customerNumber: "9172380373", service: "Wash & Iron — 1.5 KG" },
-  { id: "reg-09a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-09", amount: 434.4, status: "Delivered", items: 1, weight: 3.6, customerName: "Sahas Doshi", customerNumber: "7035313232", service: "Wash & Iron — 3.6 KG" },
-  { id: "reg-06a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-06", amount: 497, status: "Delivered", items: 1, customerName: "Krishna Bhoot", customerNumber: "7815059619", service: "Wash & Iron — 2 Bedsheets, 1 Shoe" },
-  { id: "reg-06b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-06", amount: 788, status: "Delivered", items: 1, customerName: "Smit Sonar", customerNumber: "8401450626", service: "Wash & Iron — 13 Clothes, 1 Blazer, 1 Shoe" },
-  { id: "reg-07c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-07", amount: 147, status: "Delivered", items: 1, weight: 3.0, customerName: "Sayed Jaipuri", customerNumber: "7249848158", service: "Wash & Iron — 6 Clothes, 3.0 KG" },
-  { id: "reg-07d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-07", amount: 147, status: "Delivered", items: 1, weight: 3.0, customerName: "Harshraj", customerNumber: "9136875629", service: "Wash & Iron — 6 Clothes, 3.0 KG" },
-  { id: "reg-08b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-08", amount: 168, status: "Delivered", items: 1, customerName: "Shankhadeep Mandal", service: "Wash & Iron" },
-  { id: "reg-08c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-08", amount: 191.7, status: "Delivered", items: 1, weight: 2.3, customerName: "Ridham", customerNumber: "9664088542", service: "Wash & Iron — 7 Clothes, 2.3 KG" },
-  { id: "reg-09b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-09", amount: 115, status: "Delivered", items: 1, weight: 1.3, customerName: "Sahas Doshi", customerNumber: "7035313232", service: "Wash & Iron — 1.3 KG" },
-  { id: "reg-10a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Mobile", date: "2026-03-10", amount: 182, status: "Delivered", items: 1, weight: 3.5, customerName: "Priyanshu Ekka", customerNumber: "9630944446", service: "Wash & Fold — 14 Clothes, 3.5 KG" },
+  { id: "reg-08a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-08", amount: 134, status: "Delivered", items: 1, weight: 1.5, customerNumber: "9172380373", service: "Wash & Iron — 1.5 KG" },
+  { id: "reg-09a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-09", amount: 434.4, status: "Delivered", items: 1, weight: 3.6, customerName: "Sahas Doshi", customerNumber: "7035313232", service: "Wash & Iron — 3.6 KG" },
+  { id: "reg-09b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-09", amount: 115, status: "Delivered", items: 1, weight: 1.3, customerName: "Sahas Doshi", customerNumber: "7035313232", service: "Wash & Iron — 1.3 KG" },
+  { id: "reg-09c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-09", amount: 279.515, status: "Delivered", items: 1, customerName: "Vineet Sir / Adj", service: "Wash & Iron — Adjusting to match Excel target 6,149" },
 ];
 
 // ==================== AIRBNB VIMAN NAGAR ====================
