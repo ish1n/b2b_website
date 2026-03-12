@@ -1,6 +1,7 @@
 import { FiCalendar, FiDownload, FiDollarSign } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import ExportCSV from "./ExportCSV";
+import { FaIndianRupeeSign } from "react-icons/fa6";
 
 export default function AdminTopBar({ title, dateFrom, setDateFrom, dateTo, setDateTo, onExpensesClick, isExpensesActive, orders }) {
     return (
@@ -11,14 +12,13 @@ export default function AdminTopBar({ title, dateFrom, setDateFrom, dateTo, setD
                 {/* CEO Expenses */}
                 <button
                     onClick={onExpensesClick}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13.5px] font-bold transition-all border ${
-                        isExpensesActive
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13.5px] font-bold transition-all border ${isExpensesActive
                             ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
                             : 'bg-amber-100 text-amber-900 border-amber-200 hover:bg-amber-200'
-                    }`}
+                        }`}
                 >
-                    <FiDollarSign size={16} />
-                    CEO Expenses
+                    <FaIndianRupeeSign size={16} />
+                    ANDES Expenses
                 </button>
 
                 {/* Date Picker */}

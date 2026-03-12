@@ -6,7 +6,7 @@ import { CATEGORIES } from "../data/hostelOrders";
 import ExpandableOrderRow from "../components/ExpandableOrderRow";
 import {
   FiLogOut, FiFilter, FiCalendar, FiX, FiDownload,
-  FiPackage, FiShoppingBag, FiTruck, FiUsers,
+  FiPackage, FiShoppingBag, FiTruck, FiUsers, FiAlertTriangle
 } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import { MdScale } from "react-icons/md";
@@ -52,11 +52,11 @@ const CAT_ICONS = {
   B2C_RETAIL: <FiShoppingBag />,
   AIRBNB: <FiTruck />,
   BULK_LAUNDRY: <FiTruck />,
-  ISSUES: <FiFilter />,
+  ISSUES: <FiAlertTriangle />,
 };
 
 export default function ClientDashboard() {
-  const { client, orders, logout } = useHostelAuth();
+  const { client, orders, logout, addIssue } = useHostelAuth();
   const navigate = useNavigate();
   const isGroup = client?.isGroup && client.properties?.length > 1;
 
@@ -66,6 +66,14 @@ export default function ClientDashboard() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Raise Issue Modal State
+  const [showIssueModal, setShowIssueModal] = useState(false);
+  const [issueForm, setIssueForm] = useState({
+    property: client?.properties?.[0] || "",
+    issueType: "Missing Items",
+    description: ""
+  });
 
   // Filtered orders
   const filtered = useMemo(() => {
@@ -93,7 +101,7 @@ export default function ClientDashboard() {
     });
     return Object.entries(map).map(([key, val]) => ({
       key,
-      ...(CATEGORIES[key] || {}),
+      ...(CATEGORIES[key] || { label: key, color: "#6B7280" }),
       ...val,
     }));
   }, [filtered]);
@@ -111,6 +119,35 @@ export default function ClientDashboard() {
     exportCSV(filtered, `${(client?.name || "orders").replace(/\s+/g, "_")}_orders.csv`);
   }, [filtered, client]);
 
+  // Issue Submission Handler
+  const handleSubmitIssue = async () => {
+    if (!issueForm.description.trim()) return;
+
+    const selectedProperty = isGroup ? issueForm.property : client.properties[0];
+    const newIssue = {
+      id: `issue-client-${Date.now()}`,
+      date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
+      property: selectedProperty,
+      linkedHostel: selectedProperty, // For Admin parsing
+      category: "ISSUES",
+      type: "issue",
+      issueType: issueForm.issueType,
+      service: issueForm.description,
+      severity: "pending",
+      resolveStatus: "Unresolved",
+      status: "Pending",
+      reportedBy: client.name,
+      customerName: client.name,
+      items: 0,
+      weight: 0,
+      amount: 0
+    };
+
+    await addIssue(newIssue);
+    setShowIssueModal(false);
+    setIssueForm({ ...issueForm, description: "" });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50" style={{ fontFamily: "Poppins, sans-serif" }}>
       {/* Top nav */}
@@ -126,6 +163,12 @@ export default function ClientDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowIssueModal(true)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-all shadow-sm"
+            >
+              <FiAlertTriangle size={15} /> Raise Issue
+            </button>
             <button
               onClick={handleExport}
               className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-dark border border-brand-200 bg-blue-50 px-4 py-2 rounded-xl transition-all hover:bg-blue-100"
@@ -261,7 +304,7 @@ export default function ClientDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-center">
                     <div>
-                      <p className="text-xs text-gray-400 font-medium">Orders</p>
+                      <p className="text-xs text-gray-400 font-medium">{cat.key === 'ISSUES' ? 'Issues' : 'Orders'}</p>
                       <p className="text-lg font-bold" style={{ color: cat.color }}>{cat.count}</p>
                     </div>
                     <div>
@@ -324,6 +367,83 @@ export default function ClientDashboard() {
             </table>
           </div>
         </div>
+
+        {/* Raise Issue Modal */}
+        {showIssueModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowIssueModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-slide-up">
+              <div className="flex items-center justify-between mb-6 cursor-default">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Raise an Issue</h2>
+                  <p className="text-xs text-gray-500">Report a problem with your order or service</p>
+                </div>
+                <button onClick={() => setShowIssueModal(false)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {isGroup && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Select Property</label>
+                    <select
+                      value={issueForm.property}
+                      onChange={(e) => setIssueForm({ ...issueForm, property: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 text-sm px-4 py-2.5 focus:outline-none focus:border-red-500"
+                    >
+                      {client.properties.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Issue Category</label>
+                  <select
+                    value={issueForm.issueType}
+                    onChange={(e) => setIssueForm({ ...issueForm, issueType: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 text-sm px-4 py-2.5 focus:outline-none focus:border-red-500 bg-no-repeat bg-right"
+                  >
+                    <option value="Missing Items">Missing Items</option>
+                    <option value="Damage">Damage</option>
+                    <option value="Quality Issue">Quality Issue</option>
+                    <option value="Return Pending">Return Pending</option>
+                    <option value="Weight Dispute">Weight Dispute</option>
+                    <option value="Bags Pending">Bags Pending</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Description of Issue</label>
+                  <textarea
+                    value={issueForm.description}
+                    onChange={(e) => setIssueForm({ ...issueForm, description: e.target.value })}
+                    rows={4}
+                    placeholder="Provide full details here..."
+                    className="w-full rounded-xl border border-gray-200 text-sm px-4 py-2.5 focus:outline-none focus:border-red-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setShowIssueModal(false)}
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold text-sm rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitIssue}
+                  disabled={!issueForm.description.trim()}
+                  className="flex-[1.5] py-2.5 bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95"
+                >
+                  Submit Issue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

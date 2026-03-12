@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle } from "react-icons/fi";
 import EmptyState from "./EmptyState";
 
-const CHANNELS = ["All", "App", "WhatsApp", "Outlet", "Mobile", "Student"];
-const CHANNEL_ICONS = { App: FiSmartphone, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Mobile: FiPhone, Student: FiUser };
+const CHANNELS = ["All", "App", "WhatsApp", "Outlet", "Call", "Student"];
+const CHANNEL_ICONS = { App: FiSmartphone, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
 import { BiRupee } from "react-icons/bi";
-const CHANNEL_COLORS = { App: "#1976D2", WhatsApp: "#25D366", Outlet: "#D97706", Mobile: "#7C3AED", Student: "#059669" };
+const CHANNEL_COLORS = { App: "#1976D2", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
 const SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Other"];
 const RATE_MAP = { "Wash & Fold": 49, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Other": 0 };
 
@@ -82,7 +82,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       service: `${form.serviceType}${form.weight ? ` — ${form.weight} KG` : ""}`,
       notes: form.notes,
     };
-    
+
     if (form.id) {
       newOrder.id = form.id;
       onEditOrder(newOrder);
@@ -91,7 +91,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       onAddOrder(newOrder);
       setToast("Order added successfully!");
     }
-    
+
     setShowModal(false);
     setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null });
     setTimeout(() => setToast(""), 3000);
@@ -148,7 +148,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             </button>
           ))}
         </div>
-        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null }); setShowModal(true); }} 
+        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null }); setShowModal(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 bg-blue-600 text-white text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
           <FiPlus size={18} /> Log New Order
         </button>
@@ -180,7 +180,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-12">
-                    <EmptyState 
+                    <EmptyState
                       icon={FiInbox}
                       title="No matching transactions"
                       message="Adjust your filters or start by logging a new customer order."
@@ -191,8 +191,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
                   <td className="px-6 py-4 text-[13px] font-bold text-slate-500 whitespace-nowrap">{o.date}</td>
                   <td className="px-6 py-4">
-                     <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{o.customerName || 'Anonymous'}</p>
-                     <p className="text-[11px] font-medium text-slate-400">{o.customerNumber || 'no contact'}</p>
+                    <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{o.customerName || 'Anonymous'}</p>
+                    <p className="text-[11px] font-medium text-slate-400">{o.customerNumber || 'no contact'}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CHANNEL_COLORS[o.channel] || '#6B7280') + '15', color: CHANNEL_COLORS[o.channel] || '#6B7280' }}>
@@ -200,14 +200,14 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                     <p className="text-[13px] font-bold text-slate-700">{o.service?.split(" —")[0]}</p>
-                     <p className="text-[11px] font-medium text-slate-400 italic truncate max-w-[150px]">{o.notes || 'No special notes'}</p>
+                    <p className="text-[13px] font-bold text-slate-700">{o.service?.split(" —")[0]}</p>
+                    <p className="text-[11px] font-medium text-slate-400 italic truncate max-w-[150px]">{o.notes || 'No special notes'}</p>
                   </td>
                   <td className="px-6 py-4 text-right">
-                     <p className="text-[13px] font-black text-slate-800">{o.weight?.toFixed(1) || '0.0'} <span className="text-[10px] text-slate-400">kg</span></p>
-                     <p className="text-[11px] font-bold text-slate-400">{o.items || '—'} pcs</p>
+                    <p className="text-[13px] font-black text-slate-800">{o.weight?.toFixed(1) || '0.0'} <span className="text-[10px] text-slate-400">kg</span></p>
+                    <p className="text-[11px] font-bold text-slate-400">{o.items || '—'} pcs</p>
                   </td>
-                   <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-0.5 text-[14px] font-black text-blue-600 tracking-tight">
                       <BiRupee size={13} className="mb-0.5" />
                       <span>{o.amount?.toLocaleString()}</span>
@@ -251,7 +251,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 <FiX size={26} />
               </button>
             </div>
-            
+
             <div className="p-8 space-y-6 overflow-y-auto">
               <div className="grid grid-cols-2 gap-5">
                 <div className="col-span-2">
@@ -262,7 +262,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                       className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" placeholder="Legal name or Alias" />
                   </div>
                 </div>
-                
+
                 <div className="col-span-1">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Contact Link</label>
                   <div className="relative">
@@ -282,46 +282,46 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
               </div>
 
               <div className="pt-4 border-t border-slate-50">
-                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Service Profile & Metrics</label>
-                 <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                    <div className="col-span-2">
-                      <select value={form.serviceType} onChange={e => updateForm("serviceType", e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none">
-                        {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <input type="number" step="0.1" value={form.weight} onChange={e => updateForm("weight", e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Weight (KG)" />
-                    </div>
-                    <div>
-                      <input type="number" value={form.clothes} onChange={e => updateForm("clothes", e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Item Count" />
-                    </div>
-                 </div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Service Profile & Metrics</label>
+                <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="col-span-2">
+                    <select value={form.serviceType} onChange={e => updateForm("serviceType", e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none">
+                      {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <input type="number" step="0.1" value={form.weight} onChange={e => updateForm("weight", e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Weight (KG)" />
+                  </div>
+                  <div>
+                    <input type="number" value={form.clothes} onChange={e => updateForm("clothes", e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Item Count" />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Bill Amount</label>
-                   <div className="relative">
-                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                       <BiRupee size={16} />
-                     </div>
-                     <input type="number" value={form.amount} onChange={e => updateForm("amount", e.target.value)}
-                       className={`w-full pl-10 pr-4 py-4 rounded-xl text-[18px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0" />
-                   </div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Bill Amount</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                      <BiRupee size={16} />
+                    </div>
+                    <input type="number" value={form.amount} onChange={e => updateForm("amount", e.target.value)}
+                      className={`w-full pl-10 pr-4 py-4 rounded-xl text-[18px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0" />
+                  </div>
                 </div>
                 <div className="flex items-end pb-1.5">
-                    {form.weight && RATE_MAP[form.serviceType] > 0 && (
-                      <div className="text-[11px] font-bold text-slate-400 leading-tight">
-                         Standard Pricing Rate:<br/>
-                         <div className="flex items-center gap-0.5 text-blue-500">
-                           <BiRupee size={10} />
-                           <span>{RATE_MAP[form.serviceType]}/kg applied</span>
-                         </div>
+                  {form.weight && RATE_MAP[form.serviceType] > 0 && (
+                    <div className="text-[11px] font-bold text-slate-400 leading-tight">
+                      Standard Pricing Rate:<br />
+                      <div className="flex items-center gap-0.5 text-blue-500">
+                        <BiRupee size={10} />
+                        <span>{RATE_MAP[form.serviceType]}/kg applied</span>
                       </div>
-                    )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -333,11 +333,11 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             </div>
 
             <div className="p-8 border-t border-slate-50 bg-slate-50/20 flex gap-4 mt-auto">
-               <button onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
-               <button onClick={handleSubmit} disabled={!form.customerName || !form.amount}
+              <button onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
+              <button onClick={handleSubmit} disabled={!form.customerName || !form.amount}
                 className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-widest">
                 {form.id ? 'Validate & Update' : 'Commit Transaction'}
-               </button>
+              </button>
             </div>
           </div>
         </div>
