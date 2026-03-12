@@ -7,17 +7,24 @@ import { BiRupee } from "react-icons/bi";
 
 const STUDENT_HOSTELS = ["Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha", "Kirti", "Tara", "Samshrushti"];
 const LINEN_HOSTELS = ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"];
-const HOTEL_PROPERTIES = ["Airbnb Viman Nagar"];
-const HOSTEL_COLORS = { "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706", "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA", "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706", "Airbnb Viman Nagar": "#D97706" };
+const HOSTEL_COLORS = { "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706", "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA", "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706" };
 
 const BarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white shadow-lg rounded-xl p-3 border border-gray-100" style={{ fontFamily: 'Poppins' }}>
-        <p className="text-gray-800 font-semibold text-xs mb-1">Mar {label}</p>
-        {payload.map((p, i) => (
-          <p key={i} className="text-xs" style={{ color: p.color }}>{p.name}: {p.value} KG</p>
-        ))}
+      <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-xl p-4 border border-gray-100" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+        <p className="text-[#0F172A] font-black text-[11px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">March {label}</p>
+        <div className="space-y-1.5">
+          {payload.map((p, i) => (
+            <div key={i} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                <span className="text-[12px] font-bold text-slate-500">{p.name}</span>
+              </div>
+              <span className="text-[12px] font-black text-[#0F172A]">{p.value.toFixed(1)} KG</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -26,37 +33,72 @@ const BarTooltip = ({ active, payload, label }) => {
 
 function SummaryCard({ name, color, orders, kg, clothes, students, avgKgPerStudent }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <h3 className="text-sm font-bold text-gray-800">{name}</h3>
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative">
+      <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+        <h3 className="text-[14px] font-black text-[#0F172A] tracking-tight">{name}</h3>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div><span className="text-gray-400">Orders</span><p className="font-bold text-gray-700">{orders}</p></div>
-        <div><span className="text-gray-400">KG</span><p className="font-bold text-gray-700">{kg.toFixed(1)}</p></div>
-        {clothes !== undefined && <div><span className="text-gray-400">Clothes</span><p className="font-bold text-gray-700">{clothes}</p></div>}
-        {students !== undefined && students > 0 && <div><span className="text-gray-400">Students</span><p className="font-bold text-gray-700">{students}</p></div>}
-        {avgKgPerStudent !== undefined && avgKgPerStudent > 0 && <div className="col-span-2"><span className="text-gray-400">Avg KG/Student</span><p className="font-bold text-[#1976D2]">{avgKgPerStudent.toFixed(2)}</p></div>}
+      <div className="grid grid-cols-2 gap-y-3 gap-x-1">
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Orders</p>
+          <p className="text-[13.5px] font-black text-slate-700">{orders}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total KG</p>
+          <p className="text-[13.5px] font-black text-slate-700">{kg.toFixed(1)}</p>
+        </div>
+        {clothes !== undefined && (
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Clothes</p>
+            <p className="text-[13.5px] font-black text-slate-700">{clothes}</p>
+          </div>
+        )}
+        {students !== undefined && students > 0 && (
+          <div className="text-right">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Students</p>
+            <p className="text-[13.5px] font-black text-slate-700">{students}</p>
+          </div>
+        )}
+        {avgKgPerStudent !== undefined && avgKgPerStudent > 0 && (
+          <div className="col-span-2 pt-2 border-t border-slate-50 mt-1 flex items-center justify-between">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Avg KG/Student</p>
+            <div className="flex items-center gap-0.5">
+               <p className="text-[13px] font-black text-blue-600">{avgKgPerStudent.toFixed(2)}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function LinenSummaryCard({ name, color, orders, details }) {
+function LinenSummaryCard({ name, color, orders }) {
   const totals = {};
   orders.forEach(o => {
-    if (o.details) Object.entries(o.details).forEach(([k, v]) => { totals[k] = (totals[k] || 0) + (v || 0); });
+    if (o.details) {
+      Object.entries(o.details).forEach(([k, v]) => {
+        const normalizedKey = k === "Bedsheet" ? "Single Bedsheet" : k;
+        totals[normalizedKey] = (totals[normalizedKey] || 0) + (v || 0);
+      });
+    }
   });
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <h3 className="text-sm font-bold text-gray-800">{name}</h3>
-        <span className="ml-auto text-[10px] text-gray-400 font-medium">{orders.length} pickups</span>
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative">
+      <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <h3 className="text-[14px] font-black text-[#0F172A] tracking-tight">{name}</h3>
+        </div>
+        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase tracking-wider">{orders.length} pickups</span>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-2 gap-y-3 gap-x-2">
         {Object.entries(totals).filter(([, v]) => v > 0).map(([k, v]) => (
-          <div key={k}><span className="text-gray-400">{k}</span><p className="font-bold text-gray-700">{v}</p></div>
+          <div key={k}>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 truncate">{k}</p>
+            <p className="text-[13px] font-black text-slate-700">{v}</p>
+          </div>
         ))}
       </div>
     </div>
@@ -69,7 +111,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
 
   const studentOrders = useMemo(() => orders.filter(o => o.type === "student"), [orders]);
   const linenOrders = useMemo(() => orders.filter(o => o.type === "linen"), [orders]);
-  const hotelOrders = useMemo(() => orders.filter(o => o.type === "airbnb"), [orders]);
 
   // Student hostel summaries
   const studentSummaries = useMemo(() =>
@@ -98,27 +139,19 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       color: HOSTEL_COLORS[name] || "#6B7280"
     })).filter(h => h.orders.length > 0), [linenOrders]);
 
-  // Hotel summaries
-  const hotelSummaries = useMemo(() =>
-    HOTEL_PROPERTIES.map(name => ({
-      name, orders: hotelOrders.filter(o => o.property === name),
-      color: HOSTEL_COLORS[name] || "#6B7280"
-    })).filter(h => h.orders.length > 0), [hotelOrders]);
-
-  const activeHostels = view === "student" ? STUDENT_HOSTELS : view === "linen" ? LINEN_HOSTELS : view === "hotel" ? HOTEL_PROPERTIES : [...STUDENT_HOSTELS, ...LINEN_HOSTELS, ...HOTEL_PROPERTIES];
+  const activeHostels = view === "student" ? STUDENT_HOSTELS : view === "linen" ? LINEN_HOSTELS : [...STUDENT_HOSTELS, ...LINEN_HOSTELS];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Toggle */}
-      <div className="flex gap-2">
+      <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm w-fit gap-1">
         {[
           { key: "student", label: "Student Laundry" },
           { key: "linen", label: "Linen Hostels" },
-          { key: "hotel", label: "Hotels & Airbnbs" },
-          { key: "all", label: "All" },
+          { key: "all", label: "All Sectors" },
         ].map(t => (
           <button key={t.key} onClick={() => setView(t.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${view === t.key ? 'bg-[#1976D2] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}>
+            className={`px-4 py-2 rounded-lg text-[12px] font-bold tracking-tight transition-all duration-300 ${view === t.key ? 'bg-white text-blue-600 shadow-sm border border-gray-100' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40'}`}>
             {t.label}
           </button>
         ))}
@@ -132,49 +165,63 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
           </div>
 
           {/* KG Chart */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-1">Daily KG by Hostel</h2>
-            <p className="text-xs text-gray-400 mb-4">Student laundry weight processed per day</p>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={studentChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<BarTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden min-w-0">
+            <div className="mb-6">
+               <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
+               <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
+            </div>
+            <ResponsiveContainer width="100%" height={280} debounce={100}>
+              <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
+                <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<BarTooltip />} cursor={{ fill: '#F8FAFC' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }} />
                 {studentSummaries.map(s => (
-                  <Bar key={s.name} dataKey={s.name} stackId="a" fill={s.color} radius={[2, 2, 0, 0]} />
+                  <Bar key={s.name} dataKey={s.name} stackId="a" fill={s.color} radius={[3, 3, 0, 0]} maxBarSize={40} animationDuration={1500} />
                 ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Student Detail Table */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">Student Laundry Detail</h2>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-50">
+               <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-0.5">Pick-up Log Detail</h2>
+               <p className="text-[12px] font-medium text-slate-400">Individual student laundry transactions</p>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
-                <thead>
-                  <tr className="bg-[#f8fcff]">
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tl-xl">Date</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Hostel</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Students</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Clothes</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">KG</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Amount</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Avg KG/Student</th>
+                <thead className="bg-[#F8FAFC]">
+                  <tr>
+                    <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pick-up Date</th>
+                    <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Property</th>
+                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Students</th>
+                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pieces</th>
+                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Weight</th>
+                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Billed Amount</th>
+                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">KG/Student</th>
                   </tr>
                 </thead>
                 <tbody>
                   {studentOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                    <tr key={o.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.date}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">{o.property}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.studentCount || '—'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.items}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-700">{o.weight?.toFixed(1) || '—'}</td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-800">₹{o.amount?.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm text-[#1976D2] font-medium">{o.studentCount > 0 ? (o.weight / o.studentCount).toFixed(2) : '—'}</td>
+                    <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                      <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{o.date}</td>
+                      <td className="px-6 py-4 text-[13.5px] font-black text-[#0F172A]">{o.property}</td>
+                      <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.studentCount || '—'}</td>
+                      <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.items}</td>
+                      <td className="px-6 py-4 text-[13.5px] font-black text-slate-800 text-right">{o.weight?.toFixed(1) || '—'} <span className="text-[10px] text-slate-400 ml-0.5">kg</span></td>
+                      <td className="px-6 py-4 text-[13.5px] font-black text-blue-600 text-right">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <BiRupee size={12} className="mb-0.5" />
+                          <span>{o.amount?.toLocaleString()}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-[13px] font-black px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
+                           {o.studentCount > 0 ? (o.weight / o.studentCount).toFixed(2) : '—'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -186,48 +233,57 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
 
       {/* Linen Section */}
       {(view === "linen" || view === "all") && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <button onClick={() => setLinenExpanded(!linenExpanded)} className="w-full flex items-center justify-between p-6 hover:bg-gray-50/50 transition-colors">
-            <div className="flex items-center gap-3">
-              {linenExpanded ? <FiChevronDown size={18} className="text-gray-400" /> : <FiChevronRight size={18} className="text-gray-400" />}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <button onClick={() => setLinenExpanded(!linenExpanded)} className="w-full flex items-center justify-between p-6 hover:bg-[#F8FAFC] transition-colors border-b border-gray-50">
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${linenExpanded ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-600'}`}>
+                {linenExpanded ? <FiChevronDown size={20} /> : <FiChevronRight size={20} />}
+              </div>
               <div className="text-left">
-                <h2 className="text-base font-bold text-gray-900">Hostel 99 Group — Linen Services</h2>
-                <p className="text-xs text-gray-400">3 properties · Bedsheets, Pillow Covers, Duvets, Towels</p>
+                <h2 className="text-[16px] font-black text-[#0F172A] tracking-tight">Hostel 99 Group — Linen Management</h2>
+                <p className="text-[12px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Active Pick-up Frequency: 3-Day Cycle</p>
               </div>
             </div>
-            <span className="bg-purple-50 text-purple-600 text-xs font-bold px-3 py-1 rounded-full">{linenOrders.length} pickups</span>
+            <div className="bg-indigo-50 px-3 py-1 rounded-lg text-indigo-700 text-[11px] font-black uppercase tracking-wider shadow-sm">
+                Total Pickups: {linenOrders.length}
+            </div>
           </button>
 
           {linenExpanded && (
-            <div className="px-6 pb-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-6 space-y-8 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {linenSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} />)}
               </div>
 
               {/* Linen Detail Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-50">
                 <table className="w-full min-w-[700px]">
-                  <thead>
-                    <tr className="bg-[#f8fcff]">
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tl-xl">Date</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Hostel</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Single Bedsheet</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Pillow Cover</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Duvet Cover</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Bath Towel</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Amount</th>
+                  <thead className="bg-[#F8FAFC]">
+                    <tr>
+                      <th className="text-left text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Date</th>
+                      <th className="text-left text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Hostel</th>
+                      <th className="text-right text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Bedsheet</th>
+                      <th className="text-right text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Pillow</th>
+                      <th className="text-right text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Duvet</th>
+                      <th className="text-right text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Towel</th>
+                      <th className="text-right text-[11px] font-black text-slate-400 px-6 py-4 uppercase tracking-widest">Total Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     {linenOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                      <tr key={o.id} className="border-b border-gray-50 hover:bg-purple-50/30 transition-colors">
-                        <td className="px-4 py-3 text-sm text-gray-600">{o.date}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-800">{o.property}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Single Bedsheet"] || 0}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Pillow Cover"] || 0}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Duvet Cover"] || 0}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Bath Towel"] || 0}</td>
-                        <td className="px-4 py-3 text-sm font-bold text-gray-800">₹{o.amount?.toLocaleString()}</td>
+                      <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                        <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{o.date}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-black text-[#0F172A]">{o.property}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-bold text-slate-700 text-right">{(o.details?.["Single Bedsheet"] || 0) + (o.details?.["Bedsheet"] || 0)}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-bold text-slate-700 text-right">{o.details?.["Pillow Cover"] || 0}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-bold text-slate-700 text-right">{o.details?.["Duvet Cover"] || 0}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-bold text-slate-700 text-right">{o.details?.["Bath Towel"] || 0}</td>
+                        <td className="px-6 py-4 text-[13.5px] font-black text-purple-600 text-right">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <BiRupee size={12} className="mb-0.5" />
+                            <span>{o.amount?.toLocaleString()}</span>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -238,52 +294,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         </div>
       )}
 
-      {/* Hotel Section */}
-      {(view === "hotel" || view === "all") && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Hotels & Airbnbs</h2>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} />)}
-            </div>
-
-            {/* Hotel Detail Table */}
-            <div className="overflow-x-auto mt-4">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="bg-[#f8fcff]">
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tl-xl">Date</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Property</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Bedsheet</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Pillow Cover</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Duvet Cover</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Towels</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hotelOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                    <tr key={o.id} className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors">
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.date}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">{o.property}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Bedsheet"] || o.details?.["Single Bedsheet"] || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Pillow Cover"] || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Duvet Cover"] || 0}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-800">₹{o.amount?.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                  {hotelOrders.length === 0 && (
-                    <tr>
-                      <td colSpan="7" className="px-4 py-6 text-center text-sm text-gray-400">No hotel or Airbnb orders in this period.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

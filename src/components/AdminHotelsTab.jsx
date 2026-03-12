@@ -37,7 +37,7 @@ export default function AdminHotelsTab({ orders }) {
     })).filter(h => h.orders.length > 0), [hotelOrders]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Hotel Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h2 className="text-base font-bold text-gray-900 mb-4">Hotels & Airbnbs</h2>
@@ -69,7 +69,12 @@ export default function AdminHotelsTab({ orders }) {
                     <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Pillow Cover"] || 0}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Duvet Cover"] || 0}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</td>
-                    <td className="px-4 py-3 text-sm font-bold text-gray-800">₹{o.amount?.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-sm font-bold text-gray-800">
+                      <div className="flex items-center gap-0.5">
+                        <BiRupee size={12} className="mb-0.5" />
+                        <span>{o.amount?.toLocaleString()}</span>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {hotelOrders.length === 0 && (

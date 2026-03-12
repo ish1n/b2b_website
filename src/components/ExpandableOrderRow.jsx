@@ -15,7 +15,7 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
       {/* Main row — no ID column */}
       <tr
         onClick={() => setOpen(!open)}
-        className="cursor-pointer hover:bg-brand-50/60 transition-colors border-b border-gray-100 group"
+        className="cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-50 group"
       >
         <td className="px-4 py-3 text-sm font-medium text-gray-800">{order.date}</td>
         {showProperty && (
@@ -30,39 +30,39 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
           </span>
         </td>
         <td className="px-4 py-3">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center justify-end">
             {order.items ? (
-              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
-                <FiShoppingBag size={12} className="text-brand opacity-80" /> {order.items}
+              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                <FiShoppingBag size={12} className="text-blue-600 opacity-80" /> {order.items}
               </span>
-            ) : <span className="text-gray-400 text-sm">—</span>}
+            ) : <span className="text-gray-400 text-sm w-full text-right">—</span>}
           </div>
         </td>
         <td className="px-4 py-3">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center justify-end">
             {order.weight ? (
-              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
+              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm">
                 <MdScale size={13} className="text-orange-600 opacity-80" /> {order.weight}
               </span>
-            ) : <span className="text-gray-400 text-sm">—</span>}
+            ) : <span className="text-gray-400 text-sm w-full text-right">—</span>}
           </div>
         </td>
         <td className="px-4 py-3">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center justify-end">
             {order.studentCount ? (
-              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-md shadow-sm">
-                <FiUsers size={13} className="text-indigo-600 opacity-80" /> {order.studentCount}
+              <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-gray-700 text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm">
+                <FiUsers size={12} className="text-indigo-600 opacity-80" /> {order.studentCount}
               </span>
-            ) : <span className="text-gray-400 text-sm">—</span>}
+            ) : <span className="text-gray-400 text-sm w-full text-right">—</span>}
           </div>
         </td>
-        <td className="px-4 py-3">
+        <td className="px-4 py-3 text-center">
           <span
-            className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
+            className={`inline-block text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
               order.status === "Delivered"
-                ? "bg-emerald-50 text-emerald-700"
+                ? "bg-green-100 text-green-700"
                 : order.status === "Pending"
-                ? "bg-amber-50 text-amber-700"
+                ? "bg-yellow-100 text-yellow-800"
                 : "bg-gray-100 text-gray-600"
             }`}
           >
