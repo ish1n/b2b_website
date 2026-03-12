@@ -72,10 +72,10 @@ export default function MonthOrders() {
 
                 {/* Bar Chart */}
                 {monthData.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-brand-100 shadow-sm p-6">
+                    <div className="bg-white rounded-2xl border border-brand-100 shadow-sm p-6 min-w-0">
                         <h2 className="text-base font-bold text-gray-900 mb-1">Month Comparison</h2>
                         <p className="text-xs text-gray-400 mb-5">Orders count per month</p>
-                        <ResponsiveContainer width="100%" height={260}>
+                        <ResponsiveContainer width="100%" height={260} debounce={100}>
                             <BarChart data={monthData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} barSize={40}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
                                 <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} />

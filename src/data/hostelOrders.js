@@ -30,6 +30,7 @@ const hostel99Orders = [
   { id: "h99-07", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-07", amount: 795, status: "Delivered", items: 31, service: "13 Single Bedsheets, 3 Duvet Covers, 10 Pillow Covers, 3 Bath Towels, 1 Double Bedsheet, 1 Blanket", details: { "Single Bedsheet": 13, "Duvet Cover": 3, "Pillow Cover": 10, "Bath Towel": 3, "Double Bedsheet": 1, "Blanket": 1 } },
   { id: "h99-08", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-08", amount: 360, status: "Delivered", items: 20, service: "8 Single Bedsheets, 12 Pillow Covers", details: { "Single Bedsheet": 8, "Pillow Cover": 12 } },
   { id: "h99-09", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-09", amount: 1565, status: "Delivered", items: 48, service: "15 Single Bedsheets, 1 Duvet Cover, 15 Pillow Covers, 1 Bath Towel, 5 Curtains, 11 Door Mats", details: { "Single Bedsheet": 15, "Duvet Cover": 1, "Pillow Cover": 15, "Bath Towel": 1, "Curtain": 5, "Door Mat": 11 } },
+  { id: "h99-10", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 28, service: "12 Bedsheets, 15 Pillow Covers, 1 Duvet Cover", details: { "Bedsheet": 12, "Pillow Cover": 15, "Duvet Cover": 1 } },
 ];
 
 // ==================== HOSTEL 99 NO-88 — LINEN SERVICES ====================
@@ -41,6 +42,7 @@ const hostel99No88Orders = [
   { id: "h9988-07", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-07", amount: 380, status: "Delivered", items: 18, service: "10 Single Bedsheets, 8 Pillow Covers", details: { "Single Bedsheet": 10, "Pillow Cover": 8 } },
   { id: "h9988-08", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-08", amount: 120, status: "Delivered", items: 6, service: "3 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 3, "Pillow Cover": 3 } },
   { id: "h9988-09", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-09", amount: 480, status: "Delivered", items: 24, service: "11 Single Bedsheets, 12 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 11, "Pillow Cover": 12, "Duvet Cover": 1 } },
+  { id: "h9988-10", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 12, service: "5 Bedsheets, 6 Pillow covers, 1 Bath towel", details: { "Bedsheet": 5, "Pillow Cover": 6, "Bath Towel": 1 } },
 ];
 
 // ==================== HOSTEL 99 NO-3 — LINEN SERVICES ====================
@@ -51,6 +53,7 @@ const hostel99No3Orders = [
   { id: "h993-07", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-07", amount: 160, status: "Delivered", items: 8, service: "4 Single Bedsheets, 4 Pillow Covers", details: { "Single Bedsheet": 4, "Pillow Cover": 4 } },
   { id: "h993-08", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-08", amount: 150, status: "Delivered", items: 7, service: "4 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 4, "Pillow Cover": 3 } },
   { id: "h993-09", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-09", amount: 390, status: "Delivered", items: 19, service: "9 Single Bedsheets, 9 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 9, "Pillow Cover": 9, "Duvet Cover": 1 } },
+  { id: "h993-10", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-11", amount: 0, status: "Pickup Done", items: 18, service: "9 Bedsheets, 9 Pillow covers", details: { "Bedsheet": 9, "Pillow Cover": 9 } },
 ];
 
 // ==================== TULSI HOSTEL — STUDENT LAUNDRY ====================

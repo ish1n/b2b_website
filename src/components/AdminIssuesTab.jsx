@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { FiCheckCircle, FiClock, FiAlertTriangle, FiPlus, FiX, FiCheck, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiAlertTriangle, FiPlus, FiX, FiCheck, FiEdit2, FiTrash2, FiInbox } from "react-icons/fi";
+import { BiRupee } from "react-icons/bi";
+import EmptyState from "./EmptyState";
 
 const ISSUE_TYPES = ["Missing Items", "Damage", "Quality Issue", "Return Pending", "Weight Dispute", "Bags Pending"];
 const SEVERITY_ORDER = { critical: 0, pending: 1 };
@@ -68,62 +70,68 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Summary Bar */}
       <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <FiAlertTriangle className="text-red-500" size={16} />
-          <span className="text-sm font-bold text-red-700">{criticalCount} Critical</span>
-        </div>
-        <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
-          <FiClock className="text-yellow-600" size={16} />
-          <span className="text-sm font-bold text-yellow-700">{checkingCount} Checking</span>
-        </div>
-        <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
-          <FiAlertTriangle className="text-orange-500" size={16} />
-          <span className="text-sm font-bold text-orange-700">{unresolvedCount} Unresolved</span>
-        </div>
-        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-          <span className="text-sm font-bold text-gray-600">{issues.length} Total</span>
-        </div>
-        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="ml-auto flex items-center gap-1.5 px-4 py-2.5 bg-[#DC2626] text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-all shadow-sm">
-          <FiPlus size={14} /> Add Issue
+        {[
+          { label: 'Critical', count: criticalCount, bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-700', icon: FiAlertTriangle, iconColor: 'text-red-500' },
+          { label: 'Checking', count: checkingCount, bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: FiClock, iconColor: 'text-amber-600' },
+          { label: 'Unresolved', count: unresolvedCount, bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', icon: FiAlertTriangle, iconColor: 'text-orange-500' },
+          { label: 'Total', count: issues.length, bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: FiInbox, iconColor: 'text-slate-400' },
+        ].map((stat, idx) => (
+          <div key={idx} className={`flex items-center gap-3 ${stat.bg} border ${stat.border} rounded-xl px-4 py-3 shadow-sm`}>
+            <stat.icon className={stat.iconColor} size={16} />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">{stat.label}</p>
+              <p className={`text-sm font-black ${stat.text} leading-none`}>{stat.count}</p>
+            </div>
+          </div>
+        ))}
+        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="ml-auto flex items-center gap-2 px-5 py-3 bg-red-600 text-white text-[12px] font-bold rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
+          <FiPlus size={16} /> Report New Issue
         </button>
       </div>
 
-      {/* Issue Cards */}
-      <div className="space-y-3">
+      {/* Issue List */}
+      <div className="space-y-4">
         {issues.map(issue => (
-          <div key={issue.id} className={`bg-white rounded-xl border shadow-sm p-5 transition-all hover:shadow-md ${issue.severity === "critical" ? 'border-red-200 border-l-4 border-l-red-500' : 'border-gray-100'}`}>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (TYPE_COLORS[issue.issueType] || '#6B7280') + '15', color: TYPE_COLORS[issue.issueType] || '#6B7280' }}>
+          <div key={issue.id} className={`bg-white rounded-xl border border-gray-100 shadow-sm p-5 transition-all hover:shadow-md group ${issue.severity === "critical" ? 'border-l-4 border-l-red-500' : ''}`}>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="flex flex-col gap-2 flex-shrink-0 min-w-[120px]">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider text-center" style={{ backgroundColor: (TYPE_COLORS[issue.issueType] || '#6B7280') + '15', color: TYPE_COLORS[issue.issueType] || '#6B7280' }}>
                   {issue.issueType}
                 </span>
                 {issue.severity === "critical" && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 uppercase">Critical</span>
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white uppercase tracking-widest text-center shadow-sm">Critical</span>
                 )}
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-800 leading-relaxed">{issue.service}</p>
-                {issue.solution && <p className="text-xs text-gray-400 mt-1.5 italic">Solution: {issue.solution}</p>}
+                <p className="text-[13.5px] font-bold text-[#0F172A] leading-relaxed">{issue.service}</p>
+                {issue.solution && (
+                  <div className="mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <p className="text-[12px] text-emerald-800 font-medium italic select-none">Resolution: {issue.solution}</p>
+                  </div>
+                )}
+                <div className="mt-3 flex items-center gap-4 text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+                   <span>{issue.date}</span>
+                   {issue.reportedBy && <span className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-gray-300" /> reported by {issue.reportedBy}</span>}
+                   {issue.linkedHostel && <span className="flex items-center gap-1.5 text-blue-500"><div className="w-1 h-1 rounded-full bg-blue-300" /> {issue.linkedHostel}</span>}
+                </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="text-right">
-                  <p className="text-xs text-gray-400">{issue.date}</p>
-                  {issue.reportedBy && <p className="text-[10px] text-gray-400 mt-0.5">by {issue.reportedBy}</p>}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${RESOLVE_COLORS[issue.resolveStatus] || 'bg-gray-100 text-gray-500'}`}>
-                    {issue.resolveStatus}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => openEditModal(issue)} className="p-1.5 text-gray-400 hover:text-[#1976D2] hover:bg-blue-50 rounded-lg transition-colors">
+                <span className={`text-[10px] font-black px-3 py-1.5 rounded-full uppercase border ${
+                  issue.resolveStatus === 'Resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  issue.resolveStatus === 'Checking' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-red-50 text-red-700 border-red-100'
+                }`}>
+                  {issue.resolveStatus}
+                </span>
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => openEditModal(issue)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                     <FiEdit2 size={14} />
                   </button>
                   {onDeleteIssue && (
-                    <button onClick={() => onDeleteIssue(issue)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <button onClick={() => onDeleteIssue(issue)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                       <FiTrash2 size={14} />
                     </button>
                   )}
@@ -133,83 +141,103 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
           </div>
         ))}
         {issues.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            <FiCheckCircle size={40} className="mx-auto mb-3 text-green-300" />
-            <p className="font-semibold">No issues found</p>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden py-12">
+            <EmptyState 
+              icon={FiCheckCircle} 
+              title="All systems clear" 
+              message="No outstanding issues or complaints for this period."
+            />
           </div>
         )}
       </div>
 
-      {/* Add Issue Modal */}
+      {/* Add Issue Modal - Simplified Styling */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 mx-4" style={{ fontFamily: 'Poppins' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">{form.id ? 'Edit Issue' : 'Report New Issue'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><FiX size={20} /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 animate-slide-up">
+            <div className="flex items-center justify-between mb-8 cursor-default">
+              <div>
+                <h2 className="text-lg font-black text-[#0F172A] tracking-tight">{form.id ? 'Modify Issue Report' : 'New Issue Report'}</h2>
+                <p className="text-xs font-medium text-slate-400">Please provide accurate details for tracking</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                <FiX size={24} />
+              </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
-                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Issue Type</label>
-                <select value={form.issueType} onChange={e => setForm({ ...form, issueType: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none bg-white">
-                  {ISSUE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Description *</label>
-                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none resize-none" placeholder="Describe the issue..." />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Linked Hostel / Customer</label>
-                <input type="text" value={form.linkedHostel} onChange={e => setForm({ ...form, linkedHostel: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none" placeholder="e.g. Meera Hostel" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Assigned To</label>
-                <input type="text" value={form.assignedTo} onChange={e => setForm({ ...form, assignedTo: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none" placeholder="Reporter name" />
-              </div>
-              {form.id && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Severity</label>
-                      <select value={form.severity} onChange={e => setForm({ ...form, severity: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none bg-white">
-                        <option value="pending">Pending</option>
-                        <option value="critical">Critical</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
-                      <select value={form.resolveStatus} onChange={e => setForm({ ...form, resolveStatus: e.target.value })}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none bg-white">
-                        <option value="Unresolved">Unresolved</option>
-                        <option value="Checking">Checking</option>
-                        <option value="Resolved">Resolved</option>
-                      </select>
-                    </div>
+            
+            <div className="space-y-5">
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date of Incident</label>
+                    <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-500 focus:outline-none transition-all" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Solution / Updates</label>
-                    <textarea value={form.solution} onChange={e => setForm({ ...form, solution: e.target.value })} rows={2}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#DC2626] focus:outline-none resize-none" placeholder="What was done to fix this?" />
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Category</label>
+                    <select value={form.issueType} onChange={e => setForm({ ...form, issueType: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-500 focus:outline-none transition-all bg-no-repeat bg-right">
+                      {ISSUE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
                   </div>
-                </>
+               </div>
+
+               <div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Description of Issue</label>
+                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={4}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-500 focus:outline-none resize-none transition-all" placeholder="Enter full details..." />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Linked Client</label>
+                  <input type="text" value={form.linkedHostel} onChange={e => setForm({ ...form, linkedHostel: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-500 focus:outline-none transition-all" placeholder="Search client..." />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Reported By</label>
+                  <input type="text" value={form.assignedTo} onChange={e => setForm({ ...form, assignedTo: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-red-500 focus:outline-none transition-all" placeholder="Enter name..." />
+                </div>
+              </div>
+
+              {form.id && (
+                <div className="pt-4 border-t border-slate-100 space-y-5">
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Severity Level</label>
+                       <select value={form.severity} onChange={e => setForm({ ...form, severity: e.target.value })}
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-black text-red-600 focus:bg-white focus:outline-none uppercase tracking-widest">
+                         <option value="pending">Standard</option>
+                         <option value="critical text-red-600">!! Critical !!</option>
+                       </select>
+                     </div>
+                     <div>
+                       <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Resolution Status</label>
+                       <select value={form.resolveStatus} onChange={e => setForm({ ...form, resolveStatus: e.target.value })}
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:outline-none">
+                         <option value="Unresolved">Unresolved</option>
+                         <option value="Checking">Under Investigation</option>
+                         <option value="Resolved">Resolved</option>
+                       </select>
+                     </div>
+                   </div>
+                   <div>
+                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Final Solution Notes</label>
+                      <textarea value={form.solution} onChange={e => setForm({ ...form, solution: e.target.value })} rows={2}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-emerald-700 focus:bg-emerald-50 focus:border-emerald-500 focus:outline-none resize-none transition-all" placeholder="What was done to resolve this?" />
+                   </div>
+                </div>
               )}
             </div>
-            <button onClick={handleSubmit} disabled={!form.description}
-              className="w-full mt-5 py-3 bg-[#DC2626] hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-all">
-              {form.id ? 'Save Changes' : 'Submit Issue'}
-            </button>
+
+            <div className="mt-8 flex gap-3">
+               <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
+               <button onClick={handleSubmit} disabled={!form.description}
+                className="flex-[2] py-3.5 bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest">
+                {form.id ? 'Update Record' : 'Submit for Review'}
+               </button>
+            </div>
           </div>
         </div>
       )}

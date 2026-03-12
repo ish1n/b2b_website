@@ -78,14 +78,14 @@ export default function DayOrders() {
                 </div>
 
                 {/* Bar Chart */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 min-w-0">
                     <h2 className="text-base font-bold text-gray-900 mb-1">Orders Per Day</h2>
                     {selectedDay && (
                         <p className="text-xs text-[#FF6B35] font-medium mb-1">
                             Showing orders for Day {selectedDay} — click another bar or same bar to toggle
                         </p>
                     )}
-                    <ResponsiveContainer width="100%" height={280}>
+                    <ResponsiveContainer width="100%" height={280} debounce={100}>
                         <BarChart data={dayData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }} barSize={16}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
                             <XAxis

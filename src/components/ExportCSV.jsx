@@ -50,7 +50,7 @@ export default function ExportCSV({ orders = [] }) {
             onClick={handleExport}
             disabled={!orders || orders.length === 0}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E3F2FD] text-[#1976D2] border border-brand-200 font-semibold text-sm hover:bg-[#1976D2] hover:text-white transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
             <FiDownload size={14} />
             Export CSV

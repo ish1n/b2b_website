@@ -1,3 +1,4 @@
+import { BiRupee } from "react-icons/bi";
 export default function MonthCard({ month, count, revenue, onClick }) {
     const gradients = [
         'from-[#1976D2] to-[#1565C0]',
@@ -17,7 +18,7 @@ export default function MonthCard({ month, count, revenue, onClick }) {
             onClick={!isEmpty ? onClick : undefined}
             className={`group bg-gradient-to-br ${grad} rounded-2xl p-6 text-white
         transition-all duration-200 select-none ${isEmpty ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-1 active:translate-y-0'}`}
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
             <div className="flex items-start justify-between mb-4">
                 <div>
@@ -35,7 +36,10 @@ export default function MonthCard({ month, count, revenue, onClick }) {
                 </div>
                 <div className="text-right">
                     <p className="text-white/70 text-xs">Revenue</p>
-                    <p className="text-lg font-semibold">₹{(revenue || 0).toLocaleString()}</p>
+                    <div className="flex items-center justify-end gap-0.5 text-lg font-semibold">
+                        <BiRupee size={16} className="mb-0.5" />
+                        <span>{(revenue || 0).toLocaleString()}</span>
+                    </div>
                 </div>
             </div>
 

@@ -8,7 +8,7 @@ export default function StatusBar({ label, value, total, color }) {
     const c = colorMap[color] || colorMap.brand;
 
     return (
-        <div className="flex items-center gap-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
+        <div className="flex items-center gap-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             <span className="w-24 text-xs font-medium text-gray-600 flex-shrink-0">{label}</span>
             <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                 <div

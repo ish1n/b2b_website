@@ -112,9 +112,9 @@ export default function ClientDashboard() {
   }, [filtered, client]);
 
   return (
-    <div className="min-h-screen bg-[#F0F7FF]" style={{ fontFamily: "Poppins, sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "Poppins, sans-serif" }}>
       {/* Top nav */}
-      <nav className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center">
@@ -142,26 +142,27 @@ export default function ClientDashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Orders", value: totalOrders, color: "#1976D2", Icon: FiPackage },
-            { label: "Total Items", value: totalItems.toLocaleString(), color: "#7C3AED", Icon: FiShoppingBag },
-            { label: "Total Weight", value: `${totalWeight.toFixed(1)} KG`, color: "#D97706", Icon: MdScale },
+            { label: "Total Orders", value: totalOrders, color: "#1976D2", bgColor: "bg-blue-50", Icon: FiPackage },
+            { label: "Total Items", value: totalItems.toLocaleString(), color: "#7C3AED", bgColor: "bg-purple-50", Icon: FiShoppingBag },
+            { label: "Total Weight", value: `${totalWeight.toFixed(1)} KG`, color: "#D97706", bgColor: "bg-orange-50", Icon: MdScale },
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 relative overflow-hidden hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <div
-                className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center opacity-15"
-                style={{ backgroundColor: kpi.color }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 p-3 ${kpi.bgColor}`}
               >
-                <kpi.Icon size={22} />
+                <kpi.Icon size={22} style={{ color: kpi.color }} />
               </div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{kpi.label}</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: kpi.color }}>{kpi.value}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-3xl font-bold text-gray-900 leading-tight tracking-tight">{kpi.value}</p>
+                <p className="text-sm font-medium text-gray-400 mt-1 uppercase tracking-wider">{kpi.label}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -254,7 +255,7 @@ export default function ClientDashboard() {
                     >
                       {CAT_ICONS[cat.key] || <FiPackage />}
                     </div>
-                    <span className="text-sm font-bold text-gray-800 group-hover:text-brand transition-colors">
+                    <span className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
                       {cat.label}
                     </span>
                   </div>

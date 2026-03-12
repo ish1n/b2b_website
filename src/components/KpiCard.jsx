@@ -1,38 +1,76 @@
-export default function KpiCard({ icon: Icon, value, label, sublabel, onClick, color = "brand", trend }) {
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+
+export default function KpiCard({ 
+    icon: Icon, 
+    value, 
+    label, 
+    onClick, 
+    color = "blue", 
+    trend, 
+    sparklineData = [] 
+}) {
     const isClickable = !!onClick;
+    
+    // Color mapping for top border and icon backgrounds
+    const colorClasses = {
+        blue: { border: "border-t-[3px] border-t-blue-500", icon: "bg-blue-50 text-blue-500", spark: "#3b82f6" },
+        purple: { border: "border-t-[3px] border-t-purple-500", icon: "bg-purple-50 text-purple-500", spark: "#a855f7" },
+        green: { border: "border-t-[3px] border-t-green-500", icon: "bg-green-50 text-green-500", spark: "#10b981" },
+        amber: { border: "border-t-[3px] border-t-amber-500", icon: "bg-amber-50 text-amber-500", spark: "#f59e0b" },
+        red: { border: "border-t-[3px] border-t-red-500", icon: "bg-red-50 text-red-500", spark: "#ef4444" },
+    };
+
+    const config = colorClasses[color] || colorClasses.blue;
+
     return (
         <div
             onClick={onClick}
-            className={`bg-white rounded-2xl border border-brand-100 shadow-sm p-6 flex items-start gap-4 transition-all duration-200
-        ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-[#1976D2]' : ''}
-      `}
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            className={`bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden transition-all duration-300
+                ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''}
+                ${config.border}
+            `}
+            style={{ fontFamily: 'DM Sans, sans-serif' }}
         >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-        ${color === 'brand' ? 'bg-blue-100' : color === 'orange' ? 'bg-orange-100' : color === 'purple' ? 'bg-purple-100' : color === 'danger' ? 'bg-red-100' : 'bg-green-100'}
-      `}>
-                {Icon && (
-                    <Icon
-                        size={22}
-                        className={color === 'brand' ? 'text-blue-600' : color === 'orange' ? 'text-orange-500' : color === 'purple' ? 'text-purple-600' : color === 'danger' ? 'text-red-600' : 'text-green-600'}
-                    />
-                )}
+            {/* Top Row: Icon & Label */}
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <p className="text-[11.5px] font-bold text-[#94A3B8] uppercase tracking-wider mb-1">
+                        {label}
+                    </p>
+                    <p className="text-2xl font-extrabold text-[#0F172A] leading-none tracking-tight">
+                        {value}
+                    </p>
+                </div>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${config.icon}`}>
+                    {Icon && <Icon size={18} />}
+                </div>
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-2xl font-bold text-gray-900 leading-tight">{value}</p>
-                <p className="text-sm font-medium text-gray-500 mt-0.5">{label}</p>
 
-                {trend ? (
-                    <div className="mt-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold
-                            ${trend.direction === 'up' ? 'bg-green-100 text-green-700' :
-                                trend.direction === 'down' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-600'}`}>
-                            {trend.text}
-                        </span>
+            {/* Bottom Row: Trend & Sparkline */}
+            <div className="flex items-end justify-between mt-auto">
+                {trend && (
+                    <div className={`px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1
+                        ${trend.direction === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}
+                    `}>
+                        {trend.direction === 'up' ? '↑' : '↓'} {trend.text}
                     </div>
-                ) : sublabel && (
-                    <p className="text-xs text-gray-400 mt-1">{sublabel}</p>
+                )}
+                
+                {sparklineData && sparklineData.length > 0 && (
+                    <div className="w-20 h-10 flex-shrink-0 min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                            <LineChart data={sparklineData}>
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="v" 
+                                    stroke={config.spark} 
+                                    strokeWidth={2} 
+                                    dot={false} 
+                                    animationDuration={1500}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 )}
             </div>
         </div>

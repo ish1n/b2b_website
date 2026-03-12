@@ -3,7 +3,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { getCategoryForProperty, CATEGORIES } from "../data/hostelOrders";
-import { FiArrowRight, FiX } from "react-icons/fi";
+import { FiArrowRight, FiX, FiFilter, FiChevronDown, FiTrendingUp } from "react-icons/fi";
+import { BiRupee } from "react-icons/bi";
 import ExportCSV from "./ExportCSV";
 import OrderTable from "./OrderTable";
 
@@ -12,9 +13,12 @@ const AVATAR_COLORS = ['#1976D2','#7C3AED','#059669','#DC2626','#D97706','#0891B
 const ChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border-l-4 border-[#1976D2] shadow-lg rounded-xl p-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-        <p className="text-[#1976D2] font-semibold text-xs mb-1">Mar {label}</p>
-        <p className="text-gray-800 font-bold text-sm">₹{payload[0].value.toLocaleString()}</p>
+      <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-xl rounded-xl p-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+        <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-1">Mar {label}</p>
+        <div className="flex items-center gap-0.5 text-gray-900 font-black text-base">
+          <BiRupee size={16} />
+          <span>{payload[0].value.toLocaleString()}</span>
+        </div>
       </div>
     );
   }
@@ -23,6 +27,10 @@ const ChartTooltip = ({ active, payload, label }) => {
 
 export default function AdminOverviewTab({ orders, clients, daysInRange }) {
   const [selectedClient, setSelectedClient] = useState(null);
+  const [filterType, setFilterType] = useState("All"); // All, Linen, Student
+  const [sortConfig, setSortConfig] = useState({ key: 'rev', direction: 'desc' }); // rev, orders, kg
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const regularOrders = useMemo(() => orders.filter(o => o.category !== "ISSUES"), [orders]);
 
@@ -35,6 +43,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       return { day, revenue: dayOrders.reduce((s, o) => s + (o.amount || 0), 0) };
     }), [regularOrders, daysInRange]);
 
+  const totalRevenue = useMemo(() => regularOrders.reduce((s, o) => s + (o.amount || 0), 0), [regularOrders]);
+
   const categoryBreakdown = useMemo(() => {
     const map = {};
     regularOrders.forEach(o => {
@@ -43,11 +53,14 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       map[cat.key].orders++;
       map[cat.key].revenue += (o.amount || 0);
     });
-    return Object.values(map).sort((a, b) => b.revenue - a.revenue);
-  }, [regularOrders]);
+    return Object.values(map).map(cat => ({
+        ...cat,
+        share: totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0
+    })).sort((a, b) => b.revenue - a.revenue);
+  }, [regularOrders, totalRevenue]);
 
-  const clientRows = useMemo(() =>
-    clients.map((mgr, idx) => {
+  const clientRows = useMemo(() => {
+    let rows = clients.map((mgr, idx) => {
       const props = mgr.properties || [];
       const cOrders = orders.filter(o => props.includes(o.property));
       const rev = cOrders.reduce((s, o) => s + (o.amount || 0), 0);
@@ -55,47 +68,92 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       const issues = orders.filter(o => o.category === "ISSUES").length;
       let last = null;
       cOrders.forEach(o => { if (o.date) { const d = new Date(o.date); if (!last || d > last) last = d; } });
-      const hostelType = cOrders.length > 0 && cOrders[0].type === "linen" ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
+      const hostelType = cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN") ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
       return { ...mgr, idx, rev, kg, orders: cOrders.length, issues: 0, last, hostelType };
-    }).filter(c => c.orders > 0).sort((a, b) => b.rev - a.rev),
-    [clients, orders]);
+    }).filter(c => c.orders > 0);
+
+    // Filter
+    if (filterType !== "All") {
+      rows = rows.filter(r => r.hostelType === filterType);
+    }
+
+    // Sort
+    rows.sort((a, b) => {
+      const aVal = a[sortConfig.key] || 0;
+      const bVal = b[sortConfig.key] || 0;
+      return sortConfig.direction === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    return rows;
+  }, [clients, orders, filterType, sortConfig]);
 
   return (
-    <div className="space-y-6">
-      {/* Revenue Chart + Category Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-1">Revenue Trend</h2>
-          <p className="text-xs text-gray-400 mb-5">Daily revenue across all tenants</p>
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={dailyRevenue} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+    <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6 pb-2 min-w-0">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-[15px] font-bold text-[#0F172A]">Revenue Trend</h2>
+              <p className="text-[12px] font-medium text-[#94A3B8]">Daily revenue performance</p>
+            </div>
+            <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded-md text-[10px] font-bold uppercase">
+              <FiTrendingUp size={12} />
+              +12.5% vs Last Period
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={280} debounce={100}>
+            <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1976D2" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#1976D2" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f4f5" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#1976D2', strokeDasharray: '4 4' }} />
-              <Area type="monotone" dataKey="revenue" stroke="#1976D2" strokeWidth={2.5} fill="url(#revGrad)" dot={{ r: 4, fill: '#1976D2', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#3B82F6', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
+              <Area 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#3B82F6" 
+                strokeWidth={3} 
+                fill="url(#revGrad)" 
+                dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} 
+                activeDot={{ r: 6, strokeWidth: 0 }} 
+                animationDuration={2000}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Revenue by Category</h2>
-          <div className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden">
+          <h2 className="text-[15px] font-bold text-[#0F172A] mb-1">Revenue by Category</h2>
+          <p className="text-[12px] font-medium text-[#94A3B8] mb-6">Share of total revenue</p>
+          <div className="space-y-7">
             {categoryBreakdown.map(cat => (
-              <div key={cat.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                  <span className="text-xs font-medium text-gray-600">{cat.label}</span>
+              <div key={cat.label} className="group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="text-[13px] font-bold text-[#475569]">{cat.label}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-0.5 text-[13px] font-extrabold text-[#0F172A]">
+                      <BiRupee size={12} />
+                      <span>{cat.revenue.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-gray-800">₹{cat.revenue.toLocaleString()}</span>
-                  <span className="text-[10px] text-gray-400 ml-1.5">({cat.orders})</span>
+                <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-1000 ease-out" 
+                    style={{ backgroundColor: cat.color, width: `${cat.share}%` }} 
+                  />
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider">{cat.orders} Orders</span>
+                  <span className="text-[10px] font-bold" style={{ color: cat.color }}>{cat.share.toFixed(1)}%</span>
                 </div>
               </div>
             ))}
@@ -103,50 +161,113 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
         </div>
       </div>
 
-      {/* Unified B2B Client Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-base font-bold text-gray-900 mb-1">B2B Client Performance</h2>
-        <p className="text-xs text-gray-400 mb-5">All registered hostels and their metrics</p>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white">
+          <div>
+            <h2 className="text-[15px] font-bold text-[#0F172A] mb-0.5">B2B Client Performance</h2>
+            <p className="text-[12px] font-medium text-[#94A3B8]">Detailed metrics per registered partner</p>
+          </div>
+          <div className="flex items-center gap-2 relative">
+            {/* Filter Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[12px] font-bold transition-colors ${filterType !== 'All' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-[#475569] hover:bg-gray-50'}`}>
+                <FiFilter size={14} /> {filterType === 'All' ? 'Filter' : filterType}
+              </button>
+              {showFilterMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl z-10 overflow-hidden py-1">
+                  {["All", "Linen", "Student"].map(f => (
+                    <button key={f} onClick={() => { setFilterType(f); setShowFilterMenu(false); }}
+                      className={`w-full text-left px-4 py-2 text-[12px] font-bold transition-colors ${filterType === f ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
+                      {f} Properties
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[12px] font-bold transition-colors ${sortConfig.key !== 'rev' || sortConfig.direction !== 'desc' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-[#475569] hover:bg-gray-50'}`}>
+                Sort <FiChevronDown size={14} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showSortMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden py-1">
+                  {[
+                    { key: 'rev', label: 'Revenue (High-Low)', dir: 'desc' },
+                    { key: 'rev', label: 'Revenue (Low-High)', dir: 'asc' },
+                    { key: 'orders', label: 'Order Velocity', dir: 'desc' },
+                    { key: 'kg', label: 'KG Processed', dir: 'desc' },
+                  ].map(s => (
+                    <button key={`${s.key}-${s.dir}`} onClick={() => { setSortConfig({ key: s.key, direction: s.dir }); setShowSortMenu(false); }}
+                      className={`w-full text-left px-4 py-2 text-[12px] font-bold transition-colors ${sortConfig.key === s.key && sortConfig.direction === s.dir ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[850px]">
-            <thead>
-              <tr className="bg-[#f8fcff]">
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tl-xl">Hostel</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Type</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Orders</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">KG</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Revenue</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Avg/Order</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Last Order</th>
-                <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Action</th>
+            <thead className="bg-[#F8FAFC]">
+              <tr>
+                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Hostel / Partner</th>
+                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Type</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Orders</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">KG Processed</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Total Revenue</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Avg Order</th>
+                <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Last Activity</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Analytics</th>
               </tr>
             </thead>
             <tbody>
               {clientRows.map((c, i) => (
-                <tr key={c.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
-                  <td className="px-4 py-3">
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-[13px] font-extrabold flex-shrink-0 shadow-sm" style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
                         {c.name?.charAt(0)}
                       </div>
-                      <span className="text-sm font-semibold text-gray-800">{c.name}</span>
+                      <span className="text-[13.5px] font-bold text-[#0F172A]">{c.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${c.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' : c.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}>
+                  <td className="px-6 py-4">
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-[0.05em] ${
+                        c.hostelType === 'Linen' ? 'bg-purple-100 text-purple-700' : 
+                        c.hostelType === 'Student' ? 'bg-blue-100 text-blue-700' : 
+                        'bg-emerald-100 text-emerald-700'
+                    }`}>
                       {c.hostelType}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-700">{c.orders}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{c.kg > 0 ? c.kg.toFixed(1) : '—'}</td>
-                  <td className="px-4 py-3 text-sm font-bold text-gray-800">₹{c.rev.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{c.orders > 0 ? `₹${(c.rev / c.orders).toFixed(0)}` : '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{c.last ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(c.last) : '—'}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-6 py-4 text-[13.5px] font-extrabold text-[#475569] text-right">{c.orders}</td>
+                  <td className="px-6 py-4 text-[13px] font-bold text-[#64748B] text-right">{c.kg > 0 ? c.kg.toFixed(1) : '—'}</td>
+                  <td className="px-6 py-4 text-[13.5px] font-black text-[#0F172A] text-right">
+                    <div className="flex items-center justify-end gap-0.5">
+                      <BiRupee size={14} />
+                      <span>{c.rev.toLocaleString()}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-[13px] font-bold text-[#64748B] text-right">
+                    {c.orders > 0 ? (
+                      <div className="flex items-center justify-end gap-0.5">
+                         <BiRupee size={12} />
+                         <span>{(c.rev / c.orders).toFixed(0)}</span>
+                      </div>
+                    ) : '—'}
+                  </td>
+                  <td className="px-6 py-4 text-[13px] font-medium text-[#94A3B8] text-center">{c.last ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(c.last) : '—'}</td>
+                  <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => setSelectedClient(c)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E8EAF6] text-[#0D47A1] text-xs font-semibold hover:bg-indigo-100 transition-all">
-                      View <FiArrowRight size={12} />
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[#475569] text-[12px] font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all opacity-0 group-hover:opacity-100">
+                      View <FiArrowRight size={14} />
                     </button>
                   </td>
                 </tr>
@@ -160,7 +281,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       {selectedClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedClient(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden" style={{ fontFamily: 'Poppins, sans-serif' }}>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{selectedClient.name}</h2>
@@ -186,11 +307,17 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                </div>
                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                  <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
-                 <p className="text-lg font-bold text-[#1976D2]">₹{selectedClient.rev.toLocaleString()}</p>
+                 <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-[#1976D2]">
+                    <BiRupee size={18} />
+                    <span>{selectedClient.rev.toLocaleString()}</span>
+                 </div>
                </div>
                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                  <p className="text-xs text-gray-400 font-medium">Avg per Order</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedClient.orders > 0 ? `₹${(selectedClient.rev / selectedClient.orders).toFixed(0)}` : '—'}</p>
+                 <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-gray-800">
+                    <BiRupee size={16} />
+                    <span>{selectedClient.orders > 0 ? (selectedClient.rev / selectedClient.orders).toFixed(0) : '—'}</span>
+                 </div>
                </div>
             </div>
             <div className="p-6 overflow-y-auto flex-1">
