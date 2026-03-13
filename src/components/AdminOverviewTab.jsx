@@ -61,7 +61,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
 
   const clientRows = useMemo(() => {
     let rows = clients.map((mgr, idx) => {
-      const props = mgr.properties || [];
+      const props = mgr.properties || mgr.partnernames || [];
       const cOrders = orders.filter(o => props.includes(o.property));
       const rev = cOrders.reduce((s, o) => s + (o.amount || 0), 0);
       const kg = cOrders.reduce((s, o) => s + (o.weight || 0), 0);
@@ -322,8 +322,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             </div>
             <div className="p-6 overflow-y-auto flex-1">
               <OrderTable
-                orders={orders.filter(o => (selectedClient.properties || []).includes(o.property || o.tenant))}
-                showTenant={selectedClient.properties?.length > 1}
+                orders={orders.filter(o => (selectedClient.properties || selectedClient.partnernames || []).includes(o.property || o.tenant))}
+                showTenant={(selectedClient.properties || selectedClient.partnernames || [])?.length > 1}
               />
             </div>
           </div>

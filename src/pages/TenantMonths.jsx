@@ -13,10 +13,13 @@ const MONTH_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+        // payload[0].payload gives us access to the entire data object (including revenue)
+        const data = payload[0].payload;
         return (
             <div className="bg-white border-l-4 border-[#1976D2] shadow-lg rounded-xl p-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <p className="text-[#1976D2] font-semibold text-xs mb-1">{label}</p>
-                <p className="text-gray-800 font-bold text-sm">{payload[0].value} orders</p>
+                <p className="text-gray-800 font-bold text-sm">{data.count} orders</p>
+                <p className="text-green-600 font-bold text-sm">₹{data.revenue?.toLocaleString() || 0}</p>
             </div>
         );
     }

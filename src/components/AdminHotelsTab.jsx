@@ -5,7 +5,7 @@ import { BiRupee } from "react-icons/bi";
 const HOTEL_PROPERTIES = ["Airbnb Viman Nagar"];
 const HOSTEL_COLORS = { "Airbnb Viman Nagar": "#D97706" };
 
-function LinenSummaryCard({ name, color, orders }) {
+function LinenSummaryCard({ name, color, orders, revenue }) {
   const totals = {};
   orders.forEach(o => {
     if (o.details) Object.entries(o.details).forEach(([k, v]) => { totals[k] = (totals[k] || 0) + (v || 0); });
@@ -15,7 +15,12 @@ function LinenSummaryCard({ name, color, orders }) {
       <div className="flex items-center gap-2 mb-3">
         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
         <h3 className="text-sm font-bold text-gray-800">{name}</h3>
-        <span className="ml-auto text-[10px] text-gray-400 font-medium">{orders.length} pickups</span>
+        <div className="ml-auto text-right">
+          <span className="text-[10px] text-gray-400 font-medium block mb-0.5">{orders.length} pickups</span>
+          {revenue !== undefined && (
+            <span className="text-xs font-bold text-green-600 flex items-center justify-end gap-0.5"><BiRupee size={12} />{revenue.toLocaleString()}</span>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
         {Object.entries(totals).filter(([, v]) => v > 0).map(([k, v]) => (
@@ -30,12 +35,16 @@ export default function AdminHotelsTab({ orders }) {
   const hotelOrders = useMemo(() => orders.filter(o => o.type === "airbnb"), [orders]);
 
   // Hotel summaries
+  // Hotel summaries
   const hotelSummaries = useMemo(() =>
-    HOTEL_PROPERTIES.map(name => ({
-      name, orders: hotelOrders.filter(o => o.property === name),
-      color: HOSTEL_COLORS[name] || "#6B7280"
-    })).filter(h => h.orders.length > 0), [hotelOrders]);
-
+    HOTEL_PROPERTIES.map(name => {
+      const ho = hotelOrders.filter(o => o.property === name);
+      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0); // Calculate revenue
+      return {
+        name, orders: ho, revenue,
+        color: HOSTEL_COLORS[name] || "#6B7280"
+      };
+    }).filter(h => h.orders.length > 0), [hotelOrders]);
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Hotel Section */}
@@ -43,8 +52,7 @@ export default function AdminHotelsTab({ orders }) {
         <h2 className="text-base font-bold text-gray-900 mb-4">Hotels & Airbnbs</h2>
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} />)}
-          </div>
+            {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}          </div>
 
           {/* Hotel Detail Table */}
           <div className="overflow-x-auto mt-4">

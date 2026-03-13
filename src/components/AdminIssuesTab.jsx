@@ -14,6 +14,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
     id: null, date: "", issueType: "Missing Items", description: "",
     linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: ""
   });
+  const [statusFilter, setStatusFilter] = useState("All"); // All, Unresolved, Checking, Resolved, Critical
 
   const openEditModal = (issue) => {
     setForm({
@@ -30,14 +31,23 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
     setShowModal(true);
   };
 
-  const issues = useMemo(() =>
-    orders.filter(o => o.category === "ISSUES")
-      .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99) || new Date(b.date) - new Date(a.date)),
-    [orders]);
+  const issues = useMemo(() => {
+    let list = orders.filter(o => o.category === "ISSUES");
 
-  const criticalCount = issues.filter(i => i.severity === "critical").length;
-  const unresolvedCount = issues.filter(i => i.resolveStatus === "Unresolved").length;
-  const checkingCount = issues.filter(i => i.resolveStatus === "Checking").length;
+    // Apply Status Filter
+    if (statusFilter === "Critical") {
+      list = list.filter(i => i.severity === "critical");
+    } else if (statusFilter !== "All") {
+      list = list.filter(i => i.resolveStatus === statusFilter);
+    }
+
+    return list.sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99) || new Date(b.date) - new Date(a.date));
+  }, [orders, statusFilter]);
+
+  const allIssues = useMemo(() => orders.filter(o => o.category === "ISSUES"), [orders]);
+  const criticalCount = allIssues.filter(i => i.severity === "critical").length;
+  const unresolvedCount = allIssues.filter(i => i.resolveStatus === "Unresolved").length;
+  const checkingCount = allIssues.filter(i => i.resolveStatus === "Checking").length;
 
   const handleSubmit = () => {
     if (!form.description) return;
@@ -74,22 +84,50 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
       {/* Summary Bar */}
       <div className="flex flex-wrap gap-4">
         {[
-          { label: 'Critical', count: criticalCount, bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-700', icon: FiAlertTriangle, iconColor: 'text-red-500' },
-          { label: 'Checking', count: checkingCount, bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: FiClock, iconColor: 'text-amber-600' },
-          { label: 'Unresolved', count: unresolvedCount, bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', icon: FiAlertTriangle, iconColor: 'text-orange-500' },
-          { label: 'Total', count: issues.length, bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: FiInbox, iconColor: 'text-slate-400' },
+          { label: 'Critical', count: criticalCount, bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-700', icon: FiAlertTriangle, iconColor: 'text-red-500', value: 'Critical' },
+          { label: 'Checking', count: checkingCount, bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: FiClock, iconColor: 'text-amber-600', value: 'Checking' },
+          { label: 'Unresolved', count: unresolvedCount, bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', icon: FiAlertTriangle, iconColor: 'text-orange-500', value: 'Unresolved' },
+          { label: 'Total', count: allIssues.length, bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: FiInbox, iconColor: 'text-slate-400', value: 'All' },
         ].map((stat, idx) => (
-          <div key={idx} className={`flex items-center gap-3 ${stat.bg} border ${stat.border} rounded-xl px-4 py-3 shadow-sm`}>
+          <button
+            key={idx}
+            onClick={() => setStatusFilter(statusFilter === stat.value ? 'All' : stat.value)}
+            className={`flex items-center gap-3 ${stat.bg} border ${stat.border} rounded-xl px-4 py-3 shadow-sm transition-all hover:scale-105 active:scale-95 ${statusFilter === stat.value ? 'ring-2 ring-offset-2 ring-slate-400' : ''}`}>
             <stat.icon className={stat.iconColor} size={16} />
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">{stat.label}</p>
               <p className={`text-sm font-black ${stat.text} leading-none`}>{stat.count}</p>
             </div>
-          </div>
+          </button>
         ))}
         <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="ml-auto flex items-center gap-2 px-5 py-3 bg-red-600 text-white text-[12px] font-bold rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
           <FiPlus size={16} /> Report New Issue
         </button>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Status:</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-[12px] font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500">
+            <option value="All">All Statuses</option>
+            <option value="Unresolved">Unresolved</option>
+            <option value="Checking">Under Investigation</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Critical">Critical Severity</option>
+          </select>
+        </div>
+
+        {statusFilter !== "All" && (
+          <button
+            onClick={() => setStatusFilter("All")}
+            className="ml-auto text-[11px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-1">
+            <FiX size={14} /> Clear Filters
+          </button>
+        )}
       </div>
 
       {/* Issue List */}
