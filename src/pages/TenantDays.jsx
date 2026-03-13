@@ -14,10 +14,12 @@ const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+        const data = payload[0].payload;
         return (
             <div className="bg-white border-l-4 border-[#1976D2] shadow-lg rounded-xl p-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 <p className="text-[#1976D2] font-semibold text-xs mb-1">Day {label}</p>
-                <p className="text-gray-800 font-bold text-sm">{payload[0].value} orders</p>
+                <p className="text-gray-800 font-bold text-sm">{data.count} orders</p>
+                <p className="text-green-600 font-bold text-sm">₹{data.revenue?.toLocaleString() || 0}</p>
             </div>
         );
     }
@@ -37,20 +39,20 @@ export default function TenantDays() {
     );
 
     const daysInMonth = new Date(new Date().getFullYear(), monthNum, 0).getDate();
-
     const dayData = useMemo(() => {
         const map = {};
         for (let i = 1; i <= daysInMonth; i++) {
-            map[i] = 0;
+            map[i] = { count: 0, revenue: 0 }; // Initialize revenue
         }
         tenantMonthOrders.forEach(o => {
             const d = o.day;
             if (!d || d < 1 || d > 31) return;
-            map[d]++;
+            map[d].count++;
+            map[d].revenue += o.amount || 0; // Add amount to revenue
         });
         return Object.entries(map)
             .sort((a, b) => +a[0] - +b[0])
-            .map(([d, count]) => ({ day: +d, count }));
+            .map(([d, data]) => ({ day: +d, ...data })); // Spread data object
     }, [tenantMonthOrders, daysInMonth]);
 
     const dayOrders = useMemo(() =>
@@ -59,7 +61,12 @@ export default function TenantDays() {
     );
 
     const peakDayMap = [...dayData].sort((a, b) => b.count - a.count);
-    const peakDay = peakDayMap[0]?.count > 0 ? `Day ${peakDayMap[0].day} with ${peakDayMap[0].count} orders` : 'None';
+
+    // Updated to also display the revenue on the peak day
+    const peakDay = peakDayMap[0]?.count > 0
+        ? `Day ${peakDayMap[0].day} with ${peakDayMap[0].count} orders (₹${peakDayMap[0].revenue?.toLocaleString()})`
+        : 'None';
+
     const activeDays = dayData.filter(d => d.count > 0).length;
 
     return (
