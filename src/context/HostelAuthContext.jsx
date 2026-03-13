@@ -2,9 +2,8 @@
 // Standalone auth context for client logins — Firebase Auth added for admin and anonymous auth for clients.
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { signInWithEmailAndPassword, signInAnonymously, signOut as firebaseSignOut, onAuthStateChanged } from "firebase/auth";
-import { collection, onSnapshot, setDoc, doc } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import { authenticateUser } from "../data/hostelAuth";
+import { getDoc, doc, onSnapshot, collection, setDoc } from "firebase/firestore";
 import { allHostelOrders } from "../data/hostelOrders";
 
 const HostelAuthContext = createContext(null);
@@ -26,27 +25,41 @@ export function HostelAuthProvider({ children }) {
 
   // Listen to Firestore globally for the client to see updates in real-time
   useEffect(() => {
-    if (!client) {
-      setFirestoreEdits([]);
-      return;
-    }
-
     let unsubSnapshot = () => { };
 
-    // WAIT for Firebase Auth to confirm the user is logged in (anonymously or admin) before listening
-    const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      unsubSnapshot(); // Clean up any previous listener
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      unsubSnapshot(); 
 
       if (firebaseUser) {
-        // Now that we have a valid Firebase token, we are allowed to read the database
+        try {
+          const userDoc = await getDoc(doc(db, "b2b_managers", firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const clientData = {
+              uid: firebaseUser.uid,
+              ...userData
+            };
+            setClient(clientData);
+            setIsAdmin(userData.role === "admin");
+            sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
+          } else {
+            console.warn("User profile not found in b2b_managers collection.");
+          }
+        } catch (err) {
+          console.error("Auth initialization error:", err.message);
+        }
+
         unsubSnapshot = onSnapshot(collection(db, "b2b_admin_edits"), (snapshot) => {
           const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
           setFirestoreEdits(edits);
         }, (error) => {
-          console.warn("Firestore listen error (might be offline or rule restricted):", error);
+          console.error("Orders sync error:", error.message);
         });
       } else {
+        setClient(null);
+        setIsAdmin(false);
         setFirestoreEdits([]);
+        sessionStorage.removeItem("hostelClient");
       }
     });
 
@@ -54,7 +67,7 @@ export function HostelAuthProvider({ children }) {
       unsubAuth();
       unsubSnapshot();
     };
-  }, [client]);
+  }, []);
 
   // Merge static data with live Firestore edits
   const allOrdersMerged = useMemo(() => {
@@ -66,11 +79,16 @@ export function HostelAuthProvider({ children }) {
   }, [firestoreEdits]);
 
   // Filter for the specific logged-in client
-  const orders = client?.properties
-    ? allOrdersMerged.filter((o) => client.properties.includes(o.property) || o.linkedHostel === client.properties[0])
-    : client?.role === "admin"
-      ? allOrdersMerged
-      : [];
+  const orders = useMemo(() => {
+    if (!client) return [];
+    if (client.role === "admin") return allOrdersMerged;
+    
+    // Support both 'properties' (new) and 'partnernames' (existing) fields
+    const allowedProperties = client.properties || client.partnernames || [];
+    return allOrdersMerged.filter((o) => 
+        allowedProperties.includes(o.property) || o.linkedHostel === allowedProperties[0]
+    );
+  }, [client, allOrdersMerged]);
 
   // Function to raise a new issue and push it to Firestore
   const addIssue = useCallback(async (newIssue) => {
@@ -84,30 +102,29 @@ export function HostelAuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const result = authenticateUser(email, password);
-    if (result.success) {
-      const clientData = {
-        ...result.client,
-        role: result.role,
-      };
-      setClient(clientData);
-      setIsAdmin(result.role === "admin");
-      sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
-
-      // Handle Firebase Auth for database rules
-      try {
-        if (result.role === "admin") {
-          // Admin gets real Firebase login
-          await signInWithEmailAndPassword(auth, email, password);
-        } else {
-          // Clients get anonymous Firebase login so they have database read/write access
-          await signInAnonymously(auth);
-        }
-      } catch (fbErr) {
-        console.warn("Firebase Auth sign-in failed:", fbErr.message);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userDoc = await getDoc(doc(db, "b2b_managers", userCredential.user.uid));
+      
+      if (!userDoc.exists()) {
+          throw new Error("User record not found in b2b_managers collection.");
       }
+
+      const userData = userDoc.data();
+      const clientData = {
+        uid: userCredential.user.uid,
+        ...userData,
+      };
+
+      setClient(clientData);
+      setIsAdmin(userData.role === "admin");
+      sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
+      
+      return { success: true, role: userData.role, client: clientData };
+    } catch (err) {
+      console.error("Login failed:", err);
+      return { success: false, error: err.message || "Invalid email or password." };
     }
-    return result;
   }, []);
 
   const setAuthenticatedUser = useCallback((clientData) => {

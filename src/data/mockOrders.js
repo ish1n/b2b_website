@@ -134,12 +134,4 @@ export const hardcodedOrders = [
     { id: "issue-3", tenant: "Issues & Complaints", date: "2026-03-07", month: 3, day: 7, amount: 0, items: 1, service: "Bags still pending for: Juhi, Saiyami, Mugdha, Inayat, Rijul, Anubhuti. Missing clothes: Palak (2), Prathana (1), Khushboo (1), Parija (3)", status: "Pending", hasIssue: true, issueType: "Bags Pending + Missing Items", reportedBy: "Operations" }
 ];
 
-export const hardcodedManagers = [
-    { id: "admin-1", role: "admin", name: "Andes Admin", email: "ceo@andes.co.in" },
-    { id: "mgr-1", role: "manager", name: "Hostel 99 Team", email: "h99@andes.com", partnernames: ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"] },
-    { id: "mgr-2", role: "manager", name: "Tulsi & Kirti Manager", email: "tulsi@andes.com", partnernames: ["Tulsi", "Kirti"] },
-    { id: "mgr-3", role: "manager", name: "Adarsha, Meera & Aardhana", email: "adarsha@andes.com", partnernames: ["Adarsha", "Meera", "Aardhana"] },
-    { id: "mgr-4", role: "manager", name: "Aakansha, Tara & Samshrushti", email: "tara@andes.com", partnernames: ["Aakansha", "Tara", "Samshrushti"] },
-    { id: "mgr-5", role: "manager", name: "B2C & Airbnb", email: "retail@andes.com", partnernames: ["Regular Customers", "Airbnb Viman Nagar"] },
-    { id: "mgr-6", role: "manager", name: "Customer Support", email: "support@andes.com", partnernames: ["Issues & Complaints"] }
-];
+

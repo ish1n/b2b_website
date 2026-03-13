@@ -8,7 +8,7 @@ import { BiRupee } from "react-icons/bi";
 import ExportCSV from "./ExportCSV";
 import OrderTable from "./OrderTable";
 
-const AVATAR_COLORS = ['#1976D2','#7C3AED','#059669','#DC2626','#D97706','#0891B2','#BE185D'];
+const AVATAR_COLORS = ['#1976D2', '#7C3AED', '#059669', '#DC2626', '#D97706', '#0891B2', '#BE185D'];
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -54,8 +54,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       map[cat.key].revenue += (o.amount || 0);
     });
     return Object.values(map).map(cat => ({
-        ...cat,
-        share: totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0
+      ...cat,
+      share: totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0
     })).sort((a, b) => b.revenue - a.revenue);
   }, [regularOrders, totalRevenue]);
 
@@ -68,7 +68,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       const issues = orders.filter(o => o.category === "ISSUES").length;
       let last = null;
       cOrders.forEach(o => { if (o.date) { const d = new Date(o.date); if (!last || d > last) last = d; } });
-      const hostelType = cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN") ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
+      const hostelType = mgr.id === "client-regular" ? "Retail" : cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN") ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
       return { ...mgr, idx, rev, kg, orders: cOrders.length, issues: 0, last, hostelType };
     }).filter(c => c.orders > 0);
 
@@ -101,7 +101,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               +12.5% vs Last Period
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
+          <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={1} minHeight={1} >
             <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
@@ -111,16 +111,16 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+              <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#3B82F6', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
-              <Area 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="#3B82F6" 
-                strokeWidth={3} 
-                fill="url(#revGrad)" 
-                dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} 
-                activeDot={{ r: 6, strokeWidth: 0 }} 
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#3B82F6"
+                strokeWidth={3}
+                fill="url(#revGrad)"
+                dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }}
+                activeDot={{ r: 6, strokeWidth: 0 }}
                 animationDuration={2000}
               />
             </AreaChart>
@@ -146,9 +146,9 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                   </div>
                 </div>
                 <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full rounded-full transition-all duration-1000 ease-out" 
-                    style={{ backgroundColor: cat.color, width: `${cat.share}%` }} 
+                  <div
+                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                    style={{ backgroundColor: cat.color, width: `${cat.share}%` }}
                   />
                 </div>
                 <div className="mt-1 flex justify-between">
@@ -170,17 +170,17 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
           <div className="flex items-center gap-2 relative">
             {/* Filter Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[12px] font-bold transition-colors ${filterType !== 'All' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-[#475569] hover:bg-gray-50'}`}>
                 <FiFilter size={14} /> {filterType === 'All' ? 'Filter' : filterType}
               </button>
               {showFilterMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl z-10 overflow-hidden py-1">
-                  {["All", "Linen", "Student"].map(f => (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden py-1">
+                  {["All", "Linen", "Student", "Retail"].map(f => (
                     <button key={f} onClick={() => { setFilterType(f); setShowFilterMenu(false); }}
                       className={`w-full text-left px-4 py-2 text-[12px] font-bold transition-colors ${filterType === f ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}>
-                      {f} Properties
+                      {f} {f === "All" ? "Sectors" : "Properties"}
                     </button>
                   ))}
                 </div>
@@ -189,7 +189,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
 
             {/* Sort Dropdown */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[12px] font-bold transition-colors ${sortConfig.key !== 'rev' || sortConfig.direction !== 'desc' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-[#475569] hover:bg-gray-50'}`}>
                 Sort <FiChevronDown size={14} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
@@ -238,11 +238,11 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-[0.05em] ${
-                        c.hostelType === 'Linen' ? 'bg-purple-100 text-purple-700' : 
-                        c.hostelType === 'Student' ? 'bg-blue-100 text-blue-700' : 
-                        'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-[0.05em] ${c.hostelType === 'Linen' ? 'bg-purple-100 text-purple-700' :
+                        c.hostelType === 'Student' ? 'bg-blue-100 text-blue-700' :
+                          c.hostelType === 'Retail' ? 'bg-emerald-100 text-emerald-700' :
+                            'bg-slate-100 text-slate-700'
+                      }`}>
                       {c.hostelType}
                     </span>
                   </td>
@@ -257,14 +257,14 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                   <td className="px-6 py-4 text-[13px] font-bold text-[#64748B] text-right">
                     {c.orders > 0 ? (
                       <div className="flex items-center justify-end gap-0.5">
-                         <BiRupee size={12} />
-                         <span>{(c.rev / c.orders).toFixed(0)}</span>
+                        <BiRupee size={12} />
+                        <span>{(c.rev / c.orders).toFixed(0)}</span>
                       </div>
                     ) : '—'}
                   </td>
                   <td className="px-6 py-4 text-[13px] font-medium text-[#94A3B8] text-center">{c.last ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(c.last) : '—'}</td>
                   <td className="px-6 py-4 text-right">
-                    <button 
+                    <button
                       onClick={() => setSelectedClient(c)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[#475569] text-[12px] font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all opacity-0 group-hover:opacity-100">
                       View <FiArrowRight size={14} />
@@ -297,33 +297,33 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               </button>
             </div>
             <div className="bg-gray-50 p-4 border-b border-gray-100 grid grid-cols-4 gap-4 flex-shrink-0">
-               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                 <p className="text-xs text-gray-400 font-medium">Total Orders</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedClient.orders}</p>
-               </div>
-               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                 <p className="text-xs text-gray-400 font-medium">KG Processed</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedClient.kg.toFixed(1)}</p>
-               </div>
-               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                 <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
-                 <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-[#1976D2]">
-                    <BiRupee size={18} />
-                    <span>{selectedClient.rev.toLocaleString()}</span>
-                 </div>
-               </div>
-               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                 <p className="text-xs text-gray-400 font-medium">Avg per Order</p>
-                 <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-gray-800">
-                    <BiRupee size={16} />
-                    <span>{selectedClient.orders > 0 ? (selectedClient.rev / selectedClient.orders).toFixed(0) : '—'}</span>
-                 </div>
-               </div>
+              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-medium">Total Orders</p>
+                <p className="text-lg font-bold text-gray-800">{selectedClient.orders}</p>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-medium">KG Processed</p>
+                <p className="text-lg font-bold text-gray-800">{selectedClient.kg.toFixed(1)}</p>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
+                <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-[#1976D2]">
+                  <BiRupee size={18} />
+                  <span>{selectedClient.rev.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-medium">Avg per Order</p>
+                <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-gray-800">
+                  <BiRupee size={16} />
+                  <span>{selectedClient.orders > 0 ? (selectedClient.rev / selectedClient.orders).toFixed(0) : '—'}</span>
+                </div>
+              </div>
             </div>
             <div className="p-6 overflow-y-auto flex-1">
-              <OrderTable 
-                orders={orders.filter(o => (selectedClient.properties || []).includes(o.property || o.tenant))} 
-                showTenant={selectedClient.properties?.length > 1} 
+              <OrderTable
+                orders={orders.filter(o => (selectedClient.properties || []).includes(o.property || o.tenant))}
+                showTenant={selectedClient.properties?.length > 1}
               />
             </div>
           </div>

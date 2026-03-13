@@ -33,7 +33,8 @@ export default function ClientCategoryOrders() {
   const { client, orders } = useHostelAuth();
   const navigate = useNavigate();
   const cat = CATEGORIES[categoryKey] || { label: categoryKey, icon: "📁", color: "#6B7280" };
-  const isGroup = client?.isGroup && client.properties?.length > 1;
+  const clientProperties = useMemo(() => client?.properties || client?.partnernames || [], [client]);
+  const isGroup = client?.isGroup && clientProperties.length > 1;
 
   const categoryOrders = useMemo(() => orders.filter((o) => o.category === categoryKey), [orders, categoryKey]);
 
