@@ -192,7 +192,7 @@ export default function AdminDashboard() {
             issues: getTrend(o => o.category === "ISSUES")
         }
     };
-  }, [orders, allOrders, allManagers, daysInRange]);
+  }, [orders, allOrders, allManagers, daysInRange, activeTab]);
 
   const clients = useMemo(() => allManagers.filter(m => m.role !== "admin"), [allManagers]);
 
