@@ -139,22 +139,55 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       color: HOSTEL_COLORS[name] || "#6B7280"
     })).filter(h => h.orders.length > 0), [linenOrders]);
 
+  // COMBINED TOTALS FOR HOSTEL SECTOR
+  const hostelTotals = useMemo(() => {
+    const combinedOrders = [...studentOrders, ...linenOrders];
+    return {
+      revenue: combinedOrders.reduce((s, o) => s + (o.amount || 0), 0),
+      orders: combinedOrders.length,
+      kg: combinedOrders.reduce((s, o) => s + (o.weight || 0), 0),
+      students: studentOrders.reduce((s, o) => s + (o.studentCount || 0), 0)
+    };
+  }, [studentOrders, linenOrders]);
+
   const activeHostels = view === "student" ? STUDENT_HOSTELS : view === "linen" ? LINEN_HOSTELS : [...STUDENT_HOSTELS, ...LINEN_HOSTELS];
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Toggle */}
-      <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm w-fit gap-1">
-        {[
-          { key: "student", label: "Student Laundry" },
-          { key: "linen", label: "Linen Hostels" },
-          { key: "all", label: "All Sectors" },
-        ].map(t => (
-          <button key={t.key} onClick={() => setView(t.key)}
-            className={`px-4 py-2 rounded-lg text-[12px] font-bold tracking-tight transition-all duration-300 ${view === t.key ? 'bg-white text-blue-600 shadow-sm border border-gray-100' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40'}`}>
-            {t.label}
-          </button>
-        ))}
+      {/* Toggle & Quick Stats */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm w-fit gap-1 text-[12px] font-bold">
+          {[
+            { key: "student", label: "Student Laundry" },
+            { key: "linen", label: "Linen Hostels" },
+            { key: "all", label: "All Sectors" },
+          ].map(t => (
+            <button key={t.key} onClick={() => setView(t.key)}
+              className={`px-4 py-2 rounded-lg transition-all duration-300 ${view === t.key ? 'bg-white text-blue-600 shadow-sm border border-gray-100' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-6 bg-white px-6 py-3 rounded-xl border border-gray-100 shadow-sm">
+           <div className="text-center md:text-left">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Sector Revenue</p>
+             <div className="flex items-center gap-0.5 text-[15px] font-black text-blue-600">
+               <BiRupee size={15} />
+               <span>{hostelTotals.revenue.toLocaleString()}</span>
+             </div>
+           </div>
+           <div className="w-px h-8 bg-gray-100" />
+           <div className="text-center md:text-left">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Weight</p>
+             <p className="text-[15px] font-black text-slate-700">{hostelTotals.kg.toFixed(0)} <span className="text-[10px] text-slate-400">KG</span></p>
+           </div>
+           <div className="w-px h-8 bg-gray-100" />
+           <div className="text-center md:text-left">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pickups</p>
+             <p className="text-[15px] font-black text-slate-700">{hostelTotals.orders}</p>
+           </div>
+        </div>
       </div>
 
       {/* Student Laundry Section */}
@@ -167,8 +200,8 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
           {/* KG Chart */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden min-w-0">
             <div className="mb-6">
-               <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
-               <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
+              <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
+              <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
             </div>
             <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
               <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0}>
@@ -183,55 +216,10 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Student Detail Table */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-50">
-               <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-0.5">Pick-up Log Detail</h2>
-               <p className="text-[12px] font-medium text-slate-400">Individual student laundry transactions</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
-                <thead className="bg-[#F8FAFC]">
-                  <tr>
-                    <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pick-up Date</th>
-                    <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Property</th>
-                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Students</th>
-                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pieces</th>
-                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Weight</th>
-                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Billed Amount</th>
-                    <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">KG/Student</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                    <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
-                      <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{o.date}</td>
-                      <td className="px-6 py-4 text-[13.5px] font-black text-[#0F172A]">{o.property}</td>
-                      <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.studentCount || '—'}</td>
-                      <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.items}</td>
-                      <td className="px-6 py-4 text-[13.5px] font-black text-slate-800 text-right">{o.weight?.toFixed(1) || '—'} <span className="text-[10px] text-slate-400 ml-0.5">kg</span></td>
-                      <td className="px-6 py-4 text-[13.5px] font-black text-blue-600 text-right">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <BiRupee size={12} className="mb-0.5" />
-                          <span>{o.amount?.toLocaleString()}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-[13px] font-black px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
-                           {o.studentCount > 0 ? (o.weight / o.studentCount).toFixed(2) : '—'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </>
       )}
 
-      {/* Linen Section */}
+      {/* Linen Section - Moved up to be visible before large student tables in 'All' mode */}
       {(view === "linen" || view === "all") && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <button onClick={() => setLinenExpanded(!linenExpanded)} className="w-full flex items-center justify-between p-6 hover:bg-[#F8FAFC] transition-colors border-b border-gray-50">
@@ -245,7 +233,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               </div>
             </div>
             <div className="bg-indigo-50 px-3 py-1 rounded-lg text-indigo-700 text-[11px] font-black uppercase tracking-wider shadow-sm">
-                Total Pickups: {linenOrders.length}
+              Total Pickups: {linenOrders.length}
             </div>
           </button>
 
@@ -291,6 +279,53 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Student Detail Table - Show last in 'All' mode to avoid burying other content */}
+      {(view === "student" || view === "all") && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-50">
+            <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-0.5">Pick-up Log Detail</h2>
+            <p className="text-[12px] font-medium text-slate-400">Individual student laundry transactions</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead className="bg-[#F8FAFC]">
+                <tr>
+                  <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pick-up Date</th>
+                  <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Property</th>
+                  <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Students</th>
+                  <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pieces</th>
+                  <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Weight</th>
+                  <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Billed Amount</th>
+                  <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">KG/Student</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studentOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
+                  <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                    <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{o.date}</td>
+                    <td className="px-6 py-4 text-[13.5px] font-black text-[#0F172A]">{o.property}</td>
+                    <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.studentCount || '—'}</td>
+                    <td className="px-6 py-4 text-[13.5px] font-bold text-slate-600 text-right">{o.items}</td>
+                    <td className="px-6 py-4 text-[13.5px] font-black text-slate-800 text-right">{o.weight?.toFixed(1) || '—'} <span className="text-[10px] text-slate-400 ml-0.5">kg</span></td>
+                    <td className="px-6 py-4 text-[13.5px] font-black text-blue-600 text-right">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <BiRupee size={12} className="mb-0.5" />
+                        <span>{o.amount?.toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-[13px] font-black px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
+                        {o.studentCount > 0 ? (o.weight / o.studentCount).toFixed(2) : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

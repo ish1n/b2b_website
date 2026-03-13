@@ -21,7 +21,6 @@ export default function Login() {
         setError("");
         setSubmitting(true);
 
-        // All auth is now hardcoded — check against hostelAuth credentials
         const result = await login(email.trim(), password);
 
         if (result.success) {
@@ -31,39 +30,7 @@ export default function Login() {
                 navigate("/client/dashboard");
             }
         } else {
-            // Fallback to Firebase Auth for existing admins/managers
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-                const user = userCredential.user;
-                
-                // Fetch the user document to determine role
-                const userDoc = await getDoc(doc(db, "b2b_partners", user.uid));
-                
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    
-                    // Inject Firebase user into our active context so AdminRoute doesn't drop them
-                    setAuthenticatedUser({
-                        id: user.uid,
-                        name: userData.name || "Admin",
-                        email: user.email,
-                        role: userData.role || "admin",
-                        properties: userData.partnernames || [],
-                    });
-
-                    if (userData.role === 'admin') {
-                        navigate('/admin');
-                    } else {
-                        // Legacy managers go to original dashboard
-                        navigate('/dashboard'); 
-                    }
-                } else {
-                    setError("User profile not found in system.");
-                }
-            } catch (err) {
-                console.error("Firebase Login Error:", err);
-                setError("Invalid email or password.");
-            }
+            setError(result.error || "Invalid email or password.");
         }
         setSubmitting(false);
     };

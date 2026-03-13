@@ -1,16 +1,16 @@
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
-export default function KpiCard({ 
-    icon: Icon, 
-    value, 
-    label, 
-    onClick, 
-    color = "blue", 
-    trend, 
-    sparklineData = [] 
+export default function KpiCard({
+    icon: Icon,
+    value,
+    label,
+    onClick,
+    color = "blue",
+    trend,
+    sparklineData = []
 }) {
     const isClickable = !!onClick;
-    
+
     // Color mapping for top border and icon backgrounds
     const colorClasses = {
         blue: { border: "border-t-[3px] border-t-blue-500", icon: "bg-blue-50 text-blue-500", spark: "#3b82f6" },
@@ -55,17 +55,17 @@ export default function KpiCard({
                         {trend.direction === 'up' ? '↑' : '↓'} {trend.text}
                     </div>
                 )}
-                
+
                 {sparklineData && sparklineData.length > 0 && (
                     <div className="w-20 h-10 flex-shrink-0 min-w-0">
-                        <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                        <ResponsiveContainer width="100%" height="100%" debounce={100} minWidth={1} minHeight={1}>
                             <LineChart data={sparklineData}>
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="v" 
-                                    stroke={config.spark} 
-                                    strokeWidth={2} 
-                                    dot={false} 
+                                <Line
+                                    type="monotone"
+                                    dataKey="v"
+                                    stroke={config.spark}
+                                    strokeWidth={2}
+                                    dot={false}
                                     animationDuration={1500}
                                 />
                             </LineChart>

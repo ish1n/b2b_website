@@ -1,13 +1,15 @@
+// src/components/AdminRegularTab.jsx
 import { useMemo, useState } from "react";
-import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle } from "react-icons/fi";
+import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle, FiCalendar } from "react-icons/fi";
 import EmptyState from "./EmptyState";
+import { BiRupee } from "react-icons/bi";
 
 const CHANNELS = ["All", "App", "WhatsApp", "Outlet", "Call", "Student"];
 const CHANNEL_ICONS = { App: FiSmartphone, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
-import { BiRupee } from "react-icons/bi";
 const CHANNEL_COLORS = { App: "#1976D2", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
 const SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Other"];
-const RATE_MAP = { "Wash & Fold": 49, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Other": 0 };
+
+const RATE_MAP = { "Wash & Fold": 55, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Other": 0 };
 
 const STATUS_BADGE = {
   Delivered: 'bg-emerald-50 text-emerald-700 border-emerald-100',
@@ -34,8 +36,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       weight: order.weight || "",
       clothes: order.items || "",
       amount: order.amount || "",
-      pickupDate: order.date || "",
-      deliveryDate: order.deliveryDate || "",
+      pickupDate: order.date || "", // Map order.date to pickupDate
+      deliveryDate: order.deliveryDate || "", // Map delivery date
       notes: order.notes || ""
     });
     setShowModal(true);
@@ -73,6 +75,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       type: "regular",
       channel: form.channel,
       date: form.pickupDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
+      deliveryDate: form.deliveryDate || "",
       amount: parseFloat(form.amount) || 0,
       status: "Confirmed",
       items: parseInt(form.clothes) || 1,
@@ -163,15 +166,15 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-[#F8FAFC]">
               <tr>
-                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Date</th>
-                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Customer Detail</th>
-                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Channel</th>
+                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Customer Identity</th>
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Service Detail</th>
-                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Stats</th>
-                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Revenue</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Stats (KG/PCS)</th>
+                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Amount (₹)</th>
+                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pickup Date</th>
+                <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Delivery Date</th>
                 <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Status</th>
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Actions</th>
               </tr>
@@ -179,7 +182,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12">
+                  <td colSpan="9" className="px-6 py-12">
                     <EmptyState
                       icon={FiInbox}
                       title="No matching transactions"
@@ -189,18 +192,17 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 </tr>
               ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
                 <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
-                  <td className="px-6 py-4 text-[13px] font-bold text-slate-500 whitespace-nowrap">{o.date}</td>
                   <td className="px-6 py-4">
                     <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{o.customerName || 'Anonymous'}</p>
                     <p className="text-[11px] font-medium text-slate-400">{o.customerNumber || 'no contact'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CHANNEL_COLORS[o.channel] || '#6B7280') + '15', color: CHANNEL_COLORS[o.channel] || '#6B7280' }}>
-                      {o.channel || 'direct'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-[13px] font-bold text-slate-700">{o.service?.split(" —")[0]}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-[13px] font-bold text-slate-700">{o.service?.split(" —")[0]}</p>
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">
+                        {o.channel || 'direct'}
+                      </span>
+                    </div>
                     <p className="text-[11px] font-medium text-slate-400 italic truncate max-w-[150px]">{o.notes || 'No special notes'}</p>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -213,12 +215,15 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                       <span>{o.amount?.toLocaleString()}</span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-[13px] font-bold text-slate-500 whitespace-nowrap">{o.date}</td>
+                  <td className="px-6 py-4 text-[13px] font-bold text-slate-500 whitespace-nowrap">{o.deliveryDate || 'Pending'}</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${STATUS_BADGE[o.status] || 'bg-gray-100 text-gray-500 border-gray-200'}`}>
                       {o.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
+...
                     <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEditModal(o)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                         <FiEdit2 size={15} />
@@ -253,6 +258,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             </div>
 
             <div className="p-8 space-y-6 overflow-y-auto">
+              {/* Customer Details */}
               <div className="grid grid-cols-2 gap-5">
                 <div className="col-span-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Customer Identity *</label>
@@ -278,6 +284,26 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                     className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-black text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none appearance-none">
                     {CHANNELS.filter(c => c !== "All").map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
+                </div>
+              </div>
+
+              {/* Added: Pickup and Delivery Dates Section */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Pickup Date</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FiCalendar size={14} /></div>
+                    <input type="date" value={form.pickupDate} onChange={e => updateForm("pickupDate", e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Delivery Date</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FiCalendar size={14} /></div>
+                    <input type="date" value={form.deliveryDate} onChange={e => updateForm("deliveryDate", e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
+                  </div>
                 </div>
               </div>
 

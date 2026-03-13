@@ -58,7 +58,9 @@ const CAT_ICONS = {
 export default function ClientDashboard() {
   const { client, orders, logout, addIssue } = useHostelAuth();
   const navigate = useNavigate();
-  const isGroup = client?.isGroup && client.properties?.length > 1;
+  // Helper to handle schema migration (properties -> partnernames)
+  const clientProperties = useMemo(() => client?.properties || client?.partnernames || [], [client]);
+  const isGroup = client?.isGroup && clientProperties.length > 1;
 
   // Filters
   const [propertyFilter, setPropertyFilter] = useState("all");
@@ -70,10 +72,17 @@ export default function ClientDashboard() {
   // Raise Issue Modal State
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [issueForm, setIssueForm] = useState({
-    property: client?.properties?.[0] || "",
+    property: clientProperties[0] || "",
     issueType: "Missing Items",
     description: ""
   });
+
+  // Keep issue form in sync if client properties load late
+  useMemo(() => {
+    if (!issueForm.property && clientProperties.length > 0) {
+      setIssueForm(prev => ({ ...prev, property: clientProperties[0] }));
+    }
+  }, [clientProperties]);
 
   // Filtered orders
   const filtered = useMemo(() => {
@@ -123,7 +132,7 @@ export default function ClientDashboard() {
   const handleSubmitIssue = async () => {
     if (!issueForm.description.trim()) return;
 
-    const selectedProperty = isGroup ? issueForm.property : client.properties[0];
+    const selectedProperty = isGroup ? issueForm.property : clientProperties[0];
     const newIssue = {
       id: `issue-client-${Date.now()}`,
       date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
@@ -241,7 +250,7 @@ export default function ClientDashboard() {
                     className="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:outline-none focus:border-brand"
                   >
                     <option value="all">All Properties</option>
-                    {client.properties.map((p) => (
+                    {clientProperties.map((p) => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
@@ -392,7 +401,7 @@ export default function ClientDashboard() {
                       onChange={(e) => setIssueForm({ ...issueForm, property: e.target.value })}
                       className="w-full rounded-xl border border-gray-200 text-sm px-4 py-2.5 focus:outline-none focus:border-red-500"
                     >
-                      {client.properties.map((p) => (
+                      {clientProperties.map((p) => (
                         <option key={p} value={p}>{p}</option>
                       ))}
                     </select>

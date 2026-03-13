@@ -4,7 +4,6 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { useHostelAuth } from "../context/HostelAuthContext";
 import { getCategoryForProperty } from "../data/hostelOrders";
-import { CLIENT_CREDENTIALS } from "../data/hostelAuth";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
 import KpiCard from "../components/KpiCard";
@@ -24,8 +23,8 @@ export default function AdminDashboard() {
   const { client, orders: baseOrders, logout } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const partner = client;
-  const allManagers = CLIENT_CREDENTIALS.filter(c => c.id !== "admin-1");
-  const loading = false;
+  const [allManagers, setAllManagers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [dateFrom, setDateFrom] = useState("2026-03-01");
@@ -38,16 +37,34 @@ export default function AdminDashboard() {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       unsubSnapshot(); // clean up any previous listener
       if (user) {
+        setLoading(true);
+        // Listen for Admin Edits
         const editsRef = collection(db, "b2b_admin_edits");
         unsubSnapshot = onSnapshot(editsRef, (snapshot) => {
           const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          console.log("Firebase edits loaded:", edits);
           setExtraOrders(edits);
+          setLoading(false);
         }, (error) => {
           console.error("Error fetching admin edits:", error);
+          setLoading(false);
         });
+
+        // Listen for Managers (Clients list)
+        const managersRef = collection(db, "b2b_managers");
+        const unsubManagers = onSnapshot(managersRef, (snapshot) => {
+          const managers = snapshot.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(m => m.role !== "admin"); // Filter out admin themselves
+          setAllManagers(managers);
+        }, (err) => {
+          console.error("Error fetching managers list:", err);
+        });
+
+        return () => { unsubSnapshot(); unsubManagers(); };
       } else {
-        setExtraOrders([]); // Clear edits on logout
+        setExtraOrders([]); 
+        setAllManagers([]);
+        setLoading(false);
       }
     });
     return () => { unsubAuth(); unsubSnapshot(); };
@@ -103,15 +120,37 @@ export default function AdminDashboard() {
 
   // KPI stats & Sparklines
   const stats = useMemo(() => {
-    const regular = orders.filter(o => o.category !== "ISSUES");
+    // Determine which orders to focus on for the KPI cards based on active tab
+    let focusOrders = orders.filter(o => o.category !== "ISSUES");
+
+    if (activeTab === "regular") {
+      focusOrders = orders.filter(o => o.type === "regular");
+    } else if (activeTab === "hostels") {
+      focusOrders = orders.filter(o => o.type === "student" || o.type === "linen");
+    } else if (activeTab === "hotels") {
+      focusOrders = orders.filter(o => o.type === "airbnb");
+    }
+    // 'overview' uses the default (all non-issue orders)
+
     const issues = orders.filter(o => o.category === "ISSUES");
     
     // Total Metrics
-    const totalRevenue = regular.reduce((s, o) => s + (o.amount || 0), 0);
-    const totalOrders = regular.length;
-    const totalKg = regular.reduce((s, o) => s + (o.weight || 0), 0);
-    const totalClients = allManagers.filter(m => m.role !== "admin").length;
+    const totalRevenue = focusOrders.reduce((s, o) => s + (o.amount || 0), 0);
+    const totalOrders = focusOrders.length;
+    const totalKg = focusOrders.reduce((s, o) => s + (o.weight || 0), 0);
+    const totalClients = activeTab === "regular"
+        ? new Set(focusOrders.filter(o => o.customerName && !o.id.includes("adj")).map(o => o.customerName)).size
+        : activeTab === "hostels"
+            ? new Set(focusOrders.map(o => o.property)).size
+            : activeTab === "hotels"
+                ? new Set(focusOrders.map(o => o.property)).size
+                : allManagers.filter(m => m.role !== "admin").length;
     const openIssuesCount = issues.filter(i => i.resolveStatus !== "Resolved").length;
+
+    // Segment Breakdowns for Overview
+    const hostelRevenue = orders.filter(o => o.type === "student" || o.type === "linen").reduce((s, o) => s + (o.amount || 0), 0);
+    const retailRevenue = orders.filter(o => o.type === "regular").reduce((s, o) => s + (o.amount || 0), 0);
+    const hotelRevenue = orders.filter(o => o.type === "airbnb").reduce((s, o) => s + (o.amount || 0), 0);
 
     // Helper: Build daily trend data for sparklines
     const getTrend = (filterFn) => {
@@ -129,10 +168,26 @@ export default function AdminDashboard() {
         totalKg, 
         totalClients, 
         openIssuesCount,
+        breakdown: { hostelRevenue, retailRevenue, hotelRevenue },
         sparklines: {
-            revenue: getTrend(o => o.category !== "ISSUES"),
-            orders: getTrend(o => o.category !== "ISSUES"),
-            kg: getTrend(o => o.category !== "ISSUES"),
+            revenue: getTrend(o => {
+                if (activeTab === "regular") return o.type === "regular";
+                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+                if (activeTab === "hotels") return o.type === "airbnb";
+                return o.category !== "ISSUES";
+            }),
+            orders: getTrend(o => {
+                if (activeTab === "regular") return o.type === "regular";
+                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+                if (activeTab === "hotels") return o.type === "airbnb";
+                return o.category !== "ISSUES";
+            }),
+            kg: getTrend(o => {
+                if (activeTab === "regular") return o.type === "regular";
+                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+                if (activeTab === "hotels") return o.type === "airbnb";
+                return o.category !== "ISSUES";
+            }),
             clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })), // Mock sparkle for static count
             issues: getTrend(o => o.category === "ISSUES")
         }
@@ -218,13 +273,13 @@ export default function AdminDashboard() {
         <div className="p-8">
             {/* KPI Cards - Hidden on Issues and Expenses tabs to reduce clutter */}
             {activeTab !== "issues" && activeTab !== "expenses" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
                     <KpiCard 
-                        label="Total Revenue" 
+                        label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
                         value={`₹${stats.totalRevenue.toLocaleString()}`} 
                         icon={BiRupee} 
                         color="blue" 
-                        trend={{ direction: 'up', text: '12% inc' }}
+                        trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue/1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
                         sparklineData={stats.sparklines.revenue}
                     />
                     <KpiCard 
@@ -244,21 +299,27 @@ export default function AdminDashboard() {
                         sparklineData={stats.sparklines.kg}
                     />
                     <KpiCard 
-                        label="B2B Clients" 
+                        label={
+                            activeTab === "regular" ? "Retail Customers" :
+                            activeTab === "hostels" ? "Managed Hostels" :
+                            activeTab === "hotels" ? "Active Properties" : "B2B Clients"
+                        } 
                         value={stats.totalClients} 
                         icon={FiUsers} 
                         color="amber" 
-                        trend={{ direction: 'up', text: 'New +2' }}
+                        trend={{ direction: 'up', text: activeTab === "overview" ? 'New +2' : 'Active' }}
                         sparklineData={stats.sparklines.clients}
                     />
-                    <KpiCard 
-                        label="Open Issues" 
-                        value={stats.openIssuesCount} 
-                        icon={FiAlertCircle} 
-                        color="red" 
-                        trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
-                        sparklineData={stats.sparklines.issues}
-                    />
+                    {activeTab === "overview" && (
+                      <KpiCard 
+                          label="Open Issues" 
+                          value={stats.openIssuesCount} 
+                          icon={FiAlertCircle} 
+                          color="red" 
+                          trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
+                          sparklineData={stats.sparklines.issues}
+                      />
+                    )}
                 </div>
             )}
 
