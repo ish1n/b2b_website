@@ -6,7 +6,7 @@ import { CATEGORIES } from "../data/hostelOrders";
 import ExpandableOrderRow from "../components/ExpandableOrderRow";
 import {
   FiLogOut, FiFilter, FiCalendar, FiX, FiDownload,
-  FiPackage, FiShoppingBag, FiTruck, FiUsers, FiAlertTriangle
+  FiPackage, FiShoppingBag, FiTruck, FiUsers, FiAlertTriangle, FiPlus
 } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import { MdScale } from "react-icons/md";
@@ -14,6 +14,7 @@ import BrandLogo from "../components/BrandLogo";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
+import AirbnbOrderForm from "../components/AirbnbOrderForm";
 
 // ── CSV export helper ──
 function exportCSV(rows, filename) {
@@ -62,6 +63,11 @@ export default function ClientDashboard() {
   const clientProperties = useMemo(() => client?.properties || client?.partnernames || [], [client]);
   const isGroup = client?.isGroup && clientProperties.length > 1;
 
+  // STRICT check: Only true if the full name is exactly "airbnb viman nagar" (case-insensitive)
+  const isSpecificAirbnb =
+    (client?.name || "").toLowerCase() === "airbnb viman nagar" ||
+    clientProperties.some(p => p.toLowerCase() === "airbnb viman nagar");
+
   // Filters
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -69,8 +75,10 @@ export default function ClientDashboard() {
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Raise Issue Modal State
+  // Modals State
   const [showIssueModal, setShowIssueModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false); // New state for Order Modal
+
   const [issueForm, setIssueForm] = useState({
     property: clientProperties[0] || "",
     issueType: "Missing Items",
@@ -172,6 +180,16 @@ export default function ClientDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* NEW: Place Order Button (Only visible for Airbnb Viman Nagar) */}
+            {isSpecificAirbnb && (
+              <button
+                onClick={() => setShowOrderModal(true)}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl transition-all shadow-sm"
+              >
+                <FiPlus size={16} /> Place Order
+              </button>
+            )}
+
             <button
               onClick={() => setShowIssueModal(true)}
               className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-all shadow-sm"
@@ -195,6 +213,7 @@ export default function ClientDashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -377,6 +396,8 @@ export default function ClientDashboard() {
           </div>
         </div>
 
+        {/* --- MODALS --- */}
+
         {/* Raise Issue Modal */}
         {showIssueModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -453,6 +474,37 @@ export default function ClientDashboard() {
             </div>
           </div>
         )}
+
+        {/* NEW: Place Order Modal (Airbnb Only) */}
+        {showOrderModal && isSpecificAirbnb && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowOrderModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up">
+
+              <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">New Pickup Order</h2>
+                  <p className="text-xs text-gray-500">Assign a new order directly to your rider</p>
+                </div>
+                <button onClick={() => setShowOrderModal(false)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[80vh] overflow-y-auto">
+                <AirbnbOrderForm
+                  clientName={client?.name}
+                  onSuccess={() => {
+                    alert("Order successfully assigned to rider!");
+                    setShowOrderModal(false);
+                  }}
+                />
+              </div>
+
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
