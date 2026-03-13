@@ -10,6 +10,50 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
   const navigate = useNavigate();
   const cat = CATEGORIES[order.category] || {};
 
+  // 1. Helper function to render modern blue chips safely for all order types
+  const renderItemChips = (order) => {
+    let itemsArray = [];
+
+    // Scenario A: Order has the partnerItems map (from our new Airbnb form)
+    if (order.partnerItems && typeof order.partnerItems === 'object') {
+      itemsArray = Object.entries(order.partnerItems).map(([name, qty]) => ({ name, qty }));
+    }
+    // Scenario B: Old Hostel Orders where order.details is already an object
+    else if (order.details && typeof order.details === 'object') {
+      itemsArray = Object.entries(order.details).map(([name, qty]) => ({ name, qty }));
+    }
+    // Scenario C: order.details or order.clothes is a comma-separated string
+    else if (typeof order.details === 'string' || typeof order.clothes === 'string') {
+      const detailsStr = typeof order.details === 'string' ? order.details : order.clothes;
+      itemsArray = detailsStr.split(',').map(itemStr => {
+        const [name, qty] = itemStr.split(':');
+        return {
+          name: name ? name.trim() : '',
+          qty: qty ? qty.trim() : ''
+        };
+      }).filter(item => item.name);
+    }
+
+    if (itemsArray.length === 0) return <span className="text-gray-400 text-sm">No items listed</span>;
+
+    // Render the modern blue chips UI
+    return (
+      <div className="flex flex-wrap gap-2 py-1">
+        {itemsArray.map((item, idx) => (
+          <span
+            key={idx}
+            className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 shadow-sm"
+          >
+            {item.name}
+            <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded-md shadow-sm">
+              {item.qty}
+            </span>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Main row — no ID column */}
@@ -59,15 +103,15 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
         <td className="px-4 py-3 text-center">
           <span
             className={`inline-block text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${order.status === "Delivered"
-                ? "bg-green-100 text-green-700"
-                : order.status === "Resolved"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : order.status === "Pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-gray-100 text-gray-600"
+              ? "bg-green-100 text-green-700"
+              : order.status === "Resolved"
+                ? "bg-emerald-100 text-emerald-700"
+                : order.status === "Pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-gray-100 text-gray-600"
               }`}
           >
-            {order.status}
+            {order.status || "Pending"}
           </span>
         </td>
         <td className="px-4 py-3 text-gray-400 group-hover:text-brand transition-colors">
@@ -82,12 +126,12 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
             {/* Key metrics row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Property" value={order.property} />
-              <MetricCard label="Category" value={cat.label} />
-              <MetricCard label="Status" value={order.status}
+              <MetricCard label="Category" value={cat.label || order.category} />
+              <MetricCard label="Status" value={order.status || "Pending"}
                 badgeClass={
                   order.status === "Delivered" ? "text-emerald-700" :
                     order.status === "Resolved" ? "text-emerald-700" :
-                      order.status === "Pending" ? "text-amber-600" : "text-gray-600"
+                      (order.status === "Pending" || !order.status) ? "text-amber-600" : "text-gray-600"
                 }
               />
               {order.customerName ? <MetricCard label="Customer" value={order.customerName} /> : null}
@@ -97,23 +141,14 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
               {order.solution ? <MetricCard label="Solution" value={order.solution} /> : null}
             </div>
 
-            {/* Linen item breakdown */}
-            {order.details && (
+            {/* Linen item breakdown (Uses the New Blue Chips) */}
+            {(order.details || order.partnerItems || order.clothes) && (
               <div className="mb-4">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Item Breakdown
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(order.details).map(([item, qty]) => (
-                    <span
-                      key={item}
-                      className="bg-white border border-brand-100 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 shadow-sm flex items-center gap-2"
-                    >
-                      <span className="text-gray-500">{item}</span>
-                      <span className="font-bold text-brand bg-brand-50 px-2 py-0.5 rounded-md">{qty}</span>
-                    </span>
-                  ))}
-                </div>
+                {/* 2. We inject the chips right here! */}
+                {renderItemChips(order)}
               </div>
             )}
 

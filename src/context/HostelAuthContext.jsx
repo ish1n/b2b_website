@@ -23,12 +23,17 @@ export function HostelAuthProvider({ children }) {
   // State to manage real-time Firestore edits (issues, modified orders)
   const [firestoreEdits, setFirestoreEdits] = useState([]);
 
+  // NEW: State to hold live orders from the Rider App (b2b_orders)
+  const [b2bOrders, setB2bOrders] = useState([]);
+
   // Listen to Firestore globally for the client to see updates in real-time
   useEffect(() => {
     let unsubSnapshot = () => { };
+    let unsubB2bOrders = () => { }; // NEW: cleanup function for b2b_orders
 
     const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      unsubSnapshot(); 
+      unsubSnapshot();
+      unsubB2bOrders();
 
       if (firebaseUser) {
         try {
@@ -49,16 +54,52 @@ export function HostelAuthProvider({ children }) {
           console.error("Auth initialization error:", err.message);
         }
 
+        // Existing listener for Admin Edits & Issues
         unsubSnapshot = onSnapshot(collection(db, "b2b_admin_edits"), (snapshot) => {
           const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
           setFirestoreEdits(edits);
         }, (error) => {
           console.error("Orders sync error:", error.message);
         });
+
+        // NEW: Real-time listener for B2B/Airbnb Orders placed via form or Rider App
+        unsubB2bOrders = onSnapshot(collection(db, "b2b_orders"), (snapshot) => {
+          const liveOrders = snapshot.docs.map(d => {
+            const data = d.data();
+
+            // Defensively map fields so the dashboard table can read them even if Rider app created them
+            let dateStr = new Date().toISOString().split("T")[0];
+            if (data.date) {
+              dateStr = data.date;
+            } else if (data.createdAt && data.createdAt.toDate) {
+              dateStr = data.createdAt.toDate().toISOString().split("T")[0];
+            }
+
+            let totalItems = data.items || 0;
+            if (!data.items && data.partnerItems) {
+              totalItems = Object.values(data.partnerItems).reduce((sum, val) => sum + Number(val), 0);
+            }
+
+            return {
+              id: d.id,
+              ...data,
+              property: data.property || data.partnerName || data.location,
+              date: dateStr,
+              category: data.category || "AIRBNB",
+              items: totalItems,
+              status: data.status || data.orderStatus || "Pending" // Default to pending if missing
+            };
+          });
+          setB2bOrders(liveOrders);
+        }, (error) => {
+          console.error("B2B Orders sync error:", error.message);
+        });
+
       } else {
         setClient(null);
         setIsAdmin(false);
         setFirestoreEdits([]);
+        setB2bOrders([]);
         sessionStorage.removeItem("hostelClient");
       }
     });
@@ -66,28 +107,35 @@ export function HostelAuthProvider({ children }) {
     return () => {
       unsubAuth();
       unsubSnapshot();
+      unsubB2bOrders(); // Cleanup on unmount
     };
   }, []);
 
-  // Merge static data with live Firestore edits
+  // Merge static data with live Firestore edits AND the new b2b_orders
   const allOrdersMerged = useMemo(() => {
     const extraIds = new Set(firestoreEdits.map(o => o.id));
     // Remove base orders that have been edited in Firestore
     const cleanBase = allHostelOrders.filter(o => !extraIds.has(o.id));
-    // Combine clean base with firestore edits, ignoring deleted records
-    return [...cleanBase, ...firestoreEdits].filter(o => !o.isDeleted);
-  }, [firestoreEdits]);
+    // Combine clean base with firestore edits and b2b orders, ignoring deleted records
+    return [...cleanBase, ...firestoreEdits, ...b2bOrders].filter(o => !o.isDeleted);
+  }, [firestoreEdits, b2bOrders]);
 
   // Filter for the specific logged-in client
   const orders = useMemo(() => {
     if (!client) return [];
     if (client.role === "admin") return allOrdersMerged;
-    
+
     // Support both 'properties' (new) and 'partnernames' (existing) fields
     const allowedProperties = client.properties || client.partnernames || [];
-    return allOrdersMerged.filter((o) => 
-        allowedProperties.includes(o.property) || o.linkedHostel === allowedProperties[0]
-    );
+
+    // Make filter case-insensitive to ensure "Airbnb Viman Nagar" matches "Airbnb viman nagar"
+    const normalizedAllowed = allowedProperties.map(p => p.toLowerCase());
+
+    return allOrdersMerged.filter((o) => {
+      const propName = (o.property || "").toLowerCase();
+      const linkedName = (o.linkedHostel || "").toLowerCase();
+      return normalizedAllowed.includes(propName) || linkedName === normalizedAllowed[0];
+    });
   }, [client, allOrdersMerged]);
 
   // Function to raise a new issue and push it to Firestore
@@ -105,9 +153,9 @@ export function HostelAuthProvider({ children }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const userDoc = await getDoc(doc(db, "b2b_managers", userCredential.user.uid));
-      
+
       if (!userDoc.exists()) {
-          throw new Error("User record not found in b2b_managers collection.");
+        throw new Error("User record not found in b2b_managers collection.");
       }
 
       const userData = userDoc.data();
@@ -119,7 +167,7 @@ export function HostelAuthProvider({ children }) {
       setClient(clientData);
       setIsAdmin(userData.role === "admin");
       sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
-      
+
       return { success: true, role: userData.role, client: clientData };
     } catch (err) {
       console.error("Login failed:", err);
