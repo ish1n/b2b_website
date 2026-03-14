@@ -1,9 +1,9 @@
+// src/pages/AdminDashboard.jsx
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { useHostelAuth } from "../context/HostelAuthContext";
-import { getCategoryForProperty } from "../data/hostelOrders";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
 import KpiCard from "../components/KpiCard";
@@ -14,10 +14,10 @@ import AdminHotelsTab from "../components/AdminHotelsTab";
 import AdminRegularTab from "../components/AdminRegularTab";
 import AdminIssuesTab from "../components/AdminIssuesTab";
 import AdminExpensesTab from "../components/AdminExpensesTab";
-import { FiHome, FiActivity, FiInbox, FiAlertCircle, FiUsers, FiTrendingUp } from "react-icons/fi";
+import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
+import { FiAlertCircle, FiUsers, FiTrendingUp, FiFileText } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import { GiWeight } from "react-icons/gi";
-
 
 export default function AdminDashboard() {
   const { client, orders: baseOrders, logout } = useHostelAuth();
@@ -31,9 +31,12 @@ export default function AdminDashboard() {
   const [dateTo, setDateTo] = useState(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]);
   const [extraOrders, setExtraOrders] = useState([]);
 
+  // Invoice Modal State
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
   // Listen to Firestore for admin edits — wait for Firebase Auth to be ready first
   useEffect(() => {
-    let unsubSnapshot = () => {};
+    let unsubSnapshot = () => { };
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       unsubSnapshot(); // clean up any previous listener
       if (user) {
@@ -62,7 +65,7 @@ export default function AdminDashboard() {
 
         return () => { unsubSnapshot(); unsubManagers(); };
       } else {
-        setExtraOrders([]); 
+        setExtraOrders([]);
         setAllManagers([]);
         setLoading(false);
       }
@@ -130,21 +133,20 @@ export default function AdminDashboard() {
     } else if (activeTab === "hotels") {
       focusOrders = orders.filter(o => o.type === "airbnb");
     }
-    // 'overview' uses the default (all non-issue orders)
 
     const issues = orders.filter(o => o.category === "ISSUES");
-    
+
     // Total Metrics
     const totalRevenue = focusOrders.reduce((s, o) => s + (o.amount || 0), 0);
     const totalOrders = focusOrders.length;
     const totalKg = focusOrders.reduce((s, o) => s + (o.weight || 0), 0);
     const totalClients = activeTab === "regular"
-        ? new Set(focusOrders.filter(o => o.customerName && !o.id.includes("adj")).map(o => o.customerName)).size
-        : activeTab === "hostels"
-            ? new Set(focusOrders.map(o => o.property)).size
-            : activeTab === "hotels"
-                ? new Set(focusOrders.map(o => o.property)).size
-                : allManagers.filter(m => m.role !== "admin").length;
+      ? new Set(focusOrders.filter(o => o.customerName && !o.id.includes("adj")).map(o => o.customerName)).size
+      : activeTab === "hostels"
+        ? new Set(focusOrders.map(o => o.property)).size
+        : activeTab === "hotels"
+          ? new Set(focusOrders.map(o => o.property)).size
+          : allManagers.filter(m => m.role !== "admin").length;
     const openIssuesCount = issues.filter(i => i.resolveStatus !== "Resolved").length;
 
     // Segment Breakdowns for Overview
@@ -154,48 +156,47 @@ export default function AdminDashboard() {
 
     // Helper: Build daily trend data for sparklines
     const getTrend = (filterFn) => {
-        return daysInRange.map(day => ({
-            v: allOrders.filter(o => {
-                const d = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
-                return d === day && filterFn(o);
-            }).reduce((s, o) => s + (o.amount || o.weight || 1), 0)
-        }));
+      return daysInRange.map(day => ({
+        v: allOrders.filter(o => {
+          const d = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
+          return d === day && filterFn(o);
+        }).reduce((s, o) => s + (o.amount || o.weight || 1), 0)
+      }));
     };
 
-    return { 
-        totalRevenue, 
-        totalOrders, 
-        totalKg, 
-        totalClients, 
-        openIssuesCount,
-        breakdown: { hostelRevenue, retailRevenue, hotelRevenue },
-        sparklines: {
-            revenue: getTrend(o => {
-                if (activeTab === "regular") return o.type === "regular";
-                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-                if (activeTab === "hotels") return o.type === "airbnb";
-                return o.category !== "ISSUES";
-            }),
-            orders: getTrend(o => {
-                if (activeTab === "regular") return o.type === "regular";
-                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-                if (activeTab === "hotels") return o.type === "airbnb";
-                return o.category !== "ISSUES";
-            }),
-            kg: getTrend(o => {
-                if (activeTab === "regular") return o.type === "regular";
-                if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-                if (activeTab === "hotels") return o.type === "airbnb";
-                return o.category !== "ISSUES";
-            }),
-            clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })), // Mock sparkle for static count
-            issues: getTrend(o => o.category === "ISSUES")
-        }
+    return {
+      totalRevenue,
+      totalOrders,
+      totalKg,
+      totalClients,
+      openIssuesCount,
+      breakdown: { hostelRevenue, retailRevenue, hotelRevenue },
+      sparklines: {
+        revenue: getTrend(o => {
+          if (activeTab === "regular") return o.type === "regular";
+          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+          if (activeTab === "hotels") return o.type === "airbnb";
+          return o.category !== "ISSUES";
+        }),
+        orders: getTrend(o => {
+          if (activeTab === "regular") return o.type === "regular";
+          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+          if (activeTab === "hotels") return o.type === "airbnb";
+          return o.category !== "ISSUES";
+        }),
+        kg: getTrend(o => {
+          if (activeTab === "regular") return o.type === "regular";
+          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
+          if (activeTab === "hotels") return o.type === "airbnb";
+          return o.category !== "ISSUES";
+        }),
+        clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })), // Mock sparkle for static count
+        issues: getTrend(o => o.category === "ISSUES")
+      }
     };
   }, [orders, allOrders, allManagers, daysInRange, activeTab]);
 
   const clients = useMemo(() => allManagers.filter(m => m.role !== "admin"), [allManagers]);
-
 
   const handleAddIssue = useCallback(async (issue) => {
     try {
@@ -218,14 +219,14 @@ export default function AdminDashboard() {
     if (!window.confirm("Are you sure you want to delete this specific record permanently?")) return;
     try {
       if (!item.id) throw new Error("ID missing for delete action");
-      
+
       const idStr = String(item.id);
       // If the ID explicitly implies it was manually created from the dashboard (not historical static data), actually delete it from Firestore
       if (idStr.startsWith("reg-new-") || idStr.startsWith("issue-new-")) {
-          await deleteDoc(doc(db, "b2b_admin_edits", idStr));
+        await deleteDoc(doc(db, "b2b_admin_edits", idStr));
       } else {
-          // Otherwise, it’s a historical static data point and we MUST use soft-delete { isDeleted: true } as an override to keep it hidden
-          await setDoc(doc(db, "b2b_admin_edits", idStr), { ...item, isDeleted: true });
+        // Otherwise, it’s a historical static data point and we MUST use soft-delete { isDeleted: true } as an override to keep it hidden
+        await setDoc(doc(db, "b2b_admin_edits", idStr), { ...item, isDeleted: true });
       }
     } catch (err) {
       console.error("Failed to delete record", err);
@@ -235,105 +236,122 @@ export default function AdminDashboard() {
   if (loading) return <LoadingSpinner fullscreen />;
 
   const getPageTitle = () => {
-    switch(activeTab) {
-        case 'overview': return 'Dashboard Overview';
-        case 'hostels': return 'Hostel Management';
-        case 'hotels': return 'Hotel & Airbnb Analytics';
-        case 'regular': return 'Regular B2C Orders';
-        case 'issues': return 'Issue Tracker';
-        case 'expenses': return 'CEO Expenses';
-        default: return 'Admin Portal';
+    switch (activeTab) {
+      case 'overview': return 'Dashboard Overview';
+      case 'hostels': return 'Hostel Management';
+      case 'hotels': return 'Hotel & Airbnb Analytics';
+      case 'regular': return 'Regular B2C Orders';
+      case 'issues': return 'Issue Tracker';
+      case 'expenses': return 'CEO Expenses';
+      default: return 'Admin Portal';
     }
   };
 
   return (
     <div className="flex min-h-screen bg-[#F1F5F9]" style={{ fontFamily: "DM Sans, sans-serif" }}>
-      <AdminSidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        issuesCount={stats.openIssuesCount} 
-        user={partner} 
+      <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        issuesCount={stats.openIssuesCount}
+        user={partner}
         onLogout={logout}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
       />
-      
+
       <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'ml-[80px]' : 'ml-[220px]'}`}>
-        <AdminTopBar 
-            title={getPageTitle()}
-            dateFrom={dateFrom}
-            setDateFrom={setDateFrom}
-            dateTo={dateTo}
-            setDateTo={setDateTo}
-            onExpensesClick={() => setActiveTab(activeTab === "expenses" ? "overview" : "expenses")}
-            isExpensesActive={activeTab === "expenses"}
-            orders={orders}
+        <AdminTopBar
+          title={getPageTitle()}
+          dateFrom={dateFrom}
+          setDateFrom={setDateFrom}
+          dateTo={dateTo}
+          setDateTo={setDateTo}
+          onExpensesClick={() => setActiveTab(activeTab === "expenses" ? "overview" : "expenses")}
+          isExpensesActive={activeTab === "expenses"}
+          orders={orders}
         />
 
         <div className="p-8">
-            {/* KPI Cards - Hidden on Issues and Expenses tabs to reduce clutter */}
-            {activeTab !== "issues" && activeTab !== "expenses" && (
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
-                    <KpiCard 
-                        label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
-                        value={`₹${stats.totalRevenue.toLocaleString()}`} 
-                        icon={BiRupee} 
-                        color="blue" 
-                        trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue/1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
-                        sparklineData={stats.sparklines.revenue}
-                    />
-                    <KpiCard 
-                        label="Total Orders" 
-                        value={stats.totalOrders} 
-                        icon={FiTrendingUp} 
-                        color="purple" 
-                        trend={{ direction: 'up', text: '5% inc' }}
-                        sparklineData={stats.sparklines.orders}
-                    />
-                    <KpiCard 
-                        label="KG Processed" 
-                        value={`${stats.totalKg.toFixed(1)}`} 
-                        icon={GiWeight} 
-                        color="green" 
-                        trend={{ direction: 'down', text: '2% dec' }}
-                        sparklineData={stats.sparklines.kg}
-                    />
-                    <KpiCard 
-                        label={
-                            activeTab === "regular" ? "Retail Customers" :
-                            activeTab === "hostels" ? "Managed Hostels" :
-                            activeTab === "hotels" ? "Active Properties" : "B2B Clients"
-                        } 
-                        value={stats.totalClients} 
-                        icon={FiUsers} 
-                        color="amber" 
-                        trend={{ direction: 'up', text: activeTab === "overview" ? 'New +2' : 'Active' }}
-                        sparklineData={stats.sparklines.clients}
-                    />
-                    {activeTab === "overview" && (
-                      <KpiCard 
-                          label="Open Issues" 
-                          value={stats.openIssuesCount} 
-                          icon={FiAlertCircle} 
-                          color="red" 
-                          trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
-                          sparklineData={stats.sparklines.issues}
-                      />
-                    )}
-                </div>
-            )}
+          {/* Generate Invoice Action Bar */}
+          <div className="flex justify-end mb-4 animate-fade-in">
+            <button
+              onClick={() => setShowInvoiceModal(true)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-xl transition-all shadow-sm"
+            >
+              <FiFileText size={18} /> Generate Invoice
+            </button>
+          </div>
 
-            {/* Tab Content */}
-            <div className="animate-fade-in">
-                {activeTab === "overview" && <AdminOverviewTab orders={orders} clients={clients} daysInRange={daysInRange} onDeleteData={handleDeleteData} />}
-                {activeTab === "hostels" && <AdminHostelsTab orders={orders} daysInRange={daysInRange} />}
-                {activeTab === "hotels" && <AdminHotelsTab orders={orders} />}
-                {activeTab === "regular" && <AdminRegularTab orders={orders} onAddOrder={handleAddOrder} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
-                {activeTab === "issues" && <AdminIssuesTab orders={orders} onAddIssue={handleAddIssue} onEditIssue={handleEditIssue} onDeleteIssue={handleDeleteData} />}
-                {activeTab === "expenses" && <AdminExpensesTab />}
+          {/* KPI Cards - Hidden on Issues and Expenses tabs to reduce clutter */}
+          {activeTab !== "issues" && activeTab !== "expenses" && (
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
+              <KpiCard
+                label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
+                value={`₹${stats.totalRevenue.toLocaleString()}`}
+                icon={BiRupee}
+                color="blue"
+                trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
+                sparklineData={stats.sparklines.revenue}
+              />
+              <KpiCard
+                label="Total Orders"
+                value={stats.totalOrders}
+                icon={FiTrendingUp}
+                color="purple"
+                trend={{ direction: 'up', text: '5% inc' }}
+                sparklineData={stats.sparklines.orders}
+              />
+              <KpiCard
+                label="KG Processed"
+                value={`${stats.totalKg.toFixed(1)}`}
+                icon={GiWeight}
+                color="green"
+                trend={{ direction: 'down', text: '2% dec' }}
+                sparklineData={stats.sparklines.kg}
+              />
+              <KpiCard
+                label={
+                  activeTab === "regular" ? "Retail Customers" :
+                    activeTab === "hostels" ? "Managed Hostels" :
+                      activeTab === "hotels" ? "Active Properties" : "B2B Clients"
+                }
+                value={stats.totalClients}
+                icon={FiUsers}
+                color="amber"
+                trend={{ direction: 'up', text: activeTab === "overview" ? 'New +2' : 'Active' }}
+                sparklineData={stats.sparklines.clients}
+              />
+              {activeTab === "overview" && (
+                <KpiCard
+                  label="Open Issues"
+                  value={stats.openIssuesCount}
+                  icon={FiAlertCircle}
+                  color="red"
+                  trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
+                  sparklineData={stats.sparklines.issues}
+                />
+              )}
             </div>
+          )}
+
+          {/* Tab Content */}
+          <div className="animate-fade-in">
+            {activeTab === "overview" && <AdminOverviewTab orders={orders} clients={clients} daysInRange={daysInRange} onDeleteData={handleDeleteData} />}
+            {activeTab === "hostels" && <AdminHostelsTab orders={orders} daysInRange={daysInRange} />}
+            {activeTab === "hotels" && <AdminHotelsTab orders={orders} />}
+            {activeTab === "regular" && <AdminRegularTab orders={orders} onAddOrder={handleAddOrder} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
+            {activeTab === "issues" && <AdminIssuesTab orders={orders} onAddIssue={handleAddIssue} onEditIssue={handleEditIssue} onDeleteIssue={handleDeleteData} />}
+            {activeTab === "expenses" && <AdminExpensesTab />}
+          </div>
         </div>
       </main>
+
+      {/* Invoice Generator Modal Component */}
+      <InvoiceGeneratorModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        orders={orders}
+      />
     </div>
   );
 }
