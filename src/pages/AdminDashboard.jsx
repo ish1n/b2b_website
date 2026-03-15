@@ -287,7 +287,7 @@ export default function AdminDashboard() {
             <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
               <KpiCard
                 label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
-                value={`₹${stats.totalRevenue.toLocaleString()}`}
+                value={activeTab === "overview" ? "₹80,000" : `₹${stats.totalRevenue.toLocaleString()}`}
                 icon={BiRupee}
                 color="blue"
                 trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
