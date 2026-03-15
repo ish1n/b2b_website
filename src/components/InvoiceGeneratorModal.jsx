@@ -1,4 +1,3 @@
-// src/components/InvoiceGeneratorModal.jsx
 import React, { useState, useMemo } from 'react';
 import { FiX, FiDownload, FiFileText } from 'react-icons/fi';
 import jsPDF from 'jspdf';
@@ -14,7 +13,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
     const [rate, setRate] = useState("55.00");
     const [clientName, setClientName] = useState("");
     const [clientAddress, setClientAddress] = useState("");
-    const [selectedProperty, setSelectedProperty] = useState("ALL");
+    const [selectedProperty, setSelectedProperty] = useState("GROUP_STUDENT");
 
     // Group Definitions
     const HOSTEL_GROUPS = {
@@ -41,7 +40,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
 
     // Extract unique properties from orders for the dropdown
     const uniqueProperties = useMemo(() => {
-        const exclusionList = ["Issues", "Regular Customers"];
+        const exclusionList = ["Issues", "Regular Customers", "Aakansha Hostel Kothurd", "Tara Hostel Kothrud"];
         const propMap = new Map(); // Lowercase Name -> Original Name
         
         orders.forEach(o => {
@@ -428,7 +427,6 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                             <label className="block text-xs font-bold text-gray-700 mb-1">Property / Grouping</label>
                             <select value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)}
                                 className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="ALL">ALL PROPERTIES (Aggregated)</option>
                                 <optgroup label="Custom Groups">
                                     {Object.entries(HOSTEL_GROUPS).map(([key, group]) => (
                                         <option key={key} value={key}>{group.label}</option>
