@@ -262,7 +262,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
         doc.setFontSize(24);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(0, 0, 0); 
-        doc.text("andes", bx + 15, by + 11);
+        doc.text("Andes", bx + 15, by + 11);
 
         doc.setFontSize(22);
         doc.setTextColor(0, 0, 0);
@@ -330,47 +330,56 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
             // Add Total Row at the bottom of the table
             foot: [['Total', totalQtySum.toFixed(2), '', formattedTotal]],
             footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
-            didDrawPage: (data) => {
-                const finalY = data.cursor.y;
-                const topMargin = 5;
-
-                // 1. Total in Words
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(0, 0, 0);
-                doc.text(`Total In Words:`, pageWidth - 80, finalY + 15, { align: "right" });
-                doc.setFont("helvetica", "italic");
-                const words = numberToIndianWords(totalAmount);
-                const splitWords = doc.splitTextToSize(words, 60);
-                doc.text(splitWords, pageWidth - 14, finalY + 15, { align: "right" });
-
-                // 2. Notes & Bank Details
-                const footerY = finalY + 45;
-                doc.setFontSize(11);
-                doc.setFont("helvetica", "bold");
-                doc.text("Notes", 14, footerY);
-                doc.setFontSize(10);
-                doc.setFont("helvetica", "normal");
-                doc.text("Thanks for your business.", 14, footerY + 6);
-
-                doc.text("Account Name: Andes Services Pvt Ltd", 14, footerY + 15);
-                doc.text("Account Number: 50200116540940", 14, footerY + 21);
-                doc.text("IFSC code: HDFC0000149", 14, footerY + 27);
-
-                // 3. Signature Area
-                const sigX = pageWidth - 60;
-                doc.setFont("helvetica", "bold");
-                doc.text("ARYAN GUPTA", sigX + 23, footerY + 20, { align: "center" });
-                doc.setFontSize(8);
-                doc.text("FOUNDER & CEO, ANDES", sigX + 23, footerY + 25, { align: "center" });
-                doc.setFontSize(10);
-                doc.text("Authorized Signature", sigX + 23, footerY + 31, { align: "center" });
-                
-                // Horizontal line for signature
-                doc.setDrawColor(200, 200, 200);
-                doc.line(sigX, footerY + 15, sigX + 46, footerY + 15);
-            }
         });
+
+        // --- FOOTER SECTION (POST-TABLE) ---
+        // Calculate where to start the footer
+        let finalY = doc.lastAutoTable.finalY || 100;
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const footerNeededSpace = 80; // Estimated height for words + notes + bank + sig
+
+        // Check if we need a new page for the footer
+        if (finalY + footerNeededSpace > pageHeight - 10) {
+            doc.addPage();
+            finalY = 20; // Start near top of new page
+        }
+
+        // 1. Total in Words
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Total In Words:`, pageWidth - 80, finalY + 15, { align: "right" });
+        doc.setFont("helvetica", "italic");
+        const words = numberToIndianWords(totalAmount);
+        const splitWords = doc.splitTextToSize(words, 60);
+        doc.text(splitWords, pageWidth - 14, finalY + 15, { align: "right" });
+
+        // 2. Notes & Bank Details
+        const footerY = finalY + 45;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("Notes", 14, footerY);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Thanks for your business.", 14, footerY + 6);
+
+        doc.text("Account Name: Andes Services Pvt Ltd", 14, footerY + 15);
+        doc.text("Account Number: 50200116540940", 14, footerY + 21);
+        doc.text("IFSC code: HDFC0000149", 14, footerY + 27);
+
+        // 3. Signature Area
+        const sigX = pageWidth - 60;
+        doc.setFont("helvetica", "bold");
+        doc.text("ARYAN GUPTA", sigX + 23, footerY + 20, { align: "center" });
+        doc.setFontSize(8);
+        doc.text("FOUNDER & CEO, ANDES", sigX + 23, footerY + 25, { align: "center" });
+        doc.setFontSize(10);
+        doc.text("Authorized Signature", sigX + 23, footerY + 31, { align: "center" });
+        
+        // Horizontal line for signature
+        doc.setDrawColor(200, 200, 200);
+        doc.line(sigX, footerY + 15, sigX + 46, footerY + 15);
+
         // Save PDF
         doc.save(`${invoiceNo}_${selectedProperty}.pdf`);
         onClose();
