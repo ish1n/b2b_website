@@ -1,6 +1,6 @@
 // src/pages/AdminDashboard.jsx
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, limit } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { useHostelAuth } from "../context/HostelAuthContext";
@@ -14,6 +14,7 @@ import AdminHotelsTab from "../components/AdminHotelsTab";
 import AdminRegularTab from "../components/AdminRegularTab";
 import AdminIssuesTab from "../components/AdminIssuesTab";
 import AdminExpensesTab from "../components/AdminExpensesTab";
+import AdminAnalyticsTab from "../components/AdminAnalyticsTab";
 import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
 import { FiAlertCircle, FiUsers, FiTrendingUp, FiFileText } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
@@ -25,6 +26,9 @@ export default function AdminDashboard() {
   const partner = client;
   const [allManagers, setAllManagers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [screenStats, setScreenStats] = useState([]);
+  const [searchStats, setSearchStats] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [dateFrom, setDateFrom] = useState("2026-03-01");
@@ -63,10 +67,30 @@ export default function AdminDashboard() {
           console.error("Error fetching managers list:", err);
         });
 
-        return () => { unsubSnapshot(); unsubManagers(); };
+        // Listen for Screen Analytics
+        const screensRef = query(collection(db, "analytics", "screens", "popular"), orderBy("visitCount", "desc"), limit(10));
+        const unsubScreens = onSnapshot(screensRef, (snapshot) => {
+          setScreenStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+        }, (err) => console.error("Error fetching screen stats:", err));
+
+        // Listen for Search Analytics
+        const searchesRef = query(collection(db, "analytics", "searches", "popular"), orderBy("count", "desc"), limit(10));
+        const unsubSearches = onSnapshot(searchesRef, (snapshot) => {
+          setSearchStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+        }, (err) => console.error("Error fetching search stats:", err));
+
+        // Listen for Total Users
+        const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+          setTotalUsers(snapshot.size);
+        }, (err) => console.error("Error fetching users:", err));
+
+        return () => { unsubSnapshot(); unsubManagers(); unsubScreens(); unsubSearches(); unsubUsers(); };
       } else {
         setExtraOrders([]);
         setAllManagers([]);
+        setScreenStats([]);
+        setSearchStats([]);
+        setTotalUsers(0);
         setLoading(false);
       }
     });
@@ -243,6 +267,7 @@ export default function AdminDashboard() {
       case 'regular': return 'Regular B2C Orders';
       case 'issues': return 'Issue Tracker';
       case 'expenses': return 'CEO Expenses';
+      case 'analytics': return 'Business Analytics';
       default: return 'Admin Portal';
     }
   };
@@ -273,21 +298,23 @@ export default function AdminDashboard() {
 
         <div className="p-8">
           {/* Generate Invoice Action Bar */}
-          <div className="flex justify-end mb-4 animate-fade-in">
-            <button
-              onClick={() => setShowInvoiceModal(true)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-xl transition-all shadow-sm"
-            >
-              <FiFileText size={18} /> Generate Invoice
-            </button>
-          </div>
+          {activeTab !== "analytics" && (
+            <div className="flex justify-end mb-4 animate-fade-in">
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-xl transition-all shadow-sm"
+              >
+                <FiFileText size={18} /> Generate Invoice
+              </button>
+            </div>
+          )}
 
-          {/* KPI Cards - Hidden on Issues and Expenses tabs to reduce clutter */}
-          {activeTab !== "issues" && activeTab !== "expenses" && (
+          {/* KPI Cards - Hidden on Analytics, Issues and Expenses tabs to reduce clutter */}
+          {activeTab !== "issues" && activeTab !== "expenses" && activeTab !== "analytics" && (
             <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
               <KpiCard
                 label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
-                value={activeTab === "overview" ? "₹80,000" : `₹${stats.totalRevenue.toLocaleString()}`}
+                value={`₹${stats.totalRevenue.toLocaleString()}`}
                 icon={BiRupee}
                 color="blue"
                 trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
@@ -342,6 +369,7 @@ export default function AdminDashboard() {
             {activeTab === "regular" && <AdminRegularTab orders={orders} onAddOrder={handleAddOrder} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
             {activeTab === "issues" && <AdminIssuesTab orders={orders} onAddIssue={handleAddIssue} onEditIssue={handleEditIssue} onDeleteIssue={handleDeleteData} />}
             {activeTab === "expenses" && <AdminExpensesTab />}
+            {activeTab === "analytics" && <AdminAnalyticsTab orders={orders} screens={screenStats} searches={searchStats} totalUsers={totalUsers} />}
           </div>
         </div>
       </main>
