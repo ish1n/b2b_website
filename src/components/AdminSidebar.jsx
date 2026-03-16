@@ -1,4 +1,4 @@
-import { FiLayout, FiHome, FiActivity, FiInbox, FiAlertCircle, FiShield, FiMapPin, FiLogOut, FiChevronLeft, FiMenu } from "react-icons/fi";
+import { FiLayout, FiHome, FiActivity, FiInbox, FiAlertCircle, FiShield, FiMapPin, FiLogOut, FiChevronLeft, FiMenu, FiPieChart } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 
 export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, user, onLogout, isCollapsed, setIsCollapsed }) {
@@ -8,6 +8,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, use
         { key: "hotels", label: "Hotels & Airbnbs", icon: FiActivity },
         { key: "regular", label: "Regular Orders", icon: FiInbox },
         { key: "issues", label: "Issues", icon: FiAlertCircle, badge: issuesCount },
+        { key: "analytics", label: "Analytics", icon: FiPieChart },
     ];
 
     return (

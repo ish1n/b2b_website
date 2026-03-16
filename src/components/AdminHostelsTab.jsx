@@ -9,6 +9,7 @@ const STUDENT_HOSTELS = ["Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha", "K
 const LINEN_HOSTELS = ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"];
 const HOSTEL_COLORS = { "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706", "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA", "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706" };
 
+
 const BarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -136,7 +137,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       const kg = ho.reduce((s, o) => s + (o.weight || 0), 0);
       const clothes = ho.reduce((s, o) => s + (o.items || 0), 0);
       const students = ho.reduce((s, o) => s + (o.studentCount || 0), 0);
-      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0); // Add revenue calculation
+      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0);
       return { name, orders: ho.length, kg, clothes, students, revenue, avgKgPerStudent: students > 0 ? kg / students : 0, color: HOSTEL_COLORS[name] || "#6B7280" };
     }).filter(h => h.orders > 0), [studentOrders]);
 
@@ -154,28 +155,16 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
   const linenSummaries = useMemo(() =>
     LINEN_HOSTELS.map(name => {
       const ho = linenOrders.filter(o => o.property === name);
-      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0); // Add revenue calculation
+      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0);
       return {
         name, orders: ho, revenue,
         color: HOSTEL_COLORS[name] || "#6B7280"
       };
     }).filter(h => h.orders.length > 0), [linenOrders]);
 
-  const hostelTotals = useMemo(() => {
-    const combinedOrders = [...studentOrders, ...linenOrders];
-    return {
-      revenue: combinedOrders.reduce((s, o) => s + (o.amount || 0), 0),
-      orders: combinedOrders.length,
-      kg: combinedOrders.reduce((s, o) => s + (o.weight || 0), 0),
-      students: studentOrders.reduce((s, o) => s + (o.studentCount || 0), 0)
-    };
-  }, [studentOrders, linenOrders]);
-
   const unifiedOrders = useMemo(() => {
     return [...studentOrders, ...linenOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [studentOrders, linenOrders]);
-
-  const activeHostels = view === "student" ? STUDENT_HOSTELS : view === "linen" ? LINEN_HOSTELS : [...STUDENT_HOSTELS, ...LINEN_HOSTELS];
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -243,7 +232,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
 
       {/* Transaction Log Section */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-0.5">
               {view === "all" ? "Unified Hostel Transaction Log" : view === "student" ? "Student Laundry Pick-up Log" : "Linen Management Log"}
@@ -252,6 +241,8 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               {view === "all" ? "Combined records for student and linen sectors" : "Individual property transactions"}
             </p>
           </div>
+
+
           {view === "all" && (
             <div className="flex gap-2">
               <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase">Students</span>
@@ -266,7 +257,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Date</th>
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Property / Type</th>
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Metric / Qty</th>
-                <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Details</th>
+                <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Details</th>
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Billed Amount</th>
               </tr>
             </thead>
@@ -297,14 +288,17 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex flex-wrap justify-end gap-1">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex flex-wrap justify-center gap-2">
                         {o.type === 'student' ? (
-                          <span className="text-[11px] font-bold text-slate-500 italic">Wash & Fold</span>
+                          <span className="text-[11px] font-bold text-slate-500 italic">Wash & Fold/Iron</span>
                         ) : (
                           Object.entries(o.details || {}).filter(([, v]) => v > 0).map(([k, v]) => (
-                            <span key={k} className="text-[10px] font-black bg-slate-50 text-slate-500 px-2 py-0.5 rounded shadow-sm whitespace-nowrap">
-                              {k.charAt(0)}: {v}
+                            <span 
+                              key={k} 
+                              className="text-[10px] font-bold bg-[#F1F5F9] text-slate-600 px-2 py-0.5 rounded whitespace-nowrap"
+                            >
+                              {k}: {v}
                             </span>
                           ))
                         )}
