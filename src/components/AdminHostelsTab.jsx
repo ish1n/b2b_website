@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiChevronDown, FiChevronRight, FiXCircle } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
-
+import AdminOrderModal from "./AdminOrderModal";
 const STUDENT_HOSTELS = ["Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha", "Kirti", "Tara", "Samshrushti"];
 const LINEN_HOSTELS = ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"];
 const HOSTEL_COLORS = { "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706", "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA", "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706" };
@@ -126,6 +126,15 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
 export default function AdminHostelsTab({ orders, daysInRange }) {
   const [view, setView] = useState("student");
   const [linenExpanded, setLinenExpanded] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [propertyFilter, setPropertyFilter] = useState("All");
+  const [chartDateFilter, setChartDateFilter] = useState(null);
+
+  const handleViewChange = (newView) => {
+    setView(newView);
+    setPropertyFilter("All");
+  };
 
   const studentOrders = useMemo(() => orders.filter(o => o.type === "student"), [orders]);
   const linenOrders = useMemo(() => orders.filter(o => o.type === "linen"), [orders]);
@@ -176,7 +185,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             { key: "linen", label: "Linen Hostels" },
             { key: "all", label: "All Sectors" },
           ].map(t => (
-            <button key={t.key} onClick={() => setView(t.key)}
+            <button key={t.key} onClick={() => handleViewChange(t.key)}
               className={`px-4 py-2 rounded-lg transition-all duration-300 ${view === t.key ? 'bg-white text-blue-600 shadow-sm border border-gray-100' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40'}`}>
               {t.label}
             </button>
@@ -216,14 +225,14 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
           </div>
           <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
-            <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0}>
+            <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0} onClick={(data) => { if(data && data.activeLabel) setChartDateFilter(data.activeLabel); }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
               <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} />
               <Tooltip content={<BarTooltip />} cursor={{ fill: '#F8FAFC' }} />
-              <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }} />
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }} />
               {studentSummaries.map(s => (
-                <Bar key={s.name} dataKey={s.name} stackId="a" fill={s.color} radius={[3, 3, 0, 0]} maxBarSize={40} animationDuration={1500} />
+                <Bar key={s.name} dataKey={s.name} stackId="a" fill={s.color} radius={[3, 3, 0, 0]} maxBarSize={40} animationDuration={1500} className="cursor-pointer" />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -242,13 +251,32 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             </p>
           </div>
 
-
-          {view === "all" && (
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase">Students</span>
-              <span className="px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-black rounded uppercase">Linen</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {chartDateFilter && (
+              <button 
+                onClick={() => setChartDateFilter(null)}
+                className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-indigo-100 transition-colors"
+              >
+                Day {chartDateFilter} <FiXCircle size={14} />
+              </button>
+            )}
+            {view === "all" && (
+              <div className="hidden sm:flex gap-2">
+                <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase">Students</span>
+                <span className="px-2 py-1 bg-purple-50 text-purple-600 text-[10px] font-black rounded uppercase">Linen</span>
+              </div>
+            )}
+            <select
+                value={propertyFilter}
+                onChange={(e) => setPropertyFilter(e.target.value)}
+                className="bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 cursor-pointer"
+            >
+                <option value="All">All {view === "all" ? "Properties" : view === "student" ? "Student Hostels" : "Linen Hostels"}</option>
+                {(view === "all" ? [...STUDENT_HOSTELS, ...LINEN_HOSTELS] : view === "student" ? STUDENT_HOSTELS : LINEN_HOSTELS).map(h => (
+                    <option key={h} value={h}>{h}</option>
+                ))}
+            </select>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
@@ -263,9 +291,19 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             </thead>
             <tbody>
               {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
+                .filter(o => propertyFilter === "All" || o.property === propertyFilter)
+                .filter(o => {
+                  if (!chartDateFilter) return true;
+                  const day = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
+                  return day === chartDateFilter;
+                })
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(o => (
-                  <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                  <tr 
+                    key={o.id} 
+                    onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+                    className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
+                  >
                     <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{o.date}</td>
                     <td className="px-6 py-4">
                       <p className="text-[13.5px] font-black text-[#0F172A]">{o.property}</p>
@@ -305,9 +343,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-[13.5px] font-black text-blue-600 text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <BiRupee size={12} className="mb-0.5" />
-                        <span>{o.amount?.toLocaleString()}</span>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center gap-0.5">
+                          <BiRupee size={12} className="mb-0.5" />
+                          <span>{o.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <FiChevronRight size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors ml-1" />
                       </div>
                     </td>
                   </tr>
@@ -316,6 +357,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
           </table>
         </div>
       </div>
+
+      <AdminOrderModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        order={selectedOrder} 
+      />
     </div>
   );
 }

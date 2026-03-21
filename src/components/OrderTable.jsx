@@ -9,7 +9,7 @@ const STATUS_BADGE = {
     Pending: 'bg-orange-100 text-[#FF6B35]',
 };
 
-export default function OrderTable({ orders = [], showTenant = true, onDelete }) {
+export default function OrderTable({ orders = [], showTenant = true, onDelete, onRowClick }) {
     if (orders.length === 0) {
         return (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -47,7 +47,8 @@ export default function OrderTable({ orders = [], showTenant = true, onDelete })
                             return (
                                 <tr
                                     key={order.id || i}
-                                    className={`border-b border-gray-50 transition-colors cursor-pointer ${isIssue
+                                    onClick={onRowClick ? () => onRowClick(order) : undefined}
+                                    className={`border-b border-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${isIssue
                                         ? 'bg-red-50/40 hover:bg-red-50/60'
                                         : 'hover:bg-gray-50/80'
                                         }`}

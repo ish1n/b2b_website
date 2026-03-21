@@ -1,8 +1,9 @@
 // src/components/AdminRegularTab.jsx
 import { useMemo, useState } from "react";
-import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle, FiCalendar } from "react-icons/fi";
+import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle, FiCalendar, FiChevronRight } from "react-icons/fi";
 import EmptyState from "./EmptyState";
 import { BiRupee } from "react-icons/bi";
+import AdminOrderModal from "./AdminOrderModal";
 
 const CHANNELS = ["All", "App", "WhatsApp", "Outlet", "Call", "Student"];
 const CHANNEL_ICONS = { App: FiSmartphone, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
@@ -21,6 +22,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
   const [channelFilter, setChannelFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState("");
+  const [selectedDrilldownOrder, setSelectedDrilldownOrder] = useState(null);
+  const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
   const [form, setForm] = useState({
     customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold",
     weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null
@@ -191,7 +194,11 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   </td>
                 </tr>
               ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
-                <tr key={o.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                <tr 
+                  key={o.id} 
+                  onClick={() => { setSelectedDrilldownOrder(o); setIsDrilldownOpen(true); }}
+                  className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{o.customerName || 'Anonymous'}</p>
                     <p className="text-[11px] font-medium text-slate-400">{o.customerNumber || 'no contact'}</p>
@@ -225,14 +232,15 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   <td className="px-6 py-4 text-right">
 ...
                     <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEditModal(o)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                      <button onClick={(e) => { e.stopPropagation(); openEditModal(o); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                         <FiEdit2 size={15} />
                       </button>
                       {onDeleteOrder && (
-                        <button onClick={() => onDeleteOrder(o)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteOrder(o); }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                           <FiTrash2 size={15} />
                         </button>
                       )}
+                      <FiChevronRight size={16} className="text-slate-400 ml-1" />
                     </div>
                   </td>
                 </tr>
@@ -368,6 +376,13 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
           </div>
         </div>
       )}
+
+      {/* Deep Drill-Down Order Modal */}
+      <AdminOrderModal 
+        isOpen={isDrilldownOpen}
+        onClose={() => setIsDrilldownOpen(false)}
+        order={selectedDrilldownOrder}
+      />
     </div>
   );
 }

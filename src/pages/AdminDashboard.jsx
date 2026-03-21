@@ -23,6 +23,15 @@ import { GiWeight } from "react-icons/gi";
 export default function AdminDashboard() {
   const { client, orders: baseOrders, logout } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSidebarCollapsed(window.innerWidth < 1024);
+    };
+    handleResize(); // Set initial state correctly
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const partner = client;
   const [allManagers, setAllManagers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +307,7 @@ export default function AdminDashboard() {
 
         <div className="p-8">
           {/* Generate Invoice Action Bar */}
-          {activeTab !== "analytics" && (
+          {['overview', 'hostels', 'hotels', 'regular'].includes(activeTab) && (
             <div className="flex justify-end mb-4 animate-fade-in">
               <button
                 onClick={() => setShowInvoiceModal(true)}
@@ -314,10 +323,11 @@ export default function AdminDashboard() {
             <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
               <KpiCard
                 label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
-                value={`₹${stats.totalRevenue.toLocaleString()}`}
+                value={`₹${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 icon={BiRupee}
                 color="blue"
-                trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : { direction: 'up', text: '12% inc' }}
+                onClick={() => setActiveTab("overview")}
+                trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : null}
                 sparklineData={stats.sparklines.revenue}
               />
               <KpiCard
@@ -325,7 +335,7 @@ export default function AdminDashboard() {
                 value={stats.totalOrders}
                 icon={FiTrendingUp}
                 color="purple"
-                trend={{ direction: 'up', text: '5% inc' }}
+                onClick={() => setActiveTab("overview")}
                 sparklineData={stats.sparklines.orders}
               />
               <KpiCard
@@ -333,7 +343,7 @@ export default function AdminDashboard() {
                 value={`${stats.totalKg.toFixed(1)}`}
                 icon={GiWeight}
                 color="green"
-                trend={{ direction: 'down', text: '2% dec' }}
+                onClick={() => setActiveTab("hostels")}
                 sparklineData={stats.sparklines.kg}
               />
               <KpiCard
@@ -345,7 +355,7 @@ export default function AdminDashboard() {
                 value={stats.totalClients}
                 icon={FiUsers}
                 color="amber"
-                trend={{ direction: 'up', text: activeTab === "overview" ? 'New +2' : 'Active' }}
+                onClick={() => { if (activeTab === "overview") setActiveTab("regular"); }}
                 sparklineData={stats.sparklines.clients}
               />
               {activeTab === "overview" && (
@@ -354,6 +364,7 @@ export default function AdminDashboard() {
                   value={stats.openIssuesCount}
                   icon={FiAlertCircle}
                   color="red"
+                  onClick={() => setActiveTab("issues")}
                   trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
                   sparklineData={stats.sparklines.issues}
                 />
