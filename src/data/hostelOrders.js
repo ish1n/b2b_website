@@ -65,6 +65,9 @@ const tulsiOrders = [
   { id: "tulsi-11", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 660, status: "Delivered", items: 24, weight: 12.0, studentCount: 5, service: "5 Students, 24 clothes, 12.0 KG" },
   { id: "tulsi-16", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 973.5, status: "Delivered", items: 68, weight: 17.7, studentCount: 8, service: "8 Students, 68 clothes, 17.7 KG" },
   { id: "tulsi-18", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-18", amount: 1666.5, status: "Delivered", items: 136, weight: 30.3, studentCount: 12, service: "12 Students, 136 clothes, 30.3 KG" },
+  { id: "tulsi-21", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 731.5, status: "Pickup Done", items: 69, weight: 13.3, studentCount: 7, service: "7 Students, 69 clothes, 13.3 KG" },
+
+  
 ];
 
 // ==================== ADARSHA HOSTEL — STUDENT LAUNDRY ====================
@@ -77,6 +80,7 @@ const adarshaOrders = [
   { id: "adarsha-11", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 2227.5, status: "Delivered", items: 85, weight: 40.5, studentCount: 9, service: "9 Students, 85 clothes, 40.5 KG" },
   { id: "adarsha-13", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-13", amount: 3476, status: "Delivered", items: 185, weight: 63.2, studentCount: 21, service: "21 Students, 185 clothes, 63.2 KG" },
   { id: "adarsha-16", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 621.5, status: "Delivered", items: 41, weight: 11.3, studentCount: 7, service: "7 Students, 41 clothes, 11.3 KG" },
+  { id: "adarsha-21", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 1541.54 , status: "Pickup Done", items: 157, weight: 28.028, studentCount: 20, service: "20 Students, 157 clothes, 28.028 KG" },
 ];
 
 // ==================== MEERA HOSTEL — STUDENT LAUNDRY ====================
@@ -94,6 +98,7 @@ const meeraOrders = [
   { id: "meera-16", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 1149.5, status: "Delivered", items: 63, weight: 20.9, studentCount: 8, service: "8 Students, 63 clothes, 20.9 KG" },
   { id: "meera-18", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 129.25, status: "Delivered", items: 11, weight: 2.35, studentCount: 1, service: "1 Student, 11 clothes, 2.35 KG" },
   { id: "meera-19", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 1314.5, status: "Delivered", items: 105, weight: 23.9, studentCount: 12, service: "12 Students, 105 clothes, 23.9 KG" },
+  { id: "meera-21", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 773.3, status: "Delivered", items: 63, weight: 14.06, studentCount: 10, service: "10 Students, 80 clothes, 18.5 KG" },
 
 ];
 
@@ -106,6 +111,9 @@ const kirtiOrders = [
   { id: "kirti-12", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-12", amount: 605, status: "Delivered", items: 21, weight: 11, service: "21 clothes, 11 KG" },
   { id: "kirti-14", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 418, status: "Delivered", items: 32, weight: 7.6, service: "32 clothes, 7.6 KG" },
   { id: "kirti-17", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 265.1, status: "Delivered", items: 20, weight: 4.82, service: "20 clothes, 4.82 KG" },
+  { id: "kirti-21", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 115.5 , status: "Pickup Done", items: 10, weight: 2.1, service: "10 clothes, 2.1 KG" },
+
+
 
 ];
 
@@ -114,7 +122,8 @@ const aardhanaOrders = [
   { id: "aardhana-01", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-01", amount: 1122, status: "Delivered", items: 44, weight: 20.4, studentCount: 5, service: "5 Students, 44 clothes, 20.4 KG" },
   { id: "aardhana-09", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 221.925, status: "Delivered", items: 13, weight: 4.035, studentCount: 3, service: "3 Students, 13 clothes, 4.035 KG" },
   { id: "aardhana-11", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 357.5, status: "Delivered", items: 10, weight: 6.5, studentCount: 3, service: "3 Students, 10 clothes, 6.5 KG" },
-  { id: "aardhana-13", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-13", amount: 544.5, status: "Delivered", items: 34, weight: 9.9, studentCount: 5, service: "5 Students, 34 clothes, 9.9 KG" },
+
+  { id: "aardhana-21", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 405, status: "Delivered", items: 28, weight: 7, studentCount: 4, service: "4 Students, 28 clothes, 7 KG" },
 
 ];
 
@@ -124,6 +133,7 @@ const aakanshaOrders = [
   { id: "aakansha-08", property: "Aakansha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-08", amount: 1182.5, status: "Delivered", items: 44, weight: 21.5, service: "44 clothes, 21.5 KG" },
   { id: "aakansha-10", property: "Aakansha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-10", amount: 220, status: "Delivered", items: 8, weight: 4.0, service: "8 clothes, 4.0 KG" },
   { id: "aakansha-11", property: "Aakansha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-12", amount: 80.85, status: "Delivered", items: 7, weight: 1.47, service: "7 clothes, 1.47 KG" },
+  { id: "aakansha-21", property: "Aakansha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 523.765, status: "Delivered", items: 53, weight: 9.523, service: "53 clothes, 9.523 KG" },
 ];
 
 // ==================== TARA HOSTEL — STUDENT LAUNDRY ====================
@@ -136,7 +146,9 @@ const taraOrders = [
   { id: "tara-12", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-12", amount: 423.5, status: "Delivered", items: 23, weight: 7.7, service: "23 clothes, 7.7 KG" },
   { id: "tara-14", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 550, status: "Delivered", items: 20, weight: 10, service: "20 clothes, 10 KG" },
   { id: "tara-17", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 760.65, status: "Delivered", items: 38, weight: 13.83, service: "38 clothes, 13.83 KG" },
-  { id: "tara-19", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 71.5, status: "Delivered", items: 4, weight: 1.3, service: "4 clothes, 1.3 KG" },
+
+  { id: "tara-21", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 305, status: "Pickup Done", items: 17, weight: 5, service: "17 clothes, 5 KG" },
+
 
 
 ];
@@ -150,6 +162,7 @@ const samshrushtiOrders = [
   { id: "sam-12", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-12", amount: 803, status: "Delivered", items: 46, weight: 14.6, service: "46 clothes, 14.6 KG" },
   { id: "sam-14", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 407, status: "Delivered", items: 30, weight: 7.4, service: "30 clothes, 7.4 KG" },
   { id: "sam-19", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 186.45, status: "Delivered", items: 16, weight: 3.39, service: "16 clothes, 3.39 KG" },
+  { id: "sam-21", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 280.5, status: "Pickup Done", items: 17, weight: 5.1, service: "17 clothes, 5.1 KG" },
 
 ];
 
