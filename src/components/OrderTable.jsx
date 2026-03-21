@@ -24,17 +24,21 @@ export default function OrderTable({ orders = [], showTenant = true, onDelete, o
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
-                <ExportCSV orders={orders} />
+            <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-50">
+                <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
+                <div className="flex gap-2">
+                    <ExportCSV orders={orders} />
+                </div>
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Desktop Table - Hidden on Mobile */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[800px]">
                     <thead>
-                        <tr className="bg-gray-50/50">
-                            <th className="text-left text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Date</th>
-                            {showTenant && <th className="text-left text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Tenant</th>}
-                            <th className="text-left text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Order Details</th>
+                        <tr className="bg-gray-50/50 text-left">
+                            <th className="text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Date</th>
+                            {showTenant && <th className="text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Tenant</th>}
+                            <th className="text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Order Details</th>
                             <th className="text-right text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Clothes</th>
                             <th className="text-right text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Amount</th>
                             <th className="text-center text-xs font-bold text-gray-500 px-6 py-4 uppercase tracking-wider">Status</th>
@@ -81,18 +85,18 @@ export default function OrderTable({ orders = [], showTenant = true, onDelete, o
                                         ) : '—'}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                            order.status === "Delivered" ? "bg-green-100 text-green-700" :
-                                            order.status === "Pending" ? "bg-yellow-100 text-yellow-800" :
-                                            order.status === "Confirmed" ? "bg-blue-100 text-blue-700" :
-                                            "bg-red-100 text-red-700"
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                            order.status === "Delivered" ? "bg-green-50 text-green-700" :
+                                            order.status === "Pending" ? "bg-amber-50 text-amber-700" :
+                                            order.status === "Confirmed" ? "bg-blue-50 text-blue-700" :
+                                            "bg-red-50 text-red-700"
                                         }`}>
                                             {order.status}
                                         </span>
                                     </td>
                                     {onDelete && (
                                         <td className="px-6 py-4 text-right">
-                                            <button onClick={() => onDelete(order)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                            <button onClick={(e) => { e.stopPropagation(); onDelete(order); }} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                                                 <FiTrash2 size={16} />
                                             </button>
                                         </td>
@@ -102,6 +106,52 @@ export default function OrderTable({ orders = [], showTenant = true, onDelete, o
                         })}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-50">
+                {orders.map((order, i) => (
+                    <div 
+                        key={order.id || i}
+                        onClick={onRowClick ? () => onRowClick(order) : undefined}
+                        className={`p-4 active:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                                    {order.date || `${order.day}/${order.month}`}
+                                </p>
+                                <h4 className="text-sm font-bold text-gray-900">
+                                    {order.property || order.tenant}
+                                </h4>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                order.status === "Delivered" ? "bg-green-50 text-green-700" :
+                                order.status === "Pending" ? "bg-amber-50 text-amber-700" :
+                                order.status === "Confirmed" ? "bg-blue-50 text-blue-700" :
+                                "bg-red-50 text-red-700"
+                            }`}>
+                                {order.status}
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-3 bg-gray-50/50 p-2 rounded-lg border border-gray-100/50">
+                            {order.service}
+                        </p>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100/50">
+                             <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Amount</span>
+                                <div className="flex items-center gap-0.5 text-sm font-black text-gray-900">
+                                    <BiRupee size={12} className="text-gray-400" />
+                                    <span>{order.amount?.toLocaleString() || '—'}</span>
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block">Items</span>
+                                <span className="text-xs font-bold text-slate-700">{order.items || 0} Clothes</span>
+                             </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -5,21 +5,21 @@ import EmptyState from "./EmptyState";
 
 // Re-using the card style for the main stats
 const StatCard = ({ label, value, icon, color, subValue }) => (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
+    <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
         <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors ${
                 color === 'indigo' ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white' :
                 color === 'emerald' ? 'bg-emerald-50 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white' :
                 color === 'amber' ? 'bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white' :
                 'bg-gray-50 text-gray-500 group-hover:bg-gray-500 group-hover:text-white'
             }`}>
-                {icon}
+                {React.cloneElement(icon, { size: 20, className: 'sm:w-6 sm:h-6' })}
             </div>
-            <p className="text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-tight">Real-time</p>
+            <p className="text-[10px] sm:text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md uppercase tracking-tight">Real-time</p>
         </div>
-        <p className="text-[14px] font-bold text-gray-500 mb-1">{label}</p>
-        <p className="text-3xl font-black text-gray-900 mb-1">{value}</p>
-        <p className="text-[12px] font-bold text-gray-400">{subValue}</p>
+        <p className="text-[13px] sm:text-[14px] font-bold text-gray-500 mb-1">{label}</p>
+        <p className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">{value}</p>
+        <p className="text-[11px] sm:text-[12px] font-bold text-gray-400">{subValue}</p>
     </div>
 );
 
@@ -109,10 +109,10 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
     return (
         <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             {/* Sub-navigation Tabs */}
-            <div className="flex items-center gap-8 border-b border-gray-200">
+            <div className="flex items-center gap-4 sm:gap-8 border-b border-gray-200 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
                 <button 
                     onClick={() => setSubTab("stats")}
-                    className={`pb-4 text-sm font-bold transition-all relative ${subTab === 'stats' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${subTab === 'stats' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     <div className="flex items-center gap-2">
                         <FiGlobe size={18} />
@@ -122,7 +122,7 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                 </button>
                 <button 
                     onClick={() => setSubTab("screens")}
-                    className={`pb-4 text-sm font-bold transition-all relative ${subTab === 'screens' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${subTab === 'screens' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     <div className="flex items-center gap-2">
                         <FiMonitor size={18} />
@@ -132,7 +132,7 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                 </button>
                 <button 
                     onClick={() => setSubTab("searches")}
-                    className={`pb-4 text-sm font-bold transition-all relative ${subTab === 'searches' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${subTab === 'searches' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     <div className="flex items-center gap-2">
                         <FiSearch size={18} />
@@ -142,11 +142,11 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                 </button>
                 <button 
                     onClick={() => setSubTab("services")}
-                    className={`pb-4 text-sm font-bold transition-all relative ${subTab === 'services' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${subTab === 'services' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     <div className="flex items-center gap-2">
                         <FiLayers size={18} />
-                        Services Ordered
+                        Services
                     </div>
                     {subTab === 'services' && <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-600 rounded-t-full" />}
                 </button>
@@ -159,28 +159,28 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                             <StatCard 
                                 label="Total Orders" 
                                 value={orders.length} 
-                                icon={<FiShoppingBag size={24} />} 
+                                icon={<FiShoppingBag />} 
                                 color="indigo"
                                 subValue="Overall Total"
                             />
                             <StatCard 
                                 label="Total Users" 
                                 value={totalUsers} 
-                                icon={<FiUsers size={24} />} 
+                                icon={<FiUsers />} 
                                 color="emerald"
                                 subValue="Registered App Users"
                             />
                             <StatCard 
                                 label="Services" 
                                 value={serviceStats.length} 
-                                icon={<FiLayers size={24} />} 
+                                icon={<FiLayers />} 
                                 color="amber"
                                 subValue="Active Service Types"
                             />
                             <StatCard 
                                 label="Revenue (B2C)" 
                                 value={`₹${totalRevenue.toLocaleString()}`} 
-                                icon={<BiRupee size={24} />} 
+                                icon={<BiRupee />} 
                                 color="indigo"
                                 subValue="B2C Total"
                             />

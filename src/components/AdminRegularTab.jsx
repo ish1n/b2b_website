@@ -116,27 +116,27 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       )}
 
       {/* Channel Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {CHANNELS.filter(c => c !== "All").map(ch => {
           const Icon = CHANNEL_ICONS[ch];
           const stats = channelStats[ch];
           const isActive = channelFilter === ch;
           return (
             <button key={ch} onClick={() => setChannelFilter(ch === channelFilter ? "All" : ch)}
-              className={`group bg-white rounded-xl border p-5 text-left transition-all duration-300 relative overflow-hidden ${isActive ? 'border-blue-500 shadow-md ring-1 ring-blue-500/20' : 'border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`} style={!isActive ? { color: CHANNEL_COLORS[ch], backgroundColor: CHANNEL_COLORS[ch] + '10' } : {}}>
-                  <Icon size={18} />
+              className={`group bg-white rounded-xl border p-3.5 sm:p-5 text-left transition-all duration-300 relative overflow-hidden ${isActive ? 'border-blue-500 shadow-md ring-1 ring-blue-500/20' : 'border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200'}`}>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`} style={!isActive ? { color: CHANNEL_COLORS[ch], backgroundColor: CHANNEL_COLORS[ch] + '10' } : {}}>
+                  <Icon size={16} />
                 </div>
-                {isActive && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />}
+                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
               </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{ch}</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-[20px] font-black text-[#0F172A] tracking-tight">{stats.count}</p>
-                <p className="text-[11px] font-bold text-slate-400">orders</p>
+              <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{ch}</p>
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
+                <p className="text-lg sm:text-[20px] font-black text-[#0F172A] tracking-tight">{stats.count}</p>
+                <p className="text-[10px] sm:text-[11px] font-bold text-slate-400">orders</p>
               </div>
-              <div className="flex items-center gap-0.5 text-[12px] font-black text-blue-600 mt-1">
-                <BiRupee size={12} className="mb-0.5" />
+              <div className="flex items-center gap-0.5 text-[11px] sm:text-[12px] font-black text-blue-600 mt-1">
+                <BiRupee size={10} className="mb-0.5" />
                 <span>{stats.revenue.toLocaleString()}</span>
               </div>
             </button>
@@ -162,13 +162,15 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
 
       {/* Order Log Table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-gray-50 flex items-center justify-between">
           <div>
             <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-0.5">Retail Transaction Log</h2>
             <p className="text-[12px] font-medium text-slate-400 uppercase tracking-widest">{filtered.length} total orders found</p>
           </div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Order Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[900px]">
             <thead className="bg-[#F8FAFC]">
               <tr>
@@ -230,8 +232,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-...
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button onClick={(e) => { e.stopPropagation(); openEditModal(o); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                         <FiEdit2 size={15} />
                       </button>
@@ -247,6 +248,57 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card Layout */}
+        <div className="md:hidden divide-y divide-gray-50 uppercase tracking-tight">
+           {filtered.length === 0 ? (
+             <div className="p-8 text-center text-slate-400 text-xs italic uppercase">No matching transactions</div>
+           ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
+             <div 
+               key={o.id}
+               onClick={() => { setSelectedDrilldownOrder(o); setIsDrilldownOpen(true); }}
+               className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
+             >
+               <div className="flex justify-between items-start mb-3">
+                 <div>
+                   <h4 className="text-sm font-black text-[#0F172A]">{o.customerName || 'Anonymous'}</h4>
+                   <p className="text-[10px] font-bold text-slate-400">{o.customerNumber || 'NO CONTACT'}</p>
+                 </div>
+                 <div className="flex flex-col items-end">
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mb-1.5 ${STATUS_BADGE[o.status] || 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                      {o.status}
+                    </span>
+                    <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
+                      <BiRupee size={12} className="text-blue-400" />
+                      <span>{o.amount?.toLocaleString()}</span>
+                    </div>
+                 </div>
+               </div>
+
+               <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 flex items-center justify-between mb-3">
+                 <div className="flex flex-col">
+                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Service</span>
+                   <span className="text-[11px] font-bold text-slate-700">{o.service?.split(" —")[0]}</span>
+                 </div>
+                 <div className="text-right">
+                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Metric</span>
+                   <span className="text-[11px] font-black text-slate-700">{o.weight?.toFixed(1)} KG / {o.items} PCS</span>
+                 </div>
+               </div>
+
+               <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <FiCalendar size={12} />
+                    <span>{o.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="uppercase text-[8px] tracking-widest">To:</span>
+                    <span className={o.deliveryDate ? 'text-slate-600' : 'text-amber-500'}>{o.deliveryDate || 'TBD'}</span>
+                  </div>
+               </div>
+             </div>
+           ))}
         </div>
       </div>
 

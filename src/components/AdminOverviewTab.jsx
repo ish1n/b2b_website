@@ -78,10 +78,11 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       const rev = cOrders.reduce((s, o) => s + (o.amount || 0), 0);
       const kg = cOrders.reduce((s, o) => s + (o.weight || 0), 0);
       const issues = orders.filter(o => o.category === "ISSUES").length;
+      const clothes = cOrders.reduce((s, o) => s + (o.items || 0), 0);
       let last = null;
       cOrders.forEach(o => { if (o.date) { const d = new Date(o.date); if (!last || d > last) last = d; } });
       const hostelType = mgr.id === "client-regular" ? "Retail" : cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN") ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
-      return { ...mgr, idx, rev, kg, orders: cOrders.length, issues: 0, last, hostelType };
+      return { ...mgr, idx, rev, kg, clothes, orders: cOrders.length, issues: 0, last, hostelType };
     }).filter(c => c.orders > 0);
 
     // Filter
@@ -109,8 +110,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               <p className="text-[12px] font-medium text-[#94A3B8]">Daily revenue performance</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={1} minHeight={1} >
-            <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 220 : 300} debounce={100} minWidth={1} minHeight={1} >
+            <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
@@ -118,8 +119,21 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+              <XAxis 
+                dataKey="day" 
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }} 
+                axisLine={false} 
+                tickLine={false} 
+                dy={10} 
+                interval={window.innerWidth < 640 ? 2 : 0}
+              />
+              <YAxis 
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }} 
+                axisLine={false} 
+                tickLine={false} 
+                tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`}
+                width={window.innerWidth < 640 ? 35 : 50}
+              />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#3B82F6', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
               <Area
                 type="monotone"
@@ -170,12 +184,12 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white">
+        <div className="p-4 sm:p-6 border-b border-gray-50 flex flex-wrap items-center justify-between gap-4 bg-white">
           <div>
             <h2 className="text-[15px] font-bold text-[#0F172A] mb-0.5">B2B Client Performance</h2>
             <p className="text-[12px] font-medium text-[#94A3B8]">Detailed metrics per registered partner</p>
           </div>
-          <div className="flex items-center gap-2 relative">
+          <div className="flex items-center gap-2">
             {/* Filter Dropdown */}
             <div className="relative">
               <button
@@ -220,7 +234,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[850px]">
             <thead className="bg-[#F8FAFC]">
               <tr>
@@ -283,13 +298,66 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card Layout */}
+        <div className="md:hidden divide-y divide-gray-50">
+          {clientRows.map((c, i) => (
+            <div 
+              key={c.id}
+              onClick={() => setSelectedClient(c)}
+              className="p-4 active:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-sm"
+                    style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                  >
+                    {c.name?.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-[#0F172A]">{c.name}</h4>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                      c.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' :
+                      c.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' :
+                      'bg-emerald-50 text-emerald-600'
+                    }`}>
+                      {c.hostelType}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-0.5 text-sm font-black text-[#0F172A]">
+                    <BiRupee size={12} className="text-slate-400" />
+                    <span>{c.rev.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.orders} Orders</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100/50">
+                <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Processed</span>
+                  <span className="text-[11px] font-black text-slate-700">{c.kg > 0 ? c.kg.toFixed(1) : '0'} KG</span>
+                </div>
+                <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Avg Order</span>
+                  <div className="flex items-center gap-0.5 text-[11px] font-black text-slate-700">
+                    <BiRupee size={10} className="text-slate-400" />
+                    <span>{(c.rev / (c.orders || 1)).toFixed(0)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* View Details Modal */}
       {selectedClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setSelectedClient(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedClient(null)} />
+          <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] flex flex-col overflow-hidden animate-slide-up sm:animate-fade-in" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{selectedClient.name}</h2>
@@ -301,10 +369,10 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                 </div>
               </div>
               <button onClick={() => setSelectedClient(null)} className="p-2 text-gray-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors">
-                <FiX size={20} />
+                <FiX size={24} />
               </button>
             </div>
-            <div className="bg-gray-50 p-4 border-b border-gray-100 grid grid-cols-4 gap-4 flex-shrink-0">
+            <div className="bg-gray-50 p-4 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 flex-shrink-0">
               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                 <p className="text-xs text-gray-400 font-medium">Total Orders</p>
                 <p className="text-lg font-bold text-gray-800">{selectedClient.orders}</p>
@@ -312,6 +380,10 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                 <p className="text-xs text-gray-400 font-medium">KG Processed</p>
                 <p className="text-lg font-bold text-gray-800">{selectedClient.kg.toFixed(1)}</p>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-medium">Total Clothes</p>
+                <p className="text-lg font-bold text-gray-800">{selectedClient.clothes || 0}</p>
               </div>
               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                 <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
@@ -330,26 +402,28 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             </div>
             
             {/* Modal Filter Bar */}
-            <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-2">Status</span>
-                {["All", "Pending", "Processing", "Delivered"].map(status => (
-                  <button 
-                    key={status}
-                    onClick={() => setModalFilterStatus(status)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${modalFilterStatus === status ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                  >
-                    {status}
-                  </button>
-                ))}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 sm:mr-2">Status</span>
+                <div className="flex gap-2">
+                  {["All", "Pending", "Processing", "Delivered"].map(status => (
+                    <button 
+                      key={status}
+                      onClick={() => setModalFilterStatus(status)}
+                      className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold whitespace-nowrap transition-all ${modalFilterStatus === status ? 'bg-slate-800 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
               </div>
               {(selectedClient.properties || selectedClient.partnernames || []).length > 1 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-1">Property</span>
+                <div className="flex items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-3 sm:pt-0">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Filter Property</span>
                   <select 
                     value={modalFilterProperty} 
                     onChange={(e) => setModalFilterProperty(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold rounded-lg px-3 py-1.5 outline-none focus:border-blue-500"
+                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-[12px] font-bold rounded-lg px-3 py-2 sm:py-1.5 outline-none focus:border-blue-500 min-w-[140px]"
                   >
                     <option value="All">All Properties</option>
                     {(selectedClient.properties || selectedClient.partnernames).map(p => (

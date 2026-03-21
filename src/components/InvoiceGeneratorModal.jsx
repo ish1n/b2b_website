@@ -385,11 +385,11 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-2xl sm:max-h-[90vh] overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50/50">
+                <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
                             <FiFileText size={20} />
@@ -400,15 +400,15 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                        <FiX size={20} />
+                        <FiX size={24} />
                     </button>
                 </div>
 
                 {/* Form Body */}
-                <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                <div className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
 
                     {/* Row 1: Dates */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-gray-700 mb-1">Orders From Date *</label>
                             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
@@ -422,7 +422,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                     </div>
 
                     {/* Row 2: Property & Rate */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-gray-700 mb-1">Property / Grouping</label>
                             <select value={selectedProperty} onChange={e => setSelectedProperty(e.target.value)}
@@ -447,7 +447,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                     </div>
 
                     {/* Row 3: Invoice Info */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-gray-700 mb-1">Invoice Number *</label>
                             <input type="text" placeholder="e.g. INV-000029" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)}
@@ -478,12 +478,12 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">
+                <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-end gap-3 flex-shrink-0">
+                    <button onClick={onClose} className="order-2 sm:order-1 px-5 py-3 sm:py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">
                         Cancel
                     </button>
-                    <button onClick={generatePDF} className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm flex items-center gap-2">
-                        <FiDownload size={16} /> Generate & Download PDF
+                    <button onClick={generatePDF} className="order-1 sm:order-2 px-5 py-3 sm:py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <FiDownload size={18} /> Generate PDF
                     </button>
                 </div>
 

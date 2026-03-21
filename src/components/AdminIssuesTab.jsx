@@ -82,7 +82,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Summary Bar */}
-      <div className="flex flex-wrap gap-4">
+      <div className="grid grid-cols-2 lg:flex lg:flex-wrap gap-3 sm:gap-4">
         {[
           { label: 'Critical', count: criticalCount, bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-700', icon: FiAlertTriangle, iconColor: 'text-red-500', value: 'Critical' },
           { label: 'Checking', count: checkingCount, bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: FiClock, iconColor: 'text-amber-600', value: 'Checking' },
@@ -92,27 +92,27 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
           <button
             key={idx}
             onClick={() => setStatusFilter(statusFilter === stat.value ? 'All' : stat.value)}
-            className={`flex items-center gap-3 ${stat.bg} border ${stat.border} rounded-xl px-4 py-3 shadow-sm transition-all hover:scale-105 active:scale-95 ${statusFilter === stat.value ? 'ring-2 ring-offset-2 ring-slate-400' : ''}`}>
-            <stat.icon className={stat.iconColor} size={16} />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">{stat.label}</p>
-              <p className={`text-sm font-black ${stat.text} leading-none`}>{stat.count}</p>
+            className={`flex items-center gap-2 sm:gap-3 ${stat.bg} border ${stat.border} rounded-xl px-3 sm:px-4 py-3 shadow-sm transition-all hover:scale-[1.02] active:scale-95 ${statusFilter === stat.value ? 'ring-2 ring-offset-1 ring-slate-400' : ''}`}>
+            <stat.icon className={stat.iconColor} size={14} />
+            <div className="text-left">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 leading-none mb-1">{stat.label}</p>
+              <p className={`text-[13px] sm:text-sm font-black ${stat.text} leading-none`}>{stat.count}</p>
             </div>
           </button>
         ))}
-        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="ml-auto flex items-center gap-2 px-5 py-3 bg-red-600 text-white text-[12px] font-bold rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95">
-          <FiPlus size={16} /> Report New Issue
+        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="col-span-2 lg:ml-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-red-600 text-white text-[12px] font-black rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95 uppercase tracking-widest">
+          <FiPlus size={18} /> Report New Issue
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-2">
-          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Status:</label>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm transition-all">
+        <div className="flex items-center gap-3">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex-shrink-0">Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-[12px] font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500">
+            className="flex-1 sm:flex-none bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 text-[12px] font-bold text-slate-600 focus:outline-none focus:ring-1 focus:ring-red-500 appearance-none min-w-[140px]">
             <option value="All">All Statuses</option>
             <option value="Unresolved">Unresolved</option>
             <option value="Checking">Under Investigation</option>
@@ -124,8 +124,8 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
         {statusFilter !== "All" && (
           <button
             onClick={() => setStatusFilter("All")}
-            className="ml-auto text-[11px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-1">
-            <FiX size={14} /> Clear Filters
+            className="w-fit text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+            <FiX size={14} /> Clear Selected Filters
           </button>
         )}
       </div>
@@ -190,20 +190,20 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
 
       {/* Add Issue Modal - Simplified Styling */}
       {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 animate-slide-up">
-            <div className="flex items-center justify-between mb-8 cursor-default">
+          <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg flex flex-col overflow-hidden animate-slide-up sm:animate-fade-in">
+            <div className="flex items-center justify-between p-6 sm:p-8 border-b border-gray-50 bg-slate-50/30 flex-shrink-0">
               <div>
                 <h2 className="text-lg font-black text-[#0F172A] tracking-tight">{form.id ? 'Modify Issue Report' : 'New Issue Report'}</h2>
-                <p className="text-xs font-medium text-slate-400">Please provide accurate details for tracking</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mt-0.5">Andes Audit & Compliance</p>
               </div>
               <button onClick={() => setShowModal(false)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                 <FiX size={24} />
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date of Incident</label>

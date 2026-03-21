@@ -102,7 +102,9 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
           <h3 className="text-[14px] font-black text-[#0F172A] tracking-tight">{name}</h3>
         </div>
         <div className="text-right">
-          <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase tracking-wider block mb-1">{orders.length} pickups</span>
+          <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full uppercase tracking-wider block mb-1">
+            {orders.length} pckp • {Object.values(totals).reduce((a, b) => a + b, 0)} items
+          </span>
           {revenue !== undefined && (
             <div className="flex items-center justify-end gap-0.5 text-[13px] font-black text-green-600">
               <BiRupee size={13} />
@@ -224,11 +226,23 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
             <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
           </div>
-          <ResponsiveContainer width="100%" height={280} debounce={100} minWidth={0}>
-            <BarChart data={studentChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }} barGap={0} onClick={(data) => { if(data && data.activeLabel) setChartDateFilter(data.activeLabel); }}>
+          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 240 : 300} debounce={100} minWidth={0}>
+            <BarChart data={studentChartData} margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }} barGap={0} onClick={(data) => { if(data && data.activeLabel) setChartDateFilter(data.activeLabel); }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{ fontSize: 11, fill: '#94A3B8', fontWeight: 700 }} axisLine={false} tickLine={false} />
+              <XAxis 
+                dataKey="day" 
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }} 
+                axisLine={false} 
+                tickLine={false} 
+                dy={10} 
+                interval={window.innerWidth < 640 ? 2 : 0}
+              />
+              <YAxis 
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }} 
+                axisLine={false} 
+                tickLine={false} 
+                width={window.innerWidth < 640 ? 30 : 45}
+              />
               <Tooltip content={<BarTooltip />} cursor={{ fill: '#F8FAFC' }} />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }} />
               {studentSummaries.map(s => (
@@ -278,9 +292,10 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             </select>
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200">
           <table className="w-full min-w-[800px]">
-            <thead className="bg-[#F8FAFC]">
+            <thead className="bg-[#F8FAFC] sticky top-0 z-10">
               <tr>
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Date</th>
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Property / Type</th>
@@ -355,6 +370,70 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-50 bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
+          {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
+            .filter(o => propertyFilter === "All" || o.property === propertyFilter)
+            .filter(o => {
+              if (!chartDateFilter) return true;
+              const day = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
+              return day === chartDateFilter;
+            })
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .map(o => (
+              <div 
+                key={o.id}
+                onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+                className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">{o.date}</span>
+                    <h4 className="text-[14px] font-black text-[#0F172A]">{o.property}</h4>
+                  </div>
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${o.type === 'student' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                    {o.type === 'student' ? 'Student' : 'Linen'}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100/50 mb-3">
+                   {o.type === 'student' ? (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-slate-500">Pickup Weight</span>
+                        <p className="text-[13px] font-black text-slate-800">{o.weight?.toFixed(1) || '0.0'} <span className="text-[10px] text-slate-400">KG</span></p>
+                      </div>
+                   ) : (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[11px] font-bold text-slate-500">Pick Details</span>
+                          <span className="text-[11px] font-black text-slate-800">{Object.values(o.details || {}).reduce((s, v) => s + v, 0)} Items</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {Object.entries(o.details || {}).filter(([, v]) => v > 0).map(([k, v]) => (
+                            <span key={k} className="text-[9px] font-bold bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-100">{k}: {v}</span>
+                          ))}
+                        </div>
+                      </div>
+                   )}
+                </div>
+
+                <div className="flex justify-between items-center pt-1">
+                   <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Billed Amount</span>
+                      <div className="flex items-center gap-1 text-[14px] font-black text-blue-600">
+                        <BiRupee size={12} className="text-blue-400" />
+                        <span>{o.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-1 text-slate-400">
+                      <span className="text-[10px] font-bold">View</span>
+                      <FiChevronRight size={14} />
+                   </div>
+                </div>
+              </div>
+            ))}
         </div>
       </div>
 

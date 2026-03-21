@@ -252,24 +252,24 @@ export default function AdminExpensesTab() {
       )}
 
       {/* Control Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex bg-white/50 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm gap-1 overflow-x-auto no-scrollbar max-w-full">
-          <div className="flex items-center px-3 border-r border-gray-100 mr-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="flex bg-white/70 backdrop-blur-sm p-1.5 rounded-xl border border-gray-100 shadow-sm gap-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center px-3 border-r border-gray-100 mr-1 flex-shrink-0">
             <CalendarDays size={16} className="text-slate-400" />
           </div>
           <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
-            className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
+            className="bg-transparent border-none text-[12px] font-black text-slate-700 focus:ring-0 cursor-pointer pr-8 whitespace-nowrap">
             {MONTHS.map((m) => <option key={m} value={m}>{m} Period</option>)}
           </select>
-          <div className="h-4 w-px bg-gray-200 mx-2 self-center" />
+          <div className="h-4 w-px bg-gray-200 mx-1 self-center flex-shrink-0" />
           <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
-            className="bg-transparent border-none text-[12px] font-bold text-slate-700 focus:ring-0 cursor-pointer pr-8">
+            className="bg-transparent border-none text-[12px] font-black text-slate-700 focus:ring-0 cursor-pointer pr-8 whitespace-nowrap">
             <option value="All">All Categories</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <button onClick={openNew}
-          className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 bg-blue-600 text-white text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
+          className="flex items-center justify-center gap-2.5 px-6 py-3.5 sm:py-3 bg-blue-600 text-white text-[12px] sm:text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
           <Plus size={18} /> Record Expense
         </button>
       </div>
@@ -411,7 +411,8 @@ export default function AdminExpensesTab() {
           )}
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[900px]">
             <thead className="bg-[#F8FAFC]">
               <tr>
@@ -434,7 +435,7 @@ export default function AdminExpensesTab() {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-20">
+                  <td colSpan="7" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4 text-slate-200"><FileText size={32} /></div>
                       <p className="text-[15px] font-black text-slate-400">Ledger is empty for this period</p>
@@ -486,39 +487,90 @@ export default function AdminExpensesTab() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-gray-50 bg-white">
+          {loading ? (
+            <div className="py-20 text-center text-slate-300">
+              <Loader2 size={32} className="animate-spin mx-auto mb-4" />
+              <p className="text-[13px] font-bold">Synchronizing...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center">
+              <FileText size={32} className="text-slate-200 mb-4" />
+              <p className="text-[15px] font-black text-slate-400 text-center px-6">Ledger is empty for this period</p>
+            </div>
+          ) : filtered.map((e) => (
+            <div key={e.id} className="p-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[14px] font-black text-[#0F172A] tracking-tight mb-1">{e.payee}</p>
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CAT_COLORS[e.category] || "#94a3b8") + "15", color: CAT_COLORS[e.category] || "#94a3b8" }}>
+                    {e.category}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-0.5 text-[16px] font-black text-[#0F172A] mb-1">
+                    <BiRupee size={15} />
+                    <span>{e.amount?.toLocaleString()}</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-400">{e.date}</p>
+                </div>
+              </div>
+              <p className="text-[12px] font-medium text-slate-600 italic line-clamp-2">{e.description}</p>
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex gap-2">
+                  {e.receiptUrl && (
+                    <button onClick={() => setLightboxUrl(e.receiptUrl)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                      <Eye size={14} /> Receipt
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => openEdit(e)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                    <FileText size={16} />
+                  </button>
+                  <button onClick={() => handleDelete(e)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ─── Receipt Lightbox ─── */}
       {lightboxUrl && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
-          <div className="relative max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setLightboxUrl(null)} className="absolute top-3 right-3 p-2 bg-white/80 rounded-full hover:bg-white transition shadow"><X size={18} /></button>
-            <img src={lightboxUrl} alt="Receipt" className="w-full max-h-[80vh] object-contain" />
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-0 sm:p-4" onClick={() => setLightboxUrl(null)}>
+          <div className="relative max-w-2xl w-full h-full sm:h-auto bg-white sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 z-10 p-2.5 bg-white/80 rounded-xl hover:bg-white transition-all shadow-lg text-slate-800"><X size={24} /></button>
+            <img src={lightboxUrl} alt="Receipt" className="w-full h-full sm:h-auto max-h-[90vh] object-contain" />
           </div>
         </div>
       )}
 
       {/* Side Panel Redesign */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-end p-0 sm:p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center sm:justify-end p-0 sm:p-4">
           <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-lg h-full sm:h-auto sm:max-h-[90vh] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-left">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+          <div className="relative w-full max-w-lg h-full sm:h-auto sm:max-h-[90vh] bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-slide-left">
+            <div className="p-6 sm:p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30 flex-shrink-0">
               <div>
                 <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{editingId ? 'Modify Ledger Entry' : 'New Capital Outflow'}</h2>
                 <p className="text-[12px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Corporate Financial Management</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                <X size={26} />
+              <button onClick={() => setShowModal(false)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                <X size={28} />
               </button>
             </div>
 
-            <div className="p-8 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-5">
-                <div className="col-span-2">
+            <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
+              <div className="space-y-6">
+                <div>
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Final Expenditure (INR) *</label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[18px]">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
                       <BiRupee size={22} />
                     </div>
                     <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
@@ -527,7 +579,7 @@ export default function AdminExpensesTab() {
                   {errors.amount && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.amount}</p>}
                 </div>
 
-                <div className="col-span-2">
+                <div>
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Transaction Recipient *</label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FileText size={18} /></div>
@@ -537,59 +589,62 @@ export default function AdminExpensesTab() {
                   {errors.payee && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.payee}</p>}
                 </div>
 
-                <div className="col-span-1">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Effective Date</label>
-                  <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Effective Date</label>
+                    <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Expense Category</label>
+                    <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-black text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none appearance-none">
+                      <option value="">Select Class</option>
+                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="col-span-1">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Expense Category</label>
-                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-black text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none appearance-none">
-                    <option value="">Select Class</option>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Purpose / Justification</label>
+                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none resize-none transition-all" placeholder="Explain the business need for this payment..." />
+                  {errors.description && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.description}</p>}
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Purpose / Justification</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none resize-none transition-all" placeholder="Explain the business need for this payment..." />
-                {errors.description && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.description}</p>}
-              </div>
-
-              <div className="pt-4 border-t border-slate-50">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Evidential Documentation</label>
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/20 transition-all group">
-                  {form.file ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><ImageIcon size={24} /></div>
-                      <span className="text-[13px] font-black text-slate-700">{form.file.name}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to swap file</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center text-slate-400 group-hover:text-blue-500">
-                      <Upload size={28} className="mb-2" />
-                      <span className="text-[12px] font-black uppercase tracking-widest">Link digital receipt</span>
-                      <span className="text-[10px] font-medium text-slate-300 mt-0.5">JPG, PNG or PDF formats supported</span>
-                    </div>
-                  )}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} />
-                </label>
+                <div className="pt-4 border-t border-slate-50">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Evidential Documentation</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/20 transition-all group">
+                    {form.file ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><ImageIcon size={24} /></div>
+                        <span className="text-[13px] font-black text-slate-700">{form.file.name}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to swap file</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-slate-400 group-hover:text-blue-500">
+                        <Upload size={28} className="mb-2" />
+                        <span className="text-[12px] font-black uppercase tracking-widest">Link digital receipt</span>
+                        <span className="text-[10px] font-medium text-slate-300 mt-0.5">JPG, PNG or PDF formats supported</span>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} />
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="p-8 border-t border-slate-50 bg-slate-50/20 flex gap-4 mt-auto">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
+            <div className="p-6 sm:p-8 border-t border-slate-50 bg-slate-50/20 flex flex-col sm:flex-row gap-3 sm:gap-4 flex-shrink-0">
+              <button onClick={() => setShowModal(false)} className="order-2 sm:order-1 flex-1 py-4 bg-slate-100 text-slate-500 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
               <button onClick={handleSubmit} disabled={submitting}
-                className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
+                className="order-1 sm:order-2 flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2">
                 {submitting ? <Loader2 size={18} className="animate-spin" /> : editingId ? 'Update Record' : 'Commit to Ledger'}
               </button>
             </div>
           </div>
         </div>
+
       )}
     </div>
   );

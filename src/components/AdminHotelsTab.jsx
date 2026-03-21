@@ -17,7 +17,9 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
         <h3 className="text-sm font-bold text-gray-800">{name}</h3>
         <div className="ml-auto text-right">
-          <span className="text-[10px] text-gray-400 font-medium block mb-0.5">{orders.length} pickups</span>
+          <span className="text-[10px] text-gray-400 font-medium block mb-0.5">
+            {orders.length} pckp • {Object.values(totals).reduce((a, b) => a + b, 0)} items
+          </span>
           {revenue !== undefined && (
             <span className="text-xs font-bold text-green-600 flex items-center justify-end gap-0.5"><BiRupee size={12} />{revenue.toLocaleString()}</span>
           )}
@@ -54,11 +56,12 @@ export default function AdminHotelsTab({ orders }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h2 className="text-base font-bold text-gray-900 mb-4">Hotels & Airbnbs</h2>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}
+          </div>
 
-          {/* Hotel Detail Table */}
-          <div className="overflow-x-auto mt-4">
+          {/* Desktop Hotel Table */}
+          <div className="hidden md:block overflow-x-auto mt-4">
             <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="bg-[#f8fcff]">
@@ -95,13 +98,54 @@ export default function AdminHotelsTab({ orders }) {
                     </td>
                   </tr>
                 ))}
-                {hotelOrders.length === 0 && (
-                  <tr>
-                    <td colSpan="7" className="px-4 py-6 text-center text-sm text-gray-400">No hotel or Airbnb orders in this period.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card Layout */}
+          <div className="md:hidden divide-y divide-gray-50 mt-4 border border-gray-100 rounded-xl overflow-hidden">
+            {hotelOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
+              <div 
+                key={o.id}
+                onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+                className="p-4 active:bg-orange-50 transition-colors cursor-pointer"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">{o.date}</span>
+                    <h4 className="text-sm font-bold text-gray-900">{o.property}</h4>
+                  </div>
+                  <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
+                    <BiRupee size={12} className="text-slate-400" />
+                    <span>{o.amount?.toLocaleString()}</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 pt-3 border-t border-gray-100/50">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-gray-400">Bedsheets</span>
+                    <span className="font-bold text-slate-700">{o.details?.["Bedsheet"] || o.details?.["Single Bedsheet"] || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-gray-400">Pillow Co.</span>
+                    <span className="font-bold text-slate-700">{o.details?.["Pillow Cover"] || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-gray-400">Duvet Co.</span>
+                    <span className="font-bold text-slate-700">{o.details?.["Duvet Cover"] || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-gray-400">Towels</span>
+                    <span className="font-bold text-slate-700">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {hotelOrders.length === 0 && (
+              <div className="p-8 text-center text-sm text-gray-400 bg-gray-50/50 italic">
+                No orders discovered.
+              </div>
+            )}
           </div>
         </div>
       </div>
