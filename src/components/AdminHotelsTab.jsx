@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
+import AdminOrderModal from "./AdminOrderModal";
 
 const HOTEL_PROPERTIES = ["Airbnb Viman Nagar"];
 const HOSTEL_COLORS = { "Airbnb Viman Nagar": "#D97706" };
@@ -33,6 +34,8 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
 
 export default function AdminHotelsTab({ orders }) {
   const hotelOrders = useMemo(() => orders.filter(o => o.type === "airbnb"), [orders]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Hotel summaries
   // Hotel summaries
@@ -70,7 +73,11 @@ export default function AdminHotelsTab({ orders }) {
               </thead>
               <tbody>
                 {hotelOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                  <tr key={o.id} className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors">
+                  <tr 
+                    key={o.id} 
+                    onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+                    className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors cursor-pointer group"
+                  >
                     <td className="px-4 py-3 text-sm text-gray-600">{o.date}</td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-800">{o.property}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Bedsheet"] || o.details?.["Single Bedsheet"] || 0}</td>
@@ -78,9 +85,12 @@ export default function AdminHotelsTab({ orders }) {
                     <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Duvet Cover"] || 0}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</td>
                     <td className="px-4 py-3 text-sm font-bold text-gray-800">
-                      <div className="flex items-center gap-0.5">
-                        <BiRupee size={12} className="mb-0.5" />
-                        <span>{o.amount?.toLocaleString()}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-0.5">
+                          <BiRupee size={12} className="mb-0.5" />
+                          <span>{o.amount?.toLocaleString()}</span>
+                        </div>
+                        <FiChevronRight size={16} className="text-slate-400 group-hover:text-orange-500 transition-colors" />
                       </div>
                     </td>
                   </tr>
@@ -95,6 +105,12 @@ export default function AdminHotelsTab({ orders }) {
           </div>
         </div>
       </div>
+
+      <AdminOrderModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        order={selectedOrder}
+      />
     </div>
   );
 }

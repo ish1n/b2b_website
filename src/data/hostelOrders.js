@@ -63,6 +63,8 @@ const tulsiOrders = [
   { id: "tulsi-07", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-07", amount: 825, status: "Delivered", items: 66, weight: 15.0, studentCount: 8, service: "8 Students, 66 clothes, 15.0 KG" },
   { id: "tulsi-09", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-09", amount: 979, status: "Delivered", items: 81, weight: 17.8, studentCount: 8, service: "8 Students, 81 clothes, 17.8 KG" },
   { id: "tulsi-11", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 660, status: "Delivered", items: 24, weight: 12.0, studentCount: 5, service: "5 Students, 24 clothes, 12.0 KG" },
+  { id: "tulsi-16", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 973.5, status: "Delivered", items: 68, weight: 17.7, studentCount: 8, service: "8 Students, 68 clothes, 17.7 KG" },
+  { id: "tulsi-18", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-18", amount: 1666.5, status: "Delivered", items: 136, weight: 30.3, studentCount: 12, service: "12 Students, 136 clothes, 30.3 KG" },
 ];
 
 // ==================== ADARSHA HOSTEL — STUDENT LAUNDRY ====================

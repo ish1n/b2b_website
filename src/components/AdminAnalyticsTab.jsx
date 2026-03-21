@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { FiMonitor, FiSearch, FiLayers, FiChevronDown, FiTrendingUp, FiUsers, FiShoppingBag, FiGlobe } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
+import EmptyState from "./EmptyState";
 
 // Re-using the card style for the main stats
 const StatCard = ({ label, value, icon, color, subValue }) => (
@@ -102,7 +103,7 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
     }, [orders]);
 
     const totalRevenue = useMemo(() => {
-        return orders.reduce((acc, o) => acc + (parseFloat(o.amount) || 0), 0);
+        return orders.filter(o => o.type === "regular").reduce((acc, o) => acc + (parseFloat(o.amount) || 0), 0);
     }, [orders]);
 
     return (
@@ -196,9 +197,11 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                         {screens.length > 0 ? (
                             screens.map(s => <ScreenItem key={s.id} name={s.screenName} visits={s.visitCount} />)
                         ) : (
-                            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 font-bold">
-                                No screen data available in Firebase
-                            </div>
+                            <EmptyState 
+                                icon={FiMonitor} 
+                                title="No screen data available" 
+                                message="Waiting for Firebase analytics sync." 
+                            />
                         )}
                     </div>
                 )}
@@ -212,9 +215,11 @@ export default function AdminAnalyticsTab({ orders, screens = [], searches = [],
                         {searches.length > 0 ? (
                             searches.map(s => <SearchItem key={s.id} query={s.query} count={s.count} />)
                         ) : (
-                            <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 font-bold">
-                                No search queries recorded in Firebase
-                            </div>
+                            <EmptyState 
+                                icon={FiSearch} 
+                                title="No search queries recorded" 
+                                message="Waiting for Firebase analytics sync." 
+                            />
                         )}
                     </div>
                 )}
