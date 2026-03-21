@@ -16,17 +16,20 @@ import AdminIssuesTab from "../components/AdminIssuesTab";
 import AdminExpensesTab from "../components/AdminExpensesTab";
 import AdminAnalyticsTab from "../components/AdminAnalyticsTab";
 import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
-import { FiAlertCircle, FiUsers, FiTrendingUp, FiFileText } from "react-icons/fi";
+import { FiAlertCircle, FiUsers, FiTrendingUp, FiFileText, FiShoppingBag } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import { GiWeight } from "react-icons/gi";
 
 export default function AdminDashboard() {
   const { client, orders: baseOrders, logout } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsSidebarCollapsed(window.innerWidth < 1024);
+      const isMobile = window.innerWidth < 1024;
+      setIsSidebarCollapsed(isMobile);
+      if (!isMobile) setIsMobileMenuOpen(false);
     };
     handleResize(); // Set initial state correctly
     window.addEventListener('resize', handleResize);
@@ -285,15 +288,20 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen bg-[#F1F5F9]" style={{ fontFamily: "DM Sans, sans-serif" }}>
       <AdminSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          setIsMobileMenuOpen(false);
+        }}
         issuesCount={stats.openIssuesCount}
         user={partner}
         onLogout={logout}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
+        isMobileOpen={isMobileMenuOpen}
+        setIsMobileOpen={setIsMobileMenuOpen}
       />
 
-      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'ml-[80px]' : 'ml-[220px]'}`}>
+      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[220px]'} ml-0`}>
         <AdminTopBar
           title={getPageTitle()}
           dateFrom={dateFrom}
@@ -303,9 +311,10 @@ export default function AdminDashboard() {
           onExpensesClick={() => setActiveTab(activeTab === "expenses" ? "overview" : "expenses")}
           isExpensesActive={activeTab === "expenses"}
           orders={orders}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
         />
 
-        <div className="p-8">
+        <div className="p-4 lg:p-8">
           {/* Generate Invoice Action Bar */}
           {['overview', 'hostels', 'hotels', 'regular'].includes(activeTab) && (
             <div className="flex justify-end mb-4 animate-fade-in">

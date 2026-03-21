@@ -1,7 +1,7 @@
 import { FiLayout, FiHome, FiActivity, FiInbox, FiAlertCircle, FiShield, FiMapPin, FiLogOut, FiChevronLeft, FiMenu, FiPieChart } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 
-export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, user, onLogout, isCollapsed, setIsCollapsed }) {
+export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, user, onLogout, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
     const menuItems = [
         { key: "overview", label: "Overview", icon: FiLayout },
         { key: "hostels", label: "Hostels", icon: FiHome },
@@ -12,10 +12,21 @@ export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, use
     ];
 
     return (
-        <aside 
-            className={`fixed left-0 top-0 h-screen bg-[#0F172A] text-white flex flex-col z-50 border-r border-[#1E293B] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[80px]' : 'w-[220px]'}`} 
-            style={{ fontFamily: 'DM Sans, sans-serif' }}
-        >
+        <>
+            {/* Mobile Overlay */}
+            {isMobileOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 lg:hidden"
+                    onClick={() => setIsMobileOpen(false)}
+                />
+            )}
+
+            <aside 
+                className={`fixed left-0 top-0 h-screen bg-[#0F172A] text-white flex flex-col z-50 border-r border-[#1E293B] transition-all duration-300 ease-in-out 
+                    ${isCollapsed ? 'w-[80px]' : 'w-[220px]'} 
+                    ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} 
+                style={{ fontFamily: 'DM Sans, sans-serif' }}
+            >
             {/* Logo Section */}
             <div className={`p-6 flex items-center justify-between ${isCollapsed ? 'px-4' : 'px-6'}`}>
                 <div className="flex items-center gap-3 overflow-hidden">
@@ -33,7 +44,10 @@ export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, use
                 </div>
                 {!isCollapsed && (
                     <button 
-                        onClick={() => setIsCollapsed(true)}
+                        onClick={() => {
+                            if (window.innerWidth < 1024) setIsMobileOpen(false);
+                            else setIsCollapsed(true);
+                        }}
                         className="p-1.5 rounded-lg hover:bg-[#1E293B] text-[#64748B] hover:text-white transition-colors"
                     >
                         <FiChevronLeft size={18} />
@@ -114,5 +128,6 @@ export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, use
                 )}
             </div>
         </aside>
+        </>
     );
 }

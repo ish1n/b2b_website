@@ -17,7 +17,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Blurred Backdrop */}
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
@@ -25,9 +25,9 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+      <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col sm:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-[#F8FAFC]">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-100 bg-[#F8FAFC]">
           <div>
             <h2 className="text-[18px] font-black text-[#0F172A] tracking-tight">{order.customerName || order.property || order.tenant || 'Unknown Property'}</h2>
             <div className="flex items-center gap-2 mt-1.5">
