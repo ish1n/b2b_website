@@ -26,7 +26,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
   const [form, setForm] = useState({
     customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold",
-    weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null
+    weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null
   });
 
   const openEditModal = (order) => {
@@ -41,7 +41,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       amount: order.amount || "",
       pickupDate: order.date || "", // Map order.date to pickupDate
       deliveryDate: order.deliveryDate || "", // Map delivery date
-      notes: order.notes || ""
+      notes: order.notes || "",
+      status: order.status || "Confirmed"
     });
     setShowModal(true);
   };
@@ -80,7 +81,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       date: form.pickupDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       deliveryDate: form.deliveryDate || "",
       amount: parseFloat(form.amount) || 0,
-      status: "Confirmed",
+      status: form.status,
       items: parseInt(form.clothes) || 1,
       weight: parseFloat(form.weight) || 0,
       customerName: form.customerName,
@@ -99,7 +100,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
     }
 
     setShowModal(false);
-    setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null });
+    setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null });
     setTimeout(() => setToast(""), 3000);
   };
 
@@ -154,7 +155,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             </button>
           ))}
         </div>
-        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", id: null }); setShowModal(true); }}
+        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null }); setShowModal(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 bg-blue-600 text-white text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
           <FiPlus size={18} /> Log New Order
         </button>
@@ -348,21 +349,35 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
               </div>
 
               {/* Added: Pickup and Delivery Dates Section */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-slate-50">
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Pickup Date</label>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Pickup</label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FiCalendar size={14} /></div>
                     <input type="date" value={form.pickupDate} onChange={e => updateForm("pickupDate", e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
+                      className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Delivery Date</label>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Delivery</label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FiCalendar size={14} /></div>
                     <input type="date" value={form.deliveryDate} onChange={e => updateForm("deliveryDate", e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
+                      className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Status</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FiCheckCircle size={14} /></div>
+                    <select value={form.status} onChange={e => updateForm("status", e.target.value)}
+                      className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none appearance-none transition-all">
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Pickup Done">Pickup Done</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Pending">Pending</option>
+                    </select>
                   </div>
                 </div>
               </div>

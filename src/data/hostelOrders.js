@@ -66,8 +66,9 @@ const tulsiOrders = [
   { id: "tulsi-16", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 973.5, status: "Delivered", items: 68, weight: 17.7, studentCount: 8, service: "8 Students, 68 clothes, 17.7 KG" },
   { id: "tulsi-18", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-18", amount: 1666.5, status: "Delivered", items: 136, weight: 30.3, studentCount: 12, service: "12 Students, 136 clothes, 30.3 KG" },
   { id: "tulsi-21", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 731.5, status: "Pickup Done", items: 69, weight: 13.3, studentCount: 7, service: "7 Students, 69 clothes, 13.3 KG" },
+  { id: "tulsi-22", property: "Tulsi", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-22", amount: 451, status: "Pickup Done", items: 41, weight: 8.2, studentCount: 3, service: "3 Students, 41 clothes, 8.2 KG" },
 
-  
+
 ];
 
 // ==================== ADARSHA HOSTEL — STUDENT LAUNDRY ====================
@@ -80,7 +81,8 @@ const adarshaOrders = [
   { id: "adarsha-11", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 2227.5, status: "Delivered", items: 85, weight: 40.5, studentCount: 9, service: "9 Students, 85 clothes, 40.5 KG" },
   { id: "adarsha-13", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-13", amount: 3476, status: "Delivered", items: 185, weight: 63.2, studentCount: 21, service: "21 Students, 185 clothes, 63.2 KG" },
   { id: "adarsha-16", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-16", amount: 621.5, status: "Delivered", items: 41, weight: 11.3, studentCount: 7, service: "7 Students, 41 clothes, 11.3 KG" },
-  { id: "adarsha-21", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 1541.54 , status: "Pickup Done", items: 157, weight: 28.028, studentCount: 20, service: "20 Students, 157 clothes, 28.028 KG" },
+  { id: "adarsha-21", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 1541.54, status: "Pickup Done", items: 157, weight: 28.028, studentCount: 20, service: "20 Students, 157 clothes, 28.028 KG" },
+  { id: "adarsha-22", property: "Adarsha", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-22", amount: 1061.5, status: "Pickup Done", items: 75, weight: 19.3, studentCount: 6, service: "6 Students, 75 clothes, 19.3 KG" },
 ];
 
 // ==================== MEERA HOSTEL — STUDENT LAUNDRY ====================
@@ -99,6 +101,7 @@ const meeraOrders = [
   { id: "meera-18", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 129.25, status: "Delivered", items: 11, weight: 2.35, studentCount: 1, service: "1 Student, 11 clothes, 2.35 KG" },
   { id: "meera-19", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 1314.5, status: "Delivered", items: 105, weight: 23.9, studentCount: 12, service: "12 Students, 105 clothes, 23.9 KG" },
   { id: "meera-21", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 773.3, status: "Delivered", items: 63, weight: 14.06, studentCount: 10, service: "10 Students, 80 clothes, 18.5 KG" },
+  { id: "meera-22", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-22", amount: 357.5, status: "Pickup Done", items: 31, weight: 6.5, studentCount: 3, service: "3 Students, 31 clothes, 6.5 KG" },
 
 ];
 
@@ -111,7 +114,7 @@ const kirtiOrders = [
   { id: "kirti-12", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-12", amount: 605, status: "Delivered", items: 21, weight: 11, service: "21 clothes, 11 KG" },
   { id: "kirti-14", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 418, status: "Delivered", items: 32, weight: 7.6, service: "32 clothes, 7.6 KG" },
   { id: "kirti-17", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 265.1, status: "Delivered", items: 20, weight: 4.82, service: "20 clothes, 4.82 KG" },
-  { id: "kirti-21", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 115.5 , status: "Pickup Done", items: 10, weight: 2.1, service: "10 clothes, 2.1 KG" },
+  { id: "kirti-21", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 115.5, status: "Pickup Done", items: 10, weight: 2.1, service: "10 clothes, 2.1 KG" },
 
 
 
@@ -124,6 +127,8 @@ const aardhanaOrders = [
   { id: "aardhana-11", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-11", amount: 357.5, status: "Delivered", items: 10, weight: 6.5, studentCount: 3, service: "3 Students, 10 clothes, 6.5 KG" },
 
   { id: "aardhana-21", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 405, status: "Delivered", items: 28, weight: 7, studentCount: 4, service: "4 Students, 28 clothes, 7 KG" },
+  { id: "aardhana-22", property: "Aardhana", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-22", amount: 205, status: "Pickup Done", items: 14, weight: 3, studentCount: 2, service: "2 Students, 14 clothes, 3 KG" },
+
 
 ];
 
@@ -185,7 +190,7 @@ const regularOrders = [
   { id: "reg-09a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-09", amount: 0, status: "Confirmed", items: 1, weight: 1.3, customerName: "Hostel 99 no 88 Customer", customerNumber: "7035313232", service: "Wash & Iron" },
   { id: "reg-09b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Student", date: "2026-03-09", amount: 541, status: "Delivered", items: 6, weight: 6.8, customerName: "Hostel 99 no 3 vineet sir", customerNumber: "7702531352", service: "Wash & Iron", notes: "469+72=541" },
   { id: "reg-09c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-09", amount: 434.4, status: "Delivered", items: 1, weight: 3.6, deliveryDate: "2026-03-09", customerName: "Sahas Doshi", customerNumber: "7035313232", service: "Wash & Iron" },
-  { id: "reg-09d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Student", date: "2026-03-09", amount: 0, status: "Confirmed", items: 14, customerName: "Hostel 99 no 88", customerNumber: "7397466833", service: "Only Iron", notes: "Pant 7, Shirt 7" },
+  { id: "reg-09d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Student", date: "2026-03-09", amount: 168, status: "Delivered", items: 14, customerName: "Hostel 99 no 88", customerNumber: "7397466833", service: "Only Iron", notes: "Pant 7, Shirt 7" },
 
   // --- Block 3 ---
   { id: "reg-08b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-08", amount: 168, status: "Delivered", items: 1, deliveryDate: "2026-03-09", customerName: "Shankhadeep Mandal", service: "Wash & Iron" },
@@ -196,6 +201,12 @@ const regularOrders = [
   { id: "reg-07d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-07", amount: 147, status: "Delivered", items: 6, weight: 3, deliveryDate: "2026-03-08", customerName: "Harshraj", customerNumber: "9136875629", service: "Wash & Iron" },
   { id: "reg-08c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-08", amount: 191.7, status: "Delivered", items: 7, weight: 2.3, deliveryDate: "2026-03-09", customerName: "Ridham", customerNumber: "9664088542", service: "Wash & Iron" },
   { id: "reg-10a", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Call", date: "2026-03-09", amount: 182, status: "Delivered", items: 14, weight: 3.5, deliveryDate: "2026-03-10", customerName: "Priyanshu Ekka", customerNumber: "9630944446", service: "Wash & Fold" },
+  { id: "reg-10b", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-14", amount: 100, status: "Delivered", items: 11, weight: 4, deliveryDate: "2026-03-17", customerName: "Hemant Jadhav", customerNumber: "8208601926", service: "Wash & Iron" },
+  { id: "reg-10c", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-14", amount: 35, status: "Delivered", items: 7, weight: 1.6, deliveryDate: "2026-03-20", customerName: "Sarthak Rahate", customerNumber: "8459526488", service: "Wash & Iron" },
+  { id: "reg-10d", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-21", amount: 836, status: "Delivered", weight: 9.4, deliveryDate: "2026-03-21", customerName: "Koushik Anand", customerNumber: "9959276429", service: "Wash & Iron" },
+  { id: "reg-10e", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-16", amount: 280, status: "Delivered", weight: 3.4, deliveryDate: "2026-03-21", customerName: "Shiv kapse", customerNumber: "7697029864", service: "Wash & Iron" },
+  { id: "reg-10f", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "App", date: "2026-03-16", amount: 256, status: "Delivered", items: 10, weight: 3.1, deliveryDate: "2026-03-19", customerName: "Vaibhav Singh", customerNumber: "6204345265", service: "Wash & Fold" },
+
 
   // --- ADJUSTMENT TO MATCH 6,550 TARGET ---
   { id: "reg-adj", property: "Regular Customers", category: "B2C_RETAIL", type: "regular", channel: "Outlet", date: "2026-03-10", amount: -185.5, status: "Delivered", service: "Rounding Adjustment to target 6,550" },
