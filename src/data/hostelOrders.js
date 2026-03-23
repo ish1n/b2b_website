@@ -31,6 +31,9 @@ const hostel99Orders = [
   { id: "h99-08", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-08", amount: 360, status: "Delivered", items: 20, service: "8 Single Bedsheets, 12 Pillow Covers", details: { "Single Bedsheet": 8, "Pillow Cover": 12 } },
   { id: "h99-09", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-09", amount: 1565, status: "Delivered", items: 48, service: "15 Single Bedsheets, 1 Duvet Cover, 15 Pillow Covers, 1 Bath Towel, 5 Curtains, 11 Door Mats", details: { "Single Bedsheet": 15, "Duvet Cover": 1, "Pillow Cover": 15, "Bath Towel": 1, "Curtain": 5, "Door Mat": 11 } },
   { id: "h99-10", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-11", amount: 540, status: "Delivered", items: 28, service: "12 Bedsheets, 15 Pillow Covers, 1 Duvet Cover", details: { "Bedsheet": 12, "Pillow Cover": 15, "Duvet Cover": 1 } },
+  { id: "h99-11", property: "Hostel 99", category: "LINEN", type: "linen", date: "2026-03-23", amount: 310, status: "Pickup Done", items: 14, service: "8 Bedsheets, 5 Pillow Covers, 1 Bath Towels", details: { "Bedsheet": 8, "Pillow Cover": 5, "Bath Towel": 1 } },
+
+
 ];
 
 // ==================== HOSTEL 99 NO-88 — LINEN SERVICES ====================
@@ -43,6 +46,9 @@ const hostel99No88Orders = [
   { id: "h9988-08", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-08", amount: 120, status: "Delivered", items: 6, service: "3 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 3, "Pillow Cover": 3 } },
   { id: "h9988-09", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-09", amount: 480, status: "Delivered", items: 24, service: "11 Single Bedsheets, 12 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 11, "Pillow Cover": 12, "Duvet Cover": 1 } },
   { id: "h9988-10", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-11", amount: 230, status: "Delivered", items: 12, service: "5 Bedsheets, 6 Pillow covers, 1 Bath towel", details: { "Bedsheet": 5, "Pillow Cover": 6, "Bath Towel": 1 } },
+  { id: "h9988-11", property: "Hostel 99 no-88", category: "LINEN", type: "linen", date: "2026-03-23", amount: 370, status: "Pickup Done", items: 19, service: "9 Bedsheets, 10 Pillow covers", details: { "Bedsheet": 9, "Pillow Cover": 10 } },
+
+
 ];
 
 // ==================== HOSTEL 99 NO-3 — LINEN SERVICES ====================
@@ -54,6 +60,7 @@ const hostel99No3Orders = [
   { id: "h993-08", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-08", amount: 150, status: "Delivered", items: 7, service: "4 Single Bedsheets, 3 Pillow Covers", details: { "Single Bedsheet": 4, "Pillow Cover": 3 } },
   { id: "h993-09", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-09", amount: 390, status: "Delivered", items: 19, service: "9 Single Bedsheets, 9 Pillow Covers, 1 Duvet Cover", details: { "Single Bedsheet": 9, "Pillow Cover": 9, "Duvet Cover": 1 } },
   { id: "h993-10", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-11", amount: 360, status: "Delivered", items: 18, service: "9 Bedsheets, 9 Pillow covers", details: { "Bedsheet": 9, "Pillow Cover": 9 } },
+  { id: "h993-11", property: "Hostel 99 no-3", category: "LINEN", type: "linen", date: "2026-03-23", amount: 50, status: "Pickup Done", items: 3, service: "1 Bedsheets, 2 Pillow covers", details: { "Bedsheet": 1, "Pillow Cover": 2 } },
 ];
 
 // ==================== TULSI HOSTEL — STUDENT LAUNDRY ====================
@@ -102,6 +109,8 @@ const meeraOrders = [
   { id: "meera-19", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 1314.5, status: "Delivered", items: 105, weight: 23.9, studentCount: 12, service: "12 Students, 105 clothes, 23.9 KG" },
   { id: "meera-21", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 773.3, status: "Delivered", items: 63, weight: 14.06, studentCount: 10, service: "10 Students, 80 clothes, 18.5 KG" },
   { id: "meera-22", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-22", amount: 357.5, status: "Pickup Done", items: 31, weight: 6.5, studentCount: 3, service: "3 Students, 31 clothes, 6.5 KG" },
+  { id: "meera-23", property: "Meera", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-23", amount: 203.5, status: "Pickup Done", items: 21, weight: 3.7, studentCount: 3, service: "3 Students, 21 clothes, 3.7 KG" },
+
 
 ];
 
@@ -115,6 +124,9 @@ const kirtiOrders = [
   { id: "kirti-14", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 418, status: "Delivered", items: 32, weight: 7.6, service: "32 clothes, 7.6 KG" },
   { id: "kirti-17", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 265.1, status: "Delivered", items: 20, weight: 4.82, service: "20 clothes, 4.82 KG" },
   { id: "kirti-21", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 115.5, status: "Pickup Done", items: 10, weight: 2.1, service: "10 clothes, 2.1 KG" },
+  { id: "kirti-23", property: "Kirti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-23", amount: 405, status: "Pickup Done", items: 37, weight: 7, service: "37 clothes, 7 KG" },
+
+
 
 
 
@@ -153,6 +165,9 @@ const taraOrders = [
   { id: "tara-17", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-17", amount: 760.65, status: "Delivered", items: 38, weight: 13.83, service: "38 clothes, 13.83 KG" },
 
   { id: "tara-21", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 305, status: "Pickup Done", items: 17, weight: 5, service: "17 clothes, 5 KG" },
+  { id: "tara-23", property: "Tara", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-23", amount:133.92 , status: "Pickup Done", items: 10, weight: 2.435, service: "10 clothes, 2.435 KG" },
+
+
 
 
 
@@ -168,6 +183,7 @@ const samshrushtiOrders = [
   { id: "sam-14", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-14", amount: 407, status: "Delivered", items: 30, weight: 7.4, service: "30 clothes, 7.4 KG" },
   { id: "sam-19", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-19", amount: 186.45, status: "Delivered", items: 16, weight: 3.39, service: "16 clothes, 3.39 KG" },
   { id: "sam-21", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-21", amount: 280.5, status: "Pickup Done", items: 17, weight: 5.1, service: "17 clothes, 5.1 KG" },
+  { id: "sam-23", property: "Samshrushti", category: "STUDENT_LAUNDRY", type: "student", date: "2026-03-23", amount: 225, status: "Pickup Done", items: 25, weight: 4, service: "25 clothes, 4 KG" }
 
 ];
 
