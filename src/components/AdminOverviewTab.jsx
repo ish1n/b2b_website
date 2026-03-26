@@ -60,7 +60,13 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
   const categoryBreakdown = useMemo(() => {
     const map = {};
     regularOrders.forEach(o => {
-      const cat = getCategoryForProperty(o.property || o.tenant);
+      let cat;
+      if (o.channel === "Website") {
+        cat = { key: "website", label: "Website Store", color: "#6366F1" };
+      } else {
+        cat = getCategoryForProperty(o.property || o.tenant);
+      }
+      
       if (!map[cat.key]) map[cat.key] = { label: cat.label, color: cat.color, orders: 0, revenue: 0 };
       map[cat.key].orders++;
       map[cat.key].revenue += (o.amount || 0);

@@ -357,9 +357,9 @@ export default function AdminDashboard() {
               />
               <KpiCard
                 label={
-                  activeTab === "regular" ? "Retail Customers" :
                     activeTab === "hostels" ? "Managed Hostels" :
-                      activeTab === "hotels" ? "Active Properties" : "B2B Clients"
+                      activeTab === "hotels" ? "Active Properties" : 
+                        activeTab === "website" ? "Website Customers" : "B2B Clients"
                 }
                 value={stats.totalClients}
                 icon={FiUsers}
@@ -388,6 +388,7 @@ export default function AdminDashboard() {
             {activeTab === "hotels" && <AdminHotelsTab orders={orders} />}
             {activeTab === "regular" && <AdminRegularTab orders={orders} onAddOrder={handleAddOrder} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
             {activeTab === "issues" && <AdminIssuesTab orders={orders} onAddIssue={handleAddIssue} onEditIssue={handleEditIssue} onDeleteIssue={handleDeleteData} />}
+            {activeTab === "website" && <AdminWebsiteTab orders={orders} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
             {activeTab === "expenses" && <AdminExpensesTab />}
             {activeTab === "analytics" && <AdminAnalyticsTab orders={orders} screens={screenStats} searches={searchStats} totalUsers={totalUsers} />}
           </div>

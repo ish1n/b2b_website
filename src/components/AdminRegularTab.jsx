@@ -5,9 +5,9 @@ import EmptyState from "./EmptyState";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
 
-const CHANNELS = ["All", "App", "WhatsApp", "Outlet", "Call", "Student"];
-const CHANNEL_ICONS = { App: FiSmartphone, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
-const CHANNEL_COLORS = { App: "#1976D2", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
+const CHANNELS = ["All", "App", "Website", "WhatsApp", "Outlet", "Call", "Student"];
+const CHANNEL_ICONS = { App: FiSmartphone, Website: FiShoppingBag, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
+const CHANNEL_COLORS = { App: "#1976D2", Website: "#6366F1", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
 const SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Other"];
 
 const RATE_MAP = { "Wash & Fold": 55, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Other": 0 };

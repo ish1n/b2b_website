@@ -73,6 +73,47 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 )}
               </div>
             </div>
+          ) : order.channel === 'Website' ? (
+            <div className="space-y-6">
+              <div>
+                <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                  <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Ordered Products</h3>
+                  <span className="text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                    {order.items || 0} {order.items === 1 ? 'Product' : 'Products'}
+                  </span>
+                </div>
+                
+                {order.itemsList && order.itemsList.length > 0 ? (
+                  <div className="space-y-2">
+                    {order.itemsList.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100/50">
+                        <div className="flex flex-col">
+                          <span className="text-[13.5px] font-bold text-slate-700">{item.name || item.title}</span>
+                          <span className="text-[11px] font-bold text-slate-400">Qty: {item.quantity}</span>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-[14px] font-black text-slate-700">
+                          <BiRupee size={12} />
+                          <span>{(item.price * item.quantity).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] font-medium text-slate-500 italic py-4 text-center">Standard Item Count: {order.items} pcs</p>
+                )}
+              </div>
+
+              {order.address && (
+                <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Delivery Address</p>
+                  <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
+                    {typeof order.address === 'object' 
+                      ? `${order.address.street || ''}, ${order.address.city || ''}, ${order.address.zipCode || ''}`
+                      : order.address}
+                  </p>
+                </div>
+              )}
+            </div>
           ) : order.type === 'regular' || order.category === 'B2C_RETAIL' ? (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -139,7 +180,23 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-[#F8FAFC]">
-          <div className="flex items-center justify-between">
+          {order.channel === 'Website' && (
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
+                <span>Subtotal</span>
+                <span className="text-slate-700 font-black">₹{order.subtotal?.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
+                <span>Delivery Fee</span>
+                <span className="text-slate-700 font-black">₹{order.deliveryFee || 0}</span>
+              </div>
+              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
+                <span>Convenience Fee</span>
+                <span className="text-slate-700 font-black">₹{order.convenienceFee || 0}</span>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100/50">
             <span className="text-[12px] font-black text-slate-500 uppercase tracking-widest">Total Billed</span>
             <div className="flex items-center gap-1 text-[24px] font-black text-[#1976D2]">
               <BiRupee size={24} className="mb-0.5" />
