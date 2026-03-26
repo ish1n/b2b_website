@@ -1,4 +1,4 @@
-import { FiLayout, FiHome, FiActivity, FiInbox, FiAlertCircle, FiShield, FiMapPin, FiLogOut, FiChevronLeft, FiMenu, FiPieChart } from "react-icons/fi";
+import { FiLayout, FiHome, FiActivity, FiInbox, FiShoppingBag, FiAlertCircle, FiShield, FiMapPin, FiLogOut, FiChevronLeft, FiMenu, FiPieChart } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 
 export default function AdminSidebar({ activeTab, setActiveTab, issuesCount, user, onLogout, isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen }) {
