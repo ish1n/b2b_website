@@ -5,16 +5,20 @@ import {
 import { FiChevronDown, FiChevronRight, FiXCircle } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
+
 const STUDENT_HOSTELS = ["Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha", "Kirti", "Tara", "Samshrushti"];
 const LINEN_HOSTELS = ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"];
-const HOSTEL_COLORS = { "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706", "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA", "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706" };
-
+const HOSTEL_COLORS = {
+  "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706",
+  "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA",
+  "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706"
+};
 
 const BarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white/95 backdrop-blur-md shadow-xl rounded-xl p-4 border border-gray-100" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-        <p className="text-[#0F172A] font-black text-[11px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">March {label}</p>
+        <p className="text-[#0F172A] font-black text-[11px] uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">{label}</p>
         <div className="space-y-1.5">
           {payload.map((p, i) => (
             <div key={i} className="flex items-center justify-between gap-4">
@@ -73,9 +77,7 @@ function SummaryCard({ name, color, orders, kg, clothes, students, avgKgPerStude
         {avgKgPerStudent !== undefined && avgKgPerStudent > 0 && (
           <div className="col-span-2 pt-2 border-t border-slate-50 mt-1 flex items-center justify-between">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Avg KG/Student</p>
-            <div className="flex items-center gap-0.5">
-              <p className="text-[13px] font-black text-blue-600">{avgKgPerStudent.toFixed(2)}</p>
-            </div>
+            <p className="text-[13px] font-black text-blue-600">{avgKgPerStudent.toFixed(2)}</p>
           </div>
         )}
       </div>
@@ -125,12 +127,13 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
   );
 }
 
+// daysInRange is now an array of full "YYYY-MM-DD" strings
 export default function AdminHostelsTab({ orders, daysInRange }) {
   const [view, setView] = useState("student");
-  const [linenExpanded, setLinenExpanded] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState("All");
+  // chartDateFilter stores a full "YYYY-MM-DD" string or null
   const [chartDateFilter, setChartDateFilter] = useState(null);
 
   const handleViewChange = (newView) => {
@@ -141,7 +144,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
   const studentOrders = useMemo(() => orders.filter(o => o.type === "student"), [orders]);
   const linenOrders = useMemo(() => orders.filter(o => o.type === "linen"), [orders]);
 
-  // Student hostel summaries
   const studentSummaries = useMemo(() =>
     STUDENT_HOSTELS.map(name => {
       const ho = studentOrders.filter(o => o.property === name);
@@ -149,33 +151,50 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       const clothes = ho.reduce((s, o) => s + (o.items || 0), 0);
       const students = ho.reduce((s, o) => s + (o.studentCount || 0), 0);
       const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0);
-      return { name, orders: ho.length, kg, clothes, students, revenue, avgKgPerStudent: students > 0 ? kg / students : 0, color: HOSTEL_COLORS[name] || "#6B7280" };
-    }).filter(h => h.orders > 0), [studentOrders]);
+      return {
+        name, orders: ho.length, kg, clothes, students, revenue,
+        avgKgPerStudent: students > 0 ? kg / students : 0,
+        color: HOSTEL_COLORS[name] || "#6B7280"
+      };
+    }).filter(h => h.orders > 0),
+    [studentOrders]
+  );
 
-  // Student KG chart by day
+  // ─── KEY FIX: chart data uses full date strings from daysInRange ───
   const studentChartData = useMemo(() =>
-    daysInRange.map(day => {
-      const row = { day };
+    daysInRange.map((fullDate, idx) => {
+      const dayNum = parseInt(fullDate.split("-")[2], 10);
+      // Show MM/DD at month boundaries for readability
+      const prevDate = daysInRange[idx - 1];
+      const isNewMonth = !prevDate || prevDate.slice(0, 7) !== fullDate.slice(0, 7);
+      const label = isNewMonth
+        ? `${fullDate.slice(5, 7)}/${fullDate.slice(8, 10)}`
+        : String(dayNum);
+
+      const row = { day: label, fullDate };
       STUDENT_HOSTELS.forEach(h => {
-        row[h] = studentOrders.filter(o => o.property === h && parseInt(o.date?.split("-")[2], 10) === day).reduce((s, o) => s + (o.weight || 0), 0);
+        row[h] = studentOrders
+          .filter(o => o.property === h && o.date === fullDate)
+          .reduce((s, o) => s + (o.weight || 0), 0);
       });
       return row;
-    }), [studentOrders, daysInRange]);
+    }),
+    [studentOrders, daysInRange]
+  );
 
-  // Linen hostel summaries
   const linenSummaries = useMemo(() =>
     LINEN_HOSTELS.map(name => {
       const ho = linenOrders.filter(o => o.property === name);
       const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0);
-      return {
-        name, orders: ho, revenue,
-        color: HOSTEL_COLORS[name] || "#6B7280"
-      };
-    }).filter(h => h.orders.length > 0), [linenOrders]);
+      return { name, orders: ho, revenue, color: HOSTEL_COLORS[name] || "#6B7280" };
+    }).filter(h => h.orders.length > 0),
+    [linenOrders]
+  );
 
-  const unifiedOrders = useMemo(() => {
-    return [...studentOrders, ...linenOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [studentOrders, linenOrders]);
+  const unifiedOrders = useMemo(() =>
+    [...studentOrders, ...linenOrders].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [studentOrders, linenOrders]
+  );
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -195,7 +214,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         </div>
       </div>
 
-      {/* Summary Section */}
+      {/* Summary Cards */}
       <div className="space-y-4">
         {view === "all" ? (
           <div>
@@ -219,7 +238,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         )}
       </div>
 
-      {/* KG Chart */}
+      {/* KG Bar Chart */}
       {(view === "student" || view === "all") && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden min-w-0">
           <div className="mb-6">
@@ -227,20 +246,31 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
           </div>
           <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 240 : 300} debounce={100} minWidth={0}>
-            <BarChart data={studentChartData} margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }} barGap={0} onClick={(data) => { if(data && data.activeLabel) setChartDateFilter(data.activeLabel); }}>
+            <BarChart
+              data={studentChartData}
+              margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}
+              barGap={0}
+              // ─── KEY FIX: store fullDate from the clicked bar's data point ───
+              onClick={(data, index) => {
+                if (data && index !== undefined && studentChartData[index]) {
+                  const clicked = studentChartData[index].fullDate;
+                  setChartDateFilter(prev => prev === clicked ? null : clicked);
+                }
+              }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis 
-                dataKey="day" 
-                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }} 
-                axisLine={false} 
-                tickLine={false} 
-                dy={10} 
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }}
+                axisLine={false}
+                tickLine={false}
+                dy={10}
                 interval={window.innerWidth < 640 ? 2 : 0}
               />
-              <YAxis 
-                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }} 
-                axisLine={false} 
-                tickLine={false} 
+              <YAxis
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }}
+                axisLine={false}
+                tickLine={false}
                 width={window.innerWidth < 640 ? 30 : 45}
               />
               <Tooltip content={<BarTooltip />} cursor={{ fill: '#F8FAFC' }} />
@@ -253,7 +283,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         </div>
       )}
 
-      {/* Transaction Log Section */}
+      {/* Transaction Log */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -267,11 +297,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
 
           <div className="flex items-center gap-3">
             {chartDateFilter && (
-              <button 
+              <button
                 onClick={() => setChartDateFilter(null)}
                 className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-indigo-100 transition-colors"
               >
-                Day {chartDateFilter} <FiXCircle size={14} />
+                {/* Show friendly MM/DD label */}
+                {`${chartDateFilter.slice(5, 7)}/${chartDateFilter.slice(8, 10)}`} <FiXCircle size={14} />
               </button>
             )}
             {view === "all" && (
@@ -281,18 +312,19 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               </div>
             )}
             <select
-                value={propertyFilter}
-                onChange={(e) => setPropertyFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 cursor-pointer"
+              value={propertyFilter}
+              onChange={(e) => setPropertyFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 cursor-pointer"
             >
-                <option value="All">All {view === "all" ? "Properties" : view === "student" ? "Student Hostels" : "Linen Hostels"}</option>
-                {(view === "all" ? [...STUDENT_HOSTELS, ...LINEN_HOSTELS] : view === "student" ? STUDENT_HOSTELS : LINEN_HOSTELS).map(h => (
-                    <option key={h} value={h}>{h}</option>
-                ))}
+              <option value="All">All {view === "all" ? "Properties" : view === "student" ? "Student Hostels" : "Linen Hostels"}</option>
+              {(view === "all" ? [...STUDENT_HOSTELS, ...LINEN_HOSTELS] : view === "student" ? STUDENT_HOSTELS : LINEN_HOSTELS).map(h => (
+                <option key={h} value={h}>{h}</option>
+              ))}
             </select>
           </div>
         </div>
-        {/* Desktop Table View */}
+
+        {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200">
           <table className="w-full min-w-[800px]">
             <thead className="bg-[#F8FAFC] sticky top-0 z-10">
@@ -307,15 +339,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <tbody>
               {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
                 .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-                .filter(o => {
-                  if (!chartDateFilter) return true;
-                  const day = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
-                  return day === chartDateFilter;
-                })
+                // ─── KEY FIX: match on full date string ───
+                .filter(o => !chartDateFilter || o.date === chartDateFilter)
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(o => (
-                  <tr 
-                    key={o.id} 
+                  <tr
+                    key={o.id}
                     onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
                     className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
                   >
@@ -347,10 +376,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                           <span className="text-[11px] font-bold text-slate-500 italic">Wash & Fold/Iron</span>
                         ) : (
                           Object.entries(o.details || {}).filter(([, v]) => v > 0).map(([k, v]) => (
-                            <span 
-                              key={k} 
-                              className="text-[10px] font-bold bg-[#F1F5F9] text-slate-600 px-2 py-0.5 rounded whitespace-nowrap"
-                            >
+                            <span key={k} className="text-[10px] font-bold bg-[#F1F5F9] text-slate-600 px-2 py-0.5 rounded whitespace-nowrap">
                               {k}: {v}
                             </span>
                           ))
@@ -376,14 +402,11 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         <div className="md:hidden divide-y divide-gray-50 bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
           {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
             .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-            .filter(o => {
-              if (!chartDateFilter) return true;
-              const day = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
-              return day === chartDateFilter;
-            })
+            // ─── KEY FIX: match on full date string ───
+            .filter(o => !chartDateFilter || o.date === chartDateFilter)
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .map(o => (
-              <div 
+              <div
                 key={o.id}
                 onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
                 className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
@@ -399,48 +422,48 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 </div>
 
                 <div className="bg-slate-50/50 rounded-lg p-3 border border-slate-100/50 mb-3">
-                   {o.type === 'student' ? (
-                      <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold text-slate-500">Pickup Weight</span>
-                        <p className="text-[13px] font-black text-slate-800">{o.weight?.toFixed(1) || '0.0'} <span className="text-[10px] text-slate-400">KG</span></p>
+                  {o.type === 'student' ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-slate-500">Pickup Weight</span>
+                      <p className="text-[13px] font-black text-slate-800">{o.weight?.toFixed(1) || '0.0'} <span className="text-[10px] text-slate-400">KG</span></p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[11px] font-bold text-slate-500">Pick Details</span>
+                        <span className="text-[11px] font-black text-slate-800">{Object.values(o.details || {}).reduce((s, v) => s + v, 0)} Items</span>
                       </div>
-                   ) : (
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[11px] font-bold text-slate-500">Pick Details</span>
-                          <span className="text-[11px] font-black text-slate-800">{Object.values(o.details || {}).reduce((s, v) => s + v, 0)} Items</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {Object.entries(o.details || {}).filter(([, v]) => v > 0).map(([k, v]) => (
-                            <span key={k} className="text-[9px] font-bold bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-100">{k}: {v}</span>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(o.details || {}).filter(([, v]) => v > 0).map(([k, v]) => (
+                          <span key={k} className="text-[9px] font-bold bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-100">{k}: {v}</span>
+                        ))}
                       </div>
-                   )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center pt-1">
-                   <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Billed Amount</span>
-                      <div className="flex items-center gap-1 text-[14px] font-black text-blue-600">
-                        <BiRupee size={12} className="text-blue-400" />
-                        <span>{o.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-1 text-slate-400">
-                      <span className="text-[10px] font-bold">View</span>
-                      <FiChevronRight size={14} />
-                   </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Billed Amount</span>
+                    <div className="flex items-center gap-1 text-[14px] font-black text-blue-600">
+                      <BiRupee size={12} className="text-blue-400" />
+                      <span>{o.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <span className="text-[10px] font-bold">View</span>
+                    <FiChevronRight size={14} />
+                  </div>
                 </div>
               </div>
             ))}
         </div>
       </div>
 
-      <AdminOrderModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        order={selectedOrder} 
+      <AdminOrderModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        order={selectedOrder}
       />
     </div>
   );

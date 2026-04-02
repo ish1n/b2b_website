@@ -1,6 +1,6 @@
 // src/components/AdminRegularTab.jsx
 import { useMemo, useState } from "react";
-import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiClock, FiAlertTriangle, FiCalendar, FiChevronRight } from "react-icons/fi";
+import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiCalendar, FiChevronRight } from "react-icons/fi";
 import EmptyState from "./EmptyState";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
@@ -8,9 +8,10 @@ import AdminOrderModal from "./AdminOrderModal";
 const CHANNELS = ["All", "App", "Website", "WhatsApp", "Outlet", "Call", "Student"];
 const CHANNEL_ICONS = { App: FiSmartphone, Website: FiShoppingBag, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
 const CHANNEL_COLORS = { App: "#1976D2", Website: "#6366F1", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
-const SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Other"];
 
-const RATE_MAP = { "Wash & Fold": 55, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Other": 0 };
+// Added "Shoe Cleaning" and "Other"
+const SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Shoe Cleaning", "Other"];
+const RATE_MAP = { "Wash & Fold": 55, "Wash & Iron": 90, "Wash & Fold + Iron": 120, "Dry Clean": 150, "Shoe Cleaning": 0, "Other": 0 };
 
 const STATUS_BADGE = {
   Delivered: 'bg-emerald-50 text-emerald-700 border-emerald-100',
@@ -24,23 +25,43 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
   const [toast, setToast] = useState("");
   const [selectedDrilldownOrder, setSelectedDrilldownOrder] = useState(null);
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+
+  // Updated state: services array replaces individual serviceType, weight, and clothes
+  const defaultService = () => ({ id: Date.now(), type: "Wash & Fold", customName: "", weight: "", items: "", amount: "" });
+
   const [form, setForm] = useState({
-    customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold",
-    weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null
+    customerName: "", phone: "", channel: "App",
+    services: [defaultService()],
+    amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null
   });
 
   const openEditModal = (order) => {
+    // Check if it's a new multi-service order or legacy format
+    let loadedServices = [];
+    if (order.servicesList && order.servicesList.length > 0) {
+      loadedServices = order.servicesList;
+    } else {
+      const sType = order.service?.split(" —")[0] || "Wash & Fold";
+      const isOther = !SERVICE_TYPES.includes(sType) && sType !== "Wash & Fold";
+      loadedServices = [{
+        id: Date.now(),
+        type: isOther ? "Other" : sType,
+        customName: isOther ? sType : "",
+        weight: order.weight?.toString() || "",
+        items: order.items?.toString() || "",
+        amount: order.amount?.toString() || ""
+      }];
+    }
+
     setForm({
       id: order.id,
       customerName: order.customerName || "",
       phone: order.customerNumber || "",
       channel: order.channel || "App",
-      serviceType: order.service?.split(" —")[0] || "Wash & Fold",
-      weight: order.weight || "",
-      clothes: order.items || "",
+      services: loadedServices,
       amount: order.amount || "",
-      pickupDate: order.date || "", // Map order.date to pickupDate
-      deliveryDate: order.deliveryDate || "", // Map delivery date
+      pickupDate: order.date || "",
+      deliveryDate: order.deliveryDate || "",
       notes: order.notes || "",
       status: order.status || "Confirmed"
     });
@@ -60,20 +81,59 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
   }, [regularOrders]);
 
   const updateForm = (key, val) => {
-    const updated = { ...form, [key]: val };
-    // Auto-suggest amount
-    if ((key === "weight" || key === "serviceType") && updated.weight) {
-      const rate = RATE_MAP[updated.serviceType] || 0;
-      const w = parseFloat(updated.weight) || 0;
-      if (rate > 0 && w > 0) updated.amount = (rate * w).toFixed(0);
+    setForm({ ...form, [key]: val });
+  };
+
+  const updateService = (index, field, val) => {
+    const newServices = [...form.services];
+    const srv = { ...newServices[index], [field]: val };
+
+    // Auto-calculate line amount if weight or type changes
+    if (field === 'type' || field === 'weight') {
+      const rate = RATE_MAP[srv.type] || 0;
+      const w = parseFloat(srv.weight) || 0;
+      if (rate > 0 && w > 0) {
+        srv.amount = (rate * w).toFixed(0);
+      } else if (field === 'type' && rate === 0) {
+        srv.amount = ""; // Reset for custom types to allow manual entry
+      }
     }
-    setForm(updated);
+
+    newServices[index] = srv;
+
+    // Auto-sum total amount
+    const totalAmt = newServices.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    setForm({ ...form, services: newServices, amount: totalAmt > 0 ? totalAmt.toString() : form.amount });
+  };
+
+  const addService = () => {
+    setForm({ ...form, services: [...form.services, defaultService()] });
+  };
+
+  const removeService = (index) => {
+    if (form.services.length <= 1) return;
+    const newServices = form.services.filter((_, i) => i !== index);
+    const totalAmt = newServices.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    setForm({ ...form, services: newServices, amount: totalAmt > 0 ? totalAmt.toString() : "" });
   };
 
   const handleSubmit = () => {
     if (!form.customerName || !form.amount) return;
+
+    const totalWeight = form.services.reduce((sum, srv) => sum + (parseFloat(srv.weight) || 0), 0);
+    const totalItems = form.services.reduce((sum, srv) => sum + (parseInt(srv.items) || 0), 0);
+
+    // Generate an intelligent summary string for quick viewing in tables
+    const serviceSummary = form.services.map(srv => {
+      const name = srv.type === 'Other' ? (srv.customName || 'Other') : srv.type;
+      const metrics = [];
+      if (srv.weight) metrics.push(`${srv.weight}kg`);
+      if (srv.items) metrics.push(`${srv.items}pcs`);
+      return `${name}${metrics.length ? ` (${metrics.join(', ')})` : ''}`;
+    }).join(" + ");
+
     const newOrder = {
-      id: `reg-new-${Date.now()}`,
+      id: form.id || `reg-new-${Date.now()}`,
       property: "Regular Customers",
       category: "B2C_RETAIL",
       type: "regular",
@@ -82,16 +142,16 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       deliveryDate: form.deliveryDate || "",
       amount: parseFloat(form.amount) || 0,
       status: form.status,
-      items: parseInt(form.clothes) || 1,
-      weight: parseFloat(form.weight) || 0,
+      items: totalItems,
+      weight: totalWeight,
       customerName: form.customerName,
       customerNumber: form.phone,
-      service: `${form.serviceType}${form.weight ? ` — ${form.weight} KG` : ""}`,
+      service: serviceSummary || "Custom Service",
+      servicesList: form.services, // Saved to Firebase natively here!
       notes: form.notes,
     };
 
     if (form.id) {
-      newOrder.id = form.id;
       onEditOrder(newOrder);
       setToast("Order updated successfully!");
     } else {
@@ -100,13 +160,12 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
     }
 
     setShowModal(false);
-    setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null });
+    setForm({ customerName: "", phone: "", channel: "App", services: [defaultService()], amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null });
     setTimeout(() => setToast(""), 3000);
   };
 
   return (
     <div className="space-y-8" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Toast */}
       {toast && (
         <div className="fixed top-6 right-6 z-[100] bg-[#0F172A] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-slide-left border border-slate-700/50 backdrop-blur-md">
           <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -155,7 +214,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
             </button>
           ))}
         </div>
-        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", serviceType: "Wash & Fold", weight: "", clothes: "", amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null }); setShowModal(true); }}
+        <button onClick={() => { setForm({ customerName: "", phone: "", channel: "App", services: [defaultService()], amount: "", pickupDate: "", deliveryDate: "", notes: "", status: "Confirmed", id: null }); setShowModal(true); }}
           className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 bg-blue-600 text-white text-[13px] font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest">
           <FiPlus size={18} /> Log New Order
         </button>
@@ -197,8 +256,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   </td>
                 </tr>
               ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
-                <tr 
-                  key={o.id} 
+                <tr
+                  key={o.id}
                   onClick={() => { setSelectedDrilldownOrder(o); setIsDrilldownOpen(true); }}
                   className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
                 >
@@ -208,7 +267,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-[13px] font-bold text-slate-700">{o.service?.split(" —")[0]}</p>
+                      <p className="text-[13px] font-bold text-slate-700 truncate max-w-[200px]" title={o.service}>
+                        {o.service?.split(" —")[0] || o.service}
+                      </p>
                       <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">
                         {o.channel || 'direct'}
                       </span>
@@ -253,53 +314,53 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
 
         {/* Mobile Card Layout */}
         <div className="md:hidden divide-y divide-gray-50 uppercase tracking-tight">
-           {filtered.length === 0 ? (
-             <div className="p-8 text-center text-slate-400 text-xs italic uppercase">No matching transactions</div>
-           ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
-             <div 
-               key={o.id}
-               onClick={() => { setSelectedDrilldownOrder(o); setIsDrilldownOpen(true); }}
-               className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
-             >
-               <div className="flex justify-between items-start mb-3">
-                 <div>
-                   <h4 className="text-sm font-black text-[#0F172A]">{o.customerName || 'Anonymous'}</h4>
-                   <p className="text-[10px] font-bold text-slate-400">{o.customerNumber || 'NO CONTACT'}</p>
-                 </div>
-                 <div className="flex flex-col items-end">
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mb-1.5 ${STATUS_BADGE[o.status] || 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                      {o.status}
-                    </span>
-                    <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
-                      <BiRupee size={12} className="text-blue-400" />
-                      <span>{o.amount?.toLocaleString()}</span>
-                    </div>
-                 </div>
-               </div>
-
-               <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 flex items-center justify-between mb-3">
-                 <div className="flex flex-col">
-                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Service</span>
-                   <span className="text-[11px] font-bold text-slate-700">{o.service?.split(" —")[0]}</span>
-                 </div>
-                 <div className="text-right">
-                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Metric</span>
-                   <span className="text-[11px] font-black text-slate-700">{o.weight?.toFixed(1)} KG / {o.items} PCS</span>
-                 </div>
-               </div>
-
-               <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <FiCalendar size={12} />
-                    <span>{o.date}</span>
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs italic uppercase">No matching transactions</div>
+          ) : filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).map(o => (
+            <div
+              key={o.id}
+              onClick={() => { setSelectedDrilldownOrder(o); setIsDrilldownOpen(true); }}
+              className="p-4 active:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="text-sm font-black text-[#0F172A]">{o.customerName || 'Anonymous'}</h4>
+                  <p className="text-[10px] font-bold text-slate-400">{o.customerNumber || 'NO CONTACT'}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mb-1.5 ${STATUS_BADGE[o.status] || 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                    {o.status}
+                  </span>
+                  <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
+                    <BiRupee size={12} className="text-blue-400" />
+                    <span>{o.amount?.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="uppercase text-[8px] tracking-widest">To:</span>
-                    <span className={o.deliveryDate ? 'text-slate-600' : 'text-amber-500'}>{o.deliveryDate || 'TBD'}</span>
-                  </div>
-               </div>
-             </div>
-           ))}
+                </div>
+              </div>
+
+              <div className="bg-slate-50/50 rounded-xl p-3 border border-slate-100/50 flex items-center justify-between mb-3">
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Service</span>
+                  <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{o.service?.split(" —")[0] || o.service}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Metric</span>
+                  <span className="text-[11px] font-black text-slate-700">{o.weight?.toFixed(1)} KG / {o.items} PCS</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <FiCalendar size={12} />
+                  <span>{o.date}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="uppercase text-[8px] tracking-widest">To:</span>
+                  <span className={o.deliveryDate ? 'text-slate-600' : 'text-amber-500'}>{o.deliveryDate || 'TBD'}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -348,7 +409,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 </div>
               </div>
 
-              {/* Added: Pickup and Delivery Dates Section */}
+              {/* Pickup and Delivery Dates Section */}
               <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-slate-50">
                 <div>
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Pickup</label>
@@ -382,23 +443,50 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 </div>
               </div>
 
+              {/* Multi-Service Mapping Section */}
               <div className="pt-4 border-t border-slate-50">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Service Profile & Metrics</label>
-                <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <div className="col-span-2">
-                    <select value={form.serviceType} onChange={e => updateForm("serviceType", e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none">
-                      {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <input type="number" step="0.1" value={form.weight} onChange={e => updateForm("weight", e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Weight (KG)" />
-                  </div>
-                  <div>
-                    <input type="number" value={form.clothes} onChange={e => updateForm("clothes", e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Item Count" />
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Service Breakdown</label>
+                  <button type="button" onClick={addService} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-md transition-colors border border-blue-100">
+                    <FiPlus size={12} /> Add Service
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {form.services.map((srv, index) => (
+                    <div key={srv.id} className="relative bg-slate-50/50 p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm transition-all">
+                      {form.services.length > 1 && (
+                        <button type="button" onClick={() => removeService(index)} className="absolute -top-2.5 -right-2.5 bg-white border border-red-100 text-red-500 p-1.5 rounded-full hover:bg-red-50 hover:text-red-600 transition-colors shadow-sm">
+                          <FiX size={14} />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-12 gap-2 sm:gap-3">
+                        <div className="col-span-12">
+                          <select value={srv.type} onChange={e => updateService(index, "type", e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none">
+                            {SERVICE_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          {srv.type === "Other" && (
+                            <input type="text" value={srv.customName} onChange={e => updateService(index, "customName", e.target.value)}
+                              className="w-full mt-2 px-4 py-2.5 bg-white border border-blue-200 rounded-xl text-[13px] font-bold text-blue-800 placeholder:text-blue-300 focus:border-blue-500 focus:outline-none" placeholder="Type custom service name..." />
+                          )}
+                        </div>
+                        <div className="col-span-4">
+                          <input type="number" step="0.1" value={srv.weight} onChange={e => updateService(index, "weight", e.target.value)}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Weight" />
+                        </div>
+                        <div className="col-span-4">
+                          <input type="number" value={srv.items} onChange={e => updateService(index, "items", e.target.value)}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Pcs" />
+                        </div>
+                        <div className="col-span-4 relative">
+                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold"><BiRupee size={12} /></div>
+                          <input type="number" value={srv.amount} onChange={e => updateService(index, "amount", e.target.value)}
+                            className="w-full pl-6 pr-2 py-2.5 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none" placeholder="Amt" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -414,15 +502,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   </div>
                 </div>
                 <div className="flex items-end pb-1.5">
-                  {form.weight && RATE_MAP[form.serviceType] > 0 && (
-                    <div className="text-[11px] font-bold text-slate-400 leading-tight">
-                      Standard Pricing Rate:<br />
-                      <div className="flex items-center gap-0.5 text-blue-500">
-                        <BiRupee size={10} />
-                        <span>{RATE_MAP[form.serviceType]}/kg applied</span>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-[11px] font-medium text-slate-400 leading-tight">
+                    Total amount is auto-calculated based on service lines, but can be manually overridden.
+                  </div>
                 </div>
               </div>
 
@@ -445,7 +527,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       )}
 
       {/* Deep Drill-Down Order Modal */}
-      <AdminOrderModal 
+      <AdminOrderModal
         isOpen={isDrilldownOpen}
         onClose={() => setIsDrilldownOpen(false)}
         order={selectedDrilldownOrder}

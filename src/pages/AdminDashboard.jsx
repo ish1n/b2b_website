@@ -31,10 +31,11 @@ export default function AdminDashboard() {
       setIsSidebarCollapsed(isMobile);
       if (!isMobile) setIsMobileMenuOpen(false);
     };
-    handleResize(); // Set initial state correctly
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const partner = client;
   const [allManagers, setAllManagers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,21 +44,24 @@ export default function AdminDashboard() {
   const [totalUsers, setTotalUsers] = useState(0);
 
   const [activeTab, setActiveTab] = useState("overview");
-  const [dateFrom, setDateFrom] = useState("2026-03-01");
-  const [dateTo, setDateTo] = useState(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]);
-  const [extraOrders, setExtraOrders] = useState([]);
 
-  // Invoice Modal State
+  // Dynamic default: always start at 1st of the current month
+  const [dateFrom, setDateFrom] = useState(() => {
+    const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [dateTo, setDateTo] = useState(
+    new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]
+  );
+  const [extraOrders, setExtraOrders] = useState([]);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
-  // Listen to Firestore for admin edits — wait for Firebase Auth to be ready first
   useEffect(() => {
     let unsubSnapshot = () => { };
     const unsubAuth = onAuthStateChanged(auth, (user) => {
-      unsubSnapshot(); // clean up any previous listener
+      unsubSnapshot();
       if (user) {
         setLoading(true);
-        // Listen for Admin Edits
         const editsRef = collection(db, "b2b_admin_edits");
         unsubSnapshot = onSnapshot(editsRef, (snapshot) => {
           const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -68,30 +72,24 @@ export default function AdminDashboard() {
           setLoading(false);
         });
 
-        // Listen for Managers (Clients list)
         const managersRef = collection(db, "b2b_managers");
         const unsubManagers = onSnapshot(managersRef, (snapshot) => {
           const managers = snapshot.docs
             .map(d => ({ id: d.id, ...d.data() }))
-            .filter(m => m.role !== "admin"); // Filter out admin themselves
+            .filter(m => m.role !== "admin");
           setAllManagers(managers);
-        }, (err) => {
-          console.error("Error fetching managers list:", err);
-        });
+        }, (err) => console.error("Error fetching managers list:", err));
 
-        // Listen for Screen Analytics
         const screensRef = query(collection(db, "analytics", "screens", "popular"), orderBy("visitCount", "desc"), limit(10));
         const unsubScreens = onSnapshot(screensRef, (snapshot) => {
           setScreenStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
         }, (err) => console.error("Error fetching screen stats:", err));
 
-        // Listen for Search Analytics
         const searchesRef = query(collection(db, "analytics", "searches", "popular"), orderBy("count", "desc"), limit(10));
         const unsubSearches = onSnapshot(searchesRef, (snapshot) => {
           setSearchStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
         }, (err) => console.error("Error fetching search stats:", err));
 
-        // Listen for Total Users
         const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
           setTotalUsers(snapshot.size);
         }, (err) => console.error("Error fetching users:", err));
@@ -126,12 +124,9 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Filtered overlapping orders logic
   const allOrders = useMemo(() => {
-    // baseOrders without the ones that are edited (which live in extraOrders)
     const extraIds = new Set(extraOrders.map(o => o.id));
     const cleanBase = baseOrders.filter(o => !extraIds.has(o.id));
-    // Merge base data with extra orders, then filter out any soft-deleted records
     return [...cleanBase, ...extraOrders].filter(o => !o.isDeleted);
   }, [baseOrders, extraOrders]);
 
@@ -146,20 +141,24 @@ export default function AdminDashboard() {
     });
   }, [allOrders, dateFrom, dateTo]);
 
-  // Days in range
+  // ─── KEY FIX: daysInRange now stores full "YYYY-MM-DD" strings ───
   const daysInRange = useMemo(() => {
-    const from = new Date(dateFrom || "2026-03-01");
-    const to = new Date(dateTo || "2026-03-10");
-    const days = [];
+    const now = new Date();
+    const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const from = new Date(dateFrom || defaultFrom);
+    const to = new Date(dateTo || now.toISOString().split("T")[0]);
+    const dates = [];
+    // Iterate day by day and push ISO date strings
     for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-      days.push(d.getDate());
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      dates.push(`${y}-${m}-${day}`);
     }
-    return days;
+    return dates;
   }, [dateFrom, dateTo]);
 
-  // KPI stats & Sparklines
   const stats = useMemo(() => {
-    // Determine which orders to focus on for the KPI cards based on active tab
     let focusOrders = orders.filter(o => o.category !== "ISSUES");
 
     if (activeTab === "regular") {
@@ -172,7 +171,6 @@ export default function AdminDashboard() {
 
     const issues = orders.filter(o => o.category === "ISSUES");
 
-    // Total Metrics
     const totalRevenue = focusOrders.reduce((s, o) => s + (o.amount || 0), 0);
     const totalOrders = focusOrders.length;
     const totalKg = focusOrders.reduce((s, o) => s + (o.weight || 0), 0);
@@ -185,18 +183,16 @@ export default function AdminDashboard() {
           : allManagers.filter(m => m.role !== "admin").length;
     const openIssuesCount = issues.filter(i => i.resolveStatus !== "Resolved").length;
 
-    // Segment Breakdowns for Overview
     const hostelRevenue = orders.filter(o => o.type === "student" || o.type === "linen").reduce((s, o) => s + (o.amount || 0), 0);
     const retailRevenue = orders.filter(o => o.type === "regular").reduce((s, o) => s + (o.amount || 0), 0);
     const hotelRevenue = orders.filter(o => o.type === "airbnb").reduce((s, o) => s + (o.amount || 0), 0);
 
-    // Helper: Build daily trend data for sparklines
+    // ─── KEY FIX: getTrend matches on full YYYY-MM-DD string ───
     const getTrend = (filterFn) => {
-      return daysInRange.map(day => ({
-        v: allOrders.filter(o => {
-          const d = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
-          return d === day && filterFn(o);
-        }).reduce((s, o) => s + (o.amount || o.weight || 1), 0)
+      return daysInRange.map(fullDate => ({
+        v: allOrders
+          .filter(o => o.date === fullDate && filterFn(o))
+          .reduce((s, o) => s + (o.amount || o.weight || 1), 0)
       }));
     };
 
@@ -226,7 +222,7 @@ export default function AdminDashboard() {
           if (activeTab === "hotels") return o.type === "airbnb";
           return o.category !== "ISSUES";
         }),
-        clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })), // Mock sparkle for static count
+        clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })),
         issues: getTrend(o => o.category === "ISSUES")
       }
     };
@@ -255,13 +251,10 @@ export default function AdminDashboard() {
     if (!window.confirm("Are you sure you want to delete this specific record permanently?")) return;
     try {
       if (!item.id) throw new Error("ID missing for delete action");
-
       const idStr = String(item.id);
-      // If the ID explicitly implies it was manually created from the dashboard (not historical static data), actually delete it from Firestore
       if (idStr.startsWith("reg-new-") || idStr.startsWith("issue-new-")) {
         await deleteDoc(doc(db, "b2b_admin_edits", idStr));
       } else {
-        // Otherwise, it’s a historical static data point and we MUST use soft-delete { isDeleted: true } as an override to keep it hidden
         await setDoc(doc(db, "b2b_admin_edits", idStr), { ...item, isDeleted: true });
       }
     } catch (err) {
@@ -315,7 +308,6 @@ export default function AdminDashboard() {
         />
 
         <div className="p-4 lg:p-8">
-          {/* Generate Invoice Action Bar */}
           {['overview', 'hostels', 'hotels', 'regular'].includes(activeTab) && (
             <div className="flex justify-end mb-4 animate-fade-in">
               <button
@@ -327,7 +319,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* KPI Cards - Hidden on Analytics, Issues and Expenses tabs to reduce clutter */}
           {activeTab !== "issues" && activeTab !== "expenses" && activeTab !== "analytics" && (
             <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
               <KpiCard
@@ -357,9 +348,9 @@ export default function AdminDashboard() {
               />
               <KpiCard
                 label={
-                    activeTab === "hostels" ? "Managed Hostels" :
-                      activeTab === "hotels" ? "Active Properties" : 
-                        activeTab === "website" ? "Website Customers" : "B2B Clients"
+                  activeTab === "hostels" ? "Managed Hostels" :
+                    activeTab === "hotels" ? "Active Properties" :
+                      activeTab === "website" ? "Website Customers" : "B2B Clients"
                 }
                 value={stats.totalClients}
                 icon={FiUsers}
@@ -381,21 +372,48 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Tab Content */}
           <div className="animate-fade-in">
-            {activeTab === "overview" && <AdminOverviewTab orders={orders} clients={clients} daysInRange={daysInRange} onDeleteData={handleDeleteData} />}
-            {activeTab === "hostels" && <AdminHostelsTab orders={orders} daysInRange={daysInRange} />}
+            {activeTab === "overview" && (
+              <AdminOverviewTab
+                orders={orders}
+                clients={clients}
+                daysInRange={daysInRange}
+                onDeleteData={handleDeleteData}
+              />
+            )}
+            {activeTab === "hostels" && (
+              <AdminHostelsTab orders={orders} daysInRange={daysInRange} />
+            )}
             {activeTab === "hotels" && <AdminHotelsTab orders={orders} />}
-            {activeTab === "regular" && <AdminRegularTab orders={orders} onAddOrder={handleAddOrder} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
-            {activeTab === "issues" && <AdminIssuesTab orders={orders} onAddIssue={handleAddIssue} onEditIssue={handleEditIssue} onDeleteIssue={handleDeleteData} />}
-            {activeTab === "website" && <AdminWebsiteTab orders={orders} onEditOrder={handleEditOrder} onDeleteOrder={handleDeleteData} />}
+            {activeTab === "regular" && (
+              <AdminRegularTab
+                orders={orders}
+                onAddOrder={handleAddOrder}
+                onEditOrder={handleEditOrder}
+                onDeleteOrder={handleDeleteData}
+              />
+            )}
+            {activeTab === "issues" && (
+              <AdminIssuesTab
+                orders={orders}
+                onAddIssue={handleAddIssue}
+                onEditIssue={handleEditIssue}
+                onDeleteIssue={handleDeleteData}
+              />
+            )}
             {activeTab === "expenses" && <AdminExpensesTab />}
-            {activeTab === "analytics" && <AdminAnalyticsTab orders={orders} screens={screenStats} searches={searchStats} totalUsers={totalUsers} />}
+            {activeTab === "analytics" && (
+              <AdminAnalyticsTab
+                orders={orders}
+                screens={screenStats}
+                searches={searchStats}
+                totalUsers={totalUsers}
+              />
+            )}
           </div>
         </div>
       </main>
 
-      {/* Invoice Generator Modal Component */}
       <InvoiceGeneratorModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}

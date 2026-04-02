@@ -19,11 +19,11 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Blurred Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
-        onClick={onClose} 
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
       />
-      
+
       {/* Modal Content */}
       <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col sm:max-h-[90vh]">
         {/* Header */}
@@ -36,8 +36,8 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
               {getStatusBadge(order.status)}
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 text-slate-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors"
           >
             <FiX size={20} />
@@ -82,7 +82,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                     {order.items || 0} {order.items === 1 ? 'Product' : 'Products'}
                   </span>
                 </div>
-                
+
                 {order.itemsList && order.itemsList.length > 0 ? (
                   <div className="space-y-2">
                     {order.itemsList.map((item, idx) => (
@@ -107,7 +107,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
                   <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Delivery Address</p>
                   <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
-                    {typeof order.address === 'object' 
+                    {typeof order.address === 'object'
                       ? `${order.address.street || ''}, ${order.address.city || ''}, ${order.address.zipCode || ''}`
                       : order.address}
                   </p>
@@ -129,11 +129,34 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
               <div>
                 <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Service Details</h3>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-[14px] font-bold text-slate-600">Wash Type</span>
-                  <span className="text-[14px] font-black text-[#0F172A]">{order.service?.split(" —")[0] || 'Wash & Fold'}</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-t border-slate-50">
+
+                {/* Dynamically Render Array of Services OR Fallback to Original */}
+                {order.servicesList && order.servicesList.length > 0 ? (
+                  <div className="space-y-2 py-2">
+                    {order.servicesList.map((srv, idx) => (
+                      <div key={idx} className="bg-white border border-slate-100 rounded-lg p-3 flex justify-between items-center shadow-sm">
+                        <div>
+                          <p className="text-[13px] font-black text-[#0F172A]">{srv.type === 'Other' ? (srv.customName || 'Other') : srv.type}</p>
+                          <p className="text-[11px] font-bold text-slate-500 mt-0.5">
+                            {srv.weight ? `${srv.weight} kg` : ''}
+                            {srv.weight && srv.items ? ' • ' : ''}
+                            {srv.items ? `${srv.items} pcs` : ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[14px] font-black text-blue-600">₹{srv.amount || 0}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-[14px] font-bold text-slate-600">Wash Type</span>
+                    <span className="text-[14px] font-black text-[#0F172A]">{order.service?.split(" —")[0] || 'Wash & Fold'}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between py-2 border-t border-slate-50 mt-2">
                   <span className="text-[14px] font-bold text-slate-600">Channel</span>
                   <span className="text-[14px] font-black text-[#0F172A]">{order.channel || 'Direct'}</span>
                 </div>
@@ -160,7 +183,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                     {Object.values(order.details || {}).reduce((s, v) => s + v, 0) || order.items || 0} Pieces Total
                   </span>
                 </div>
-                
+
                 {order.details && Object.keys(order.details).length > 0 ? (
                   <div className="space-y-2">
                     {Object.entries(order.details).filter(([, v]) => v > 0).map(([item, qty]) => (

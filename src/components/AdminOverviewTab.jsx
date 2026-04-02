@@ -8,13 +8,14 @@ import { BiRupee } from "react-icons/bi";
 import ExportCSV from "./ExportCSV";
 import OrderTable from "./OrderTable";
 import AdminOrderModal from "./AdminOrderModal";
+
 const AVATAR_COLORS = ['#1976D2', '#7C3AED', '#059669', '#DC2626', '#D97706', '#0891B2', '#BE185D'];
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white/90 backdrop-blur-sm border border-gray-100 shadow-xl rounded-xl p-3" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-        <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-1">Mar {label}</p>
+        <p className="text-gray-400 font-bold text-[10px] uppercase tracking-wider mb-1">{label}</p>
         <div className="flex items-center gap-0.5 text-gray-900 font-black text-base">
           <BiRupee size={16} />
           <span>{payload[0].value.toLocaleString()}</span>
@@ -25,14 +26,13 @@ const ChartTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// daysInRange is now an array of full "YYYY-MM-DD" strings
 export default function AdminOverviewTab({ orders, clients, daysInRange }) {
   const [selectedClient, setSelectedClient] = useState(null);
-  const [filterType, setFilterType] = useState("All"); // All, Linen, Student
-  const [sortConfig, setSortConfig] = useState({ key: 'rev', direction: 'desc' }); // rev, orders, kg
+  const [filterType, setFilterType] = useState("All");
+  const [sortConfig, setSortConfig] = useState({ key: 'rev', direction: 'desc' });
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
-
-  // New Client Modal states
   const [modalFilterStatus, setModalFilterStatus] = useState("All");
   const [modalFilterProperty, setModalFilterProperty] = useState("All");
   const [selectedModalOrder, setSelectedModalOrder] = useState(null);
@@ -46,14 +46,26 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
 
   const regularOrders = useMemo(() => orders.filter(o => o.category !== "ISSUES"), [orders]);
 
+  // ─── KEY FIX: daysInRange contains full "YYYY-MM-DD" strings ───
+  // Match orders by exact date string — no day-number ambiguity across months
   const dailyRevenue = useMemo(() =>
-    daysInRange.map(day => {
-      const dayOrders = regularOrders.filter(o => {
-        const d = o.date ? parseInt(o.date.split("-")[2], 10) : o.day;
-        return d === day;
-      });
-      return { day, revenue: dayOrders.reduce((s, o) => s + (o.amount || 0), 0) };
-    }), [regularOrders, daysInRange]);
+    daysInRange.map(fullDate => {
+      const dayOrders = regularOrders.filter(o => o.date === fullDate);
+      const dayNum = parseInt(fullDate.split("-")[2], 10);
+      // Show MM/DD label at month boundaries so the chart is readable
+      const prevDate = daysInRange[daysInRange.indexOf(fullDate) - 1];
+      const isNewMonth = !prevDate || prevDate.slice(0, 7) !== fullDate.slice(0, 7);
+      const label = isNewMonth
+        ? `${fullDate.slice(5, 7)}/${fullDate.slice(8, 10)}`
+        : String(dayNum);
+      return {
+        day: label,
+        fullDate,
+        revenue: dayOrders.reduce((s, o) => s + (o.amount || 0), 0)
+      };
+    }),
+    [regularOrders, daysInRange]
+  );
 
   const totalRevenue = useMemo(() => regularOrders.reduce((s, o) => s + (o.amount || 0), 0), [regularOrders]);
 
@@ -66,7 +78,6 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       } else {
         cat = getCategoryForProperty(o.property || o.tenant);
       }
-      
       if (!map[cat.key]) map[cat.key] = { label: cat.label, color: cat.color, orders: 0, revenue: 0 };
       map[cat.key].orders++;
       map[cat.key].revenue += (o.amount || 0);
@@ -83,20 +94,28 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
       const cOrders = orders.filter(o => props.includes(o.property));
       const rev = cOrders.reduce((s, o) => s + (o.amount || 0), 0);
       const kg = cOrders.reduce((s, o) => s + (o.weight || 0), 0);
-      const issues = orders.filter(o => o.category === "ISSUES").length;
       const clothes = cOrders.reduce((s, o) => s + (o.items || 0), 0);
       let last = null;
-      cOrders.forEach(o => { if (o.date) { const d = new Date(o.date); if (!last || d > last) last = d; } });
-      const hostelType = mgr.id === "client-regular" ? "Retail" : cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN") ? "Linen" : cOrders.length > 0 && cOrders[0].type === "student" ? "Student" : "Other";
+      cOrders.forEach(o => {
+        if (o.date) {
+          const d = new Date(o.date);
+          if (!last || d > last) last = d;
+        }
+      });
+      const hostelType = mgr.id === "client-regular"
+        ? "Retail"
+        : cOrders.length > 0 && (cOrders[0].type === "linen" || cOrders[0].category === "LINEN")
+          ? "Linen"
+          : cOrders.length > 0 && cOrders[0].type === "student"
+            ? "Student"
+            : "Other";
       return { ...mgr, idx, rev, kg, clothes, orders: cOrders.length, issues: 0, last, hostelType };
     }).filter(c => c.orders > 0);
 
-    // Filter
     if (filterType !== "All") {
       rows = rows.filter(r => r.hostelType === filterType);
     }
 
-    // Sort
     rows.sort((a, b) => {
       const aVal = a[sortConfig.key] || 0;
       const bVal = b[sortConfig.key] || 0;
@@ -116,7 +135,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               <p className="text-[12px] font-medium text-[#94A3B8]">Daily revenue performance</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 220 : 300} debounce={100} minWidth={1} minHeight={1} >
+          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 220 : 300} debounce={100} minWidth={1} minHeight={1}>
             <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
@@ -125,18 +144,18 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis 
-                dataKey="day" 
-                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }} 
-                axisLine={false} 
-                tickLine={false} 
-                dy={10} 
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }}
+                axisLine={false}
+                tickLine={false}
+                dy={10}
                 interval={window.innerWidth < 640 ? 2 : 0}
               />
-              <YAxis 
-                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }} 
-                axisLine={false} 
-                tickLine={false} 
+              <YAxis
+                tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 500 }}
+                axisLine={false}
+                tickLine={false}
                 tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`}
                 width={window.innerWidth < 640 ? 35 : 50}
               />
@@ -166,11 +185,9 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
                     <span className="text-[13px] font-bold text-[#475569]">{cat.label}</span>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center justify-end gap-0.5 text-[13px] font-extrabold text-[#0F172A]">
-                      <BiRupee size={12} />
-                      <span>{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
+                  <div className="flex items-center justify-end gap-0.5 text-[13px] font-extrabold text-[#0F172A]">
+                    <BiRupee size={12} />
+                    <span>{cat.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
                 <div className="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
@@ -196,7 +213,6 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             <p className="text-[12px] font-medium text-[#94A3B8]">Detailed metrics per registered partner</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Filter Dropdown */}
             <div className="relative">
               <button
                 onClick={() => { setShowFilterMenu(!showFilterMenu); setShowSortMenu(false); }}
@@ -215,7 +231,6 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               )}
             </div>
 
-            {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() => { setShowSortMenu(!showSortMenu); setShowFilterMenu(false); }}
@@ -240,6 +255,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
             </div>
           </div>
         </div>
+
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[850px]">
@@ -291,11 +307,13 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                       </div>
                     ) : '—'}
                   </td>
-                  <td className="px-6 py-4 text-[13px] font-medium text-[#94A3B8] text-center">{c.last ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(c.last) : '—'}</td>
+                  <td className="px-6 py-4 text-[13px] font-medium text-[#94A3B8] text-center">
+                    {c.last ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(c.last) : '—'}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => handleOpenClientModal(c)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[#475569] text-[12px] font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all opacity-100">
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[#475569] text-[12px] font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all">
                       View <FiArrowRight size={14} />
                     </button>
                   </td>
@@ -308,14 +326,14 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
         {/* Mobile Card Layout */}
         <div className="md:hidden divide-y divide-gray-50">
           {clientRows.map((c, i) => (
-            <div 
+            <div
               key={c.id}
               onClick={() => setSelectedClient(c)}
               className="p-4 active:bg-gray-50 transition-colors cursor-pointer"
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-sm"
                     style={{ backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
                   >
@@ -323,11 +341,10 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                   </div>
                   <div>
                     <h4 className="text-sm font-black text-[#0F172A]">{c.name}</h4>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                      c.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' :
-                      c.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' :
-                      'bg-emerald-50 text-emerald-600'
-                    }`}>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${c.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' :
+                        c.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' :
+                          'bg-emerald-50 text-emerald-600'
+                      }`}>
                       {c.hostelType}
                     </span>
                   </div>
@@ -340,7 +357,6 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.orders} Orders</span>
                 </div>
               </div>
-              
               <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100/50">
                 <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Processed</span>
@@ -368,7 +384,10 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{selectedClient.name}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${selectedClient.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' : selectedClient.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-500'}`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${selectedClient.hostelType === 'Linen' ? 'bg-purple-50 text-purple-600' :
+                      selectedClient.hostelType === 'Student' ? 'bg-blue-50 text-blue-600' :
+                        'bg-gray-50 text-gray-500'
+                    }`}>
                     {selectedClient.hostelType}
                   </span>
                   <p className="text-sm text-gray-500">Detailed Order History</p>
@@ -379,18 +398,16 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               </button>
             </div>
             <div className="bg-gray-50 p-4 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 flex-shrink-0">
-              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                <p className="text-xs text-gray-400 font-medium">Total Orders</p>
-                <p className="text-lg font-bold text-gray-800">{selectedClient.orders}</p>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                <p className="text-xs text-gray-400 font-medium">KG Processed</p>
-                <p className="text-lg font-bold text-gray-800">{selectedClient.kg.toFixed(1)}</p>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-                <p className="text-xs text-gray-400 font-medium">Total Clothes</p>
-                <p className="text-lg font-bold text-gray-800">{selectedClient.clothes || 0}</p>
-              </div>
+              {[
+                { label: "Total Orders", value: selectedClient.orders, isNum: true },
+                { label: "KG Processed", value: selectedClient.kg.toFixed(1), isNum: true },
+                { label: "Total Clothes", value: selectedClient.clothes || 0, isNum: true },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                  <p className="text-xs text-gray-400 font-medium">{stat.label}</p>
+                  <p className="text-lg font-bold text-gray-800">{stat.value}</p>
+                </div>
+              ))}
               <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                 <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
                 <div className="flex items-center justify-center gap-0.5 text-lg font-bold text-[#1976D2]">
@@ -406,14 +423,13 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
                 </div>
               </div>
             </div>
-            
-            {/* Modal Filter Bar */}
+
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
               <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 sm:mr-2">Status</span>
                 <div className="flex gap-2">
                   {["All", "Pending", "Processing", "Delivered"].map(status => (
-                    <button 
+                    <button
                       key={status}
                       onClick={() => setModalFilterStatus(status)}
                       className={`px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold whitespace-nowrap transition-all ${modalFilterStatus === status ? 'bg-slate-800 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
@@ -426,8 +442,8 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
               {(selectedClient.properties || selectedClient.partnernames || []).length > 1 && (
                 <div className="flex items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 pt-3 sm:pt-0">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Filter Property</span>
-                  <select 
-                    value={modalFilterProperty} 
+                  <select
+                    value={modalFilterProperty}
                     onChange={(e) => setModalFilterProperty(e.target.value)}
                     className="bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-[12px] font-bold rounded-lg px-3 py-2 sm:py-1.5 outline-none focus:border-blue-500 min-w-[140px]"
                   >
@@ -463,8 +479,7 @@ export default function AdminOverviewTab({ orders, clients, daysInRange }) {
         </div>
       )}
 
-      {/* Deep Drill-Down Order Modal */}
-      <AdminOrderModal 
+      <AdminOrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         order={selectedModalOrder}
