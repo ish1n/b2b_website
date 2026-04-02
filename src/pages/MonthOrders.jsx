@@ -4,14 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import TopNav from "../components/TopNav";
 import MonthCard from "../components/MonthCard";
 import PageHeader from "../components/PageHeader";
+import { parseOrderDate } from "./Dashboard";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 
-const MONTH_NAMES = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
-const MONTH_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -30,19 +28,26 @@ export default function MonthOrders() {
     const navigate = useNavigate();
 
     const monthData = useMemo(() => {
+        const uniqueMap = new Map();
+        orders.forEach(o => uniqueMap.set(o.id || `${o.date}-${o.amount}-${o.tenant}`, { ...o, ...parseOrderDate(o) }));
+        const validOrders = Array.from(uniqueMap.values());
+
         const map = {};
-        for (let i = 1; i <= 12; i++) {
-            map[i] = { count: 0, revenue: 0 };
-        }
-        orders.forEach(o => {
-            const m = o.month;
-            if (!m || m < 1 || m > 12) return;
-            map[m].count++;
-            map[m].revenue += o.amount || 0;
+        validOrders.forEach(o => {
+            if (!map[o.monthKey]) {
+                map[o.monthKey] = {
+                    key: o.monthKey,
+                    label: `${MONTH_SHORT[o.month]} '${String(o.year).slice(2)}`,
+                    sortVal: o.year * 100 + o.month,
+                    count: 0,
+                    revenue: 0
+                };
+            }
+            map[o.monthKey].count++;
+            map[o.monthKey].revenue += parseFloat(o.amount) || 0;
         });
-        return Object.entries(map)
-            .sort((a, b) => +a[0] - +b[0])
-            .map(([m, data]) => ({ month: +m, ...data, label: MONTH_SHORT[+m] }));
+
+        return Object.values(map).sort((a, b) => a.sortVal - b.sortVal);
     }, [orders]);
 
     return (
@@ -55,22 +60,20 @@ export default function MonthOrders() {
                     backTo="/dashboard"
                 />
 
-                {/* Month Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {monthData.length === 0 ? (
                         <p className="text-gray-400 text-sm col-span-3">No order data available.</p>
                     ) : monthData.map(m => (
                         <MonthCard
-                            key={m.month}
-                            month={m.month}
+                            key={m.key}
+                            month={m.label}
                             count={m.count}
                             revenue={m.revenue}
-                            onClick={() => navigate(`/orders/months/${m.month}`)}
+                            onClick={() => navigate(`/orders/months/${m.key}`)}
                         />
                     ))}
                 </div>
 
-                {/* Bar Chart */}
                 {monthData.length > 0 && (
                     <div className="bg-white rounded-2xl border border-brand-100 shadow-sm p-6 min-w-0">
                         <h2 className="text-base font-bold text-gray-900 mb-1">Month Comparison</h2>
@@ -82,9 +85,7 @@ export default function MonthOrders() {
                                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af', fontFamily: 'Poppins' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F0F7FF' }} />
                                 <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                                    {monthData.map((_, i) => (
-                                        <Cell key={i} fill="#1976D2" />
-                                    ))}
+                                    {monthData.map((_, i) => <Cell key={i} fill="#1976D2" />)}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
