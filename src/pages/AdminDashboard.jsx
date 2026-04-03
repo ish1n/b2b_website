@@ -1,12 +1,7 @@
-// src/pages/AdminDashboard.jsx
-import { useMemo, useState, useCallback, useEffect } from "react";
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, limit } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "../firebase";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHostelAuth } from "../context/HostelAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
-import KpiCard from "../components/KpiCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import AdminOverviewTab from "../components/AdminOverviewTab";
 import AdminHostelsTab from "../components/AdminHostelsTab";
@@ -16,14 +11,22 @@ import AdminIssuesTab from "../components/AdminIssuesTab";
 import AdminExpensesTab from "../components/AdminExpensesTab";
 import AdminAnalyticsTab from "../components/AdminAnalyticsTab";
 import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
-import { FiAlertCircle, FiUsers, FiTrendingUp, FiFileText, FiShoppingBag } from "react-icons/fi";
-import { BiRupee } from "react-icons/bi";
-import { GiWeight } from "react-icons/gi";
+import AdminAddOrderModal from "../components/AdminAddOrderModal";
+import AdminPageActions from "../components/AdminPageActions";
+import AdminDashboardKpis from "../components/AdminDashboardKpis";
+import { getAdminTabConfig } from "../config/adminTabs";
+import { getMonthStartString, getTodayString, useAdminDashboardData } from "../hooks/useAdminDashboardData";
 
 export default function AdminDashboard() {
   const { client, orders: baseOrders, logout } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [dateFrom, setDateFrom] = useState(() => getMonthStartString());
+  const [dateTo, setDateTo] = useState(() => getTodayString());
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [saveMessage, setSaveMessage] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -31,262 +34,114 @@ export default function AdminDashboard() {
       setIsSidebarCollapsed(isMobile);
       if (!isMobile) setIsMobileMenuOpen(false);
     };
+
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const partner = client;
-  const [allManagers, setAllManagers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [screenStats, setScreenStats] = useState([]);
-  const [searchStats, setSearchStats] = useState([]);
-  const [totalUsers, setTotalUsers] = useState(0);
-
-  const [activeTab, setActiveTab] = useState("overview");
-
-  // Dynamic default: always start at 1st of the current month
-  const [dateFrom, setDateFrom] = useState(() => {
-    const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const {
+    daysInRange,
+    handleAddIssue,
+    handleAddOrder,
+    handleDeleteData,
+    handleEditIssue,
+    handleEditOrder,
+    loading,
+    orders,
+    screenStats,
+    searchStats,
+    stats,
+    totalUsers,
+  } = useAdminDashboardData({
+    activeTab,
+    baseOrders,
+    dateFrom,
+    dateTo,
   });
-  const [dateTo, setDateTo] = useState(
-    new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]
-  );
-  const [extraOrders, setExtraOrders] = useState([]);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
-  useEffect(() => {
-    let unsubSnapshot = () => { };
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      unsubSnapshot();
-      if (user) {
-        setLoading(true);
-        const editsRef = collection(db, "b2b_admin_edits");
-        unsubSnapshot = onSnapshot(editsRef, (snapshot) => {
-          const edits = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          setExtraOrders(edits);
-          setLoading(false);
-        }, (error) => {
-          console.error("Error fetching admin edits:", error);
-          setLoading(false);
-        });
-
-        const managersRef = collection(db, "b2b_managers");
-        const unsubManagers = onSnapshot(managersRef, (snapshot) => {
-          const managers = snapshot.docs
-            .map(d => ({ id: d.id, ...d.data() }))
-            .filter(m => m.role !== "admin");
-          setAllManagers(managers);
-        }, (err) => console.error("Error fetching managers list:", err));
-
-        const screensRef = query(collection(db, "analytics", "screens", "popular"), orderBy("visitCount", "desc"), limit(10));
-        const unsubScreens = onSnapshot(screensRef, (snapshot) => {
-          setScreenStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-        }, (err) => console.error("Error fetching screen stats:", err));
-
-        const searchesRef = query(collection(db, "analytics", "searches", "popular"), orderBy("count", "desc"), limit(10));
-        const unsubSearches = onSnapshot(searchesRef, (snapshot) => {
-          setSearchStats(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-        }, (err) => console.error("Error fetching search stats:", err));
-
-        const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-          setTotalUsers(snapshot.size);
-        }, (err) => console.error("Error fetching users:", err));
-
-        return () => { unsubSnapshot(); unsubManagers(); unsubScreens(); unsubSearches(); unsubUsers(); };
-      } else {
-        setExtraOrders([]);
-        setAllManagers([]);
-        setScreenStats([]);
-        setSearchStats([]);
-        setTotalUsers(0);
-        setLoading(false);
-      }
-    });
-    return () => { unsubAuth(); unsubSnapshot(); };
-  }, []);
-
-  const handleAddOrder = useCallback(async (order) => {
-    try {
-      await setDoc(doc(db, "b2b_admin_edits", order.id), order);
-    } catch (err) {
-      console.error("Failed to add order", err);
-    }
-  }, []);
-
-  const handleEditOrder = useCallback(async (updatedOrder) => {
-    try {
-      if (!updatedOrder.id) throw new Error("Order ID missing");
-      await setDoc(doc(db, "b2b_admin_edits", String(updatedOrder.id)), updatedOrder);
-    } catch (err) {
-      console.error("Failed to edit order", err);
-    }
-  }, []);
-
-  const allOrders = useMemo(() => {
-    const extraIds = new Set(extraOrders.map(o => o.id));
-    const cleanBase = baseOrders.filter(o => !extraIds.has(o.id));
-    return [...cleanBase, ...extraOrders].filter(o => !o.isDeleted);
-  }, [baseOrders, extraOrders]);
-
-  // Date-filtered orders
-  const orders = useMemo(() => {
-    if (!dateFrom && !dateTo) return allOrders;
-    return allOrders.filter(o => {
-      if (!o.date) return true;
-      if (dateFrom && o.date < dateFrom) return false;
-      if (dateTo && o.date > dateTo) return false;
-      return true;
-    });
-  }, [allOrders, dateFrom, dateTo]);
-
-  // ─── KEY FIX: daysInRange now stores full "YYYY-MM-DD" strings ───
-  const daysInRange = useMemo(() => {
-    const now = new Date();
-    const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const from = new Date(dateFrom || defaultFrom);
-    const to = new Date(dateTo || now.toISOString().split("T")[0]);
-    const dates = [];
-    // Iterate day by day and push ISO date strings
-    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      dates.push(`${y}-${m}-${day}`);
-    }
-    return dates;
+  const activeTabConfig = getAdminTabConfig(activeTab);
+  const isCurrentFilterShowingDate = useCallback((targetDate) => {
+    if (!targetDate) return true;
+    if (dateFrom && targetDate < dateFrom) return false;
+    if (dateTo && targetDate > dateTo) return false;
+    return true;
   }, [dateFrom, dateTo]);
 
-  const stats = useMemo(() => {
-    let focusOrders = orders.filter(o => o.category !== "ISSUES");
+  const handleTabChange = useCallback((tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  }, []);
 
-    if (activeTab === "regular") {
-      focusOrders = orders.filter(o => o.type === "regular");
-    } else if (activeTab === "hostels") {
-      focusOrders = orders.filter(o => o.type === "student" || o.type === "linen");
-    } else if (activeTab === "hotels") {
-      focusOrders = orders.filter(o => o.type === "airbnb");
-    }
+  useEffect(() => {
+    if (!saveMessage) return undefined;
+    const timeoutId = window.setTimeout(() => setSaveMessage(null), 4500);
+    return () => window.clearTimeout(timeoutId);
+  }, [saveMessage]);
 
-    const issues = orders.filter(o => o.category === "ISSUES");
-
-    const totalRevenue = focusOrders.reduce((s, o) => s + (o.amount || 0), 0);
-    const totalOrders = focusOrders.length;
-    const totalKg = focusOrders.reduce((s, o) => s + (o.weight || 0), 0);
-    const totalClients = activeTab === "regular"
-      ? new Set(focusOrders.filter(o => o.customerName && !o.id.includes("adj")).map(o => o.customerName)).size
-      : activeTab === "hostels"
-        ? new Set(focusOrders.map(o => o.property)).size
-        : activeTab === "hotels"
-          ? new Set(focusOrders.map(o => o.property)).size
-          : allManagers.filter(m => m.role !== "admin").length;
-    const openIssuesCount = issues.filter(i => i.resolveStatus !== "Resolved").length;
-
-    const hostelRevenue = orders.filter(o => o.type === "student" || o.type === "linen").reduce((s, o) => s + (o.amount || 0), 0);
-    const retailRevenue = orders.filter(o => o.type === "regular").reduce((s, o) => s + (o.amount || 0), 0);
-    const hotelRevenue = orders.filter(o => o.type === "airbnb").reduce((s, o) => s + (o.amount || 0), 0);
-
-    // ─── KEY FIX: getTrend matches on full YYYY-MM-DD string ───
-    const getTrend = (filterFn) => {
-      return daysInRange.map(fullDate => ({
-        v: allOrders
-          .filter(o => o.date === fullDate && filterFn(o))
-          .reduce((s, o) => s + (o.amount || o.weight || 1), 0)
-      }));
+  // A single registry keeps tab rendering in one place instead of scattering conditionals.
+  const activeTabPanel = useMemo(() => {
+    const panels = {
+      overview: (
+        <AdminOverviewTab
+          orders={orders}
+          daysInRange={daysInRange}
+          onDeleteData={handleDeleteData}
+        />
+      ),
+      hostels: <AdminHostelsTab orders={orders} daysInRange={daysInRange} />,
+      hotels: <AdminHotelsTab orders={orders} />,
+      regular: (
+        <AdminRegularTab
+          orders={orders}
+          onAddOrder={handleAddOrder}
+          onEditOrder={handleEditOrder}
+          onDeleteOrder={handleDeleteData}
+        />
+      ),
+      issues: (
+        <AdminIssuesTab
+          orders={orders}
+          onAddIssue={handleAddIssue}
+          onEditIssue={handleEditIssue}
+          onDeleteIssue={handleDeleteData}
+        />
+      ),
+      expenses: <AdminExpensesTab />,
+      analytics: (
+        <AdminAnalyticsTab
+          orders={orders}
+          screens={screenStats}
+          searches={searchStats}
+          totalUsers={totalUsers}
+        />
+      ),
     };
 
-    return {
-      totalRevenue,
-      totalOrders,
-      totalKg,
-      totalClients,
-      openIssuesCount,
-      breakdown: { hostelRevenue, retailRevenue, hotelRevenue },
-      sparklines: {
-        revenue: getTrend(o => {
-          if (activeTab === "regular") return o.type === "regular";
-          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-          if (activeTab === "hotels") return o.type === "airbnb";
-          return o.category !== "ISSUES";
-        }),
-        orders: getTrend(o => {
-          if (activeTab === "regular") return o.type === "regular";
-          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-          if (activeTab === "hotels") return o.type === "airbnb";
-          return o.category !== "ISSUES";
-        }),
-        kg: getTrend(o => {
-          if (activeTab === "regular") return o.type === "regular";
-          if (activeTab === "hostels") return o.type === "student" || o.type === "linen";
-          if (activeTab === "hotels") return o.type === "airbnb";
-          return o.category !== "ISSUES";
-        }),
-        clients: daysInRange.map((_, i) => ({ v: 10 + Math.sin(i) * 2 })),
-        issues: getTrend(o => o.category === "ISSUES")
-      }
-    };
-  }, [orders, allOrders, allManagers, daysInRange, activeTab]);
-
-  const clients = useMemo(() => allManagers.filter(m => m.role !== "admin"), [allManagers]);
-
-  const handleAddIssue = useCallback(async (issue) => {
-    try {
-      await setDoc(doc(db, "b2b_admin_edits", issue.id), issue);
-    } catch (err) {
-      console.error("Failed to add issue", err);
-    }
-  }, []);
-
-  const handleEditIssue = useCallback(async (updatedIssue) => {
-    try {
-      if (!updatedIssue.id) throw new Error("Issue ID missing");
-      await setDoc(doc(db, "b2b_admin_edits", String(updatedIssue.id)), updatedIssue);
-    } catch (err) {
-      console.error("Failed to edit issue", err);
-    }
-  }, []);
-
-  const handleDeleteData = useCallback(async (item) => {
-    if (!window.confirm("Are you sure you want to delete this specific record permanently?")) return;
-    try {
-      if (!item.id) throw new Error("ID missing for delete action");
-      const idStr = String(item.id);
-      if (idStr.startsWith("reg-new-") || idStr.startsWith("issue-new-")) {
-        await deleteDoc(doc(db, "b2b_admin_edits", idStr));
-      } else {
-        await setDoc(doc(db, "b2b_admin_edits", idStr), { ...item, isDeleted: true });
-      }
-    } catch (err) {
-      console.error("Failed to delete record", err);
-    }
-  }, []);
+    return panels[activeTab] || null;
+  }, [
+    activeTab,
+    daysInRange,
+    handleAddIssue,
+    handleAddOrder,
+    handleDeleteData,
+    handleEditIssue,
+    handleEditOrder,
+    orders,
+    screenStats,
+    searchStats,
+    totalUsers,
+  ]);
 
   if (loading) return <LoadingSpinner fullscreen />;
-
-  const getPageTitle = () => {
-    switch (activeTab) {
-      case 'overview': return 'Dashboard Overview';
-      case 'hostels': return 'Hostel Management';
-      case 'hotels': return 'Hotel & Airbnb Analytics';
-      case 'regular': return 'Regular B2C Orders';
-      case 'issues': return 'Issue Tracker';
-      case 'expenses': return 'CEO Expenses';
-      case 'analytics': return 'Business Analytics';
-      default: return 'Admin Portal';
-    }
-  };
 
   return (
     <div className="flex min-h-screen bg-[#F1F5F9]" style={{ fontFamily: "DM Sans, sans-serif" }}>
       <AdminSidebar
         activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab);
-          setIsMobileMenuOpen(false);
-        }}
+        setActiveTab={handleTabChange}
         issuesCount={stats.openIssuesCount}
-        user={partner}
+        user={client}
         onLogout={logout}
         isCollapsed={isSidebarCollapsed}
         setIsCollapsed={setIsSidebarCollapsed}
@@ -294,123 +149,43 @@ export default function AdminDashboard() {
         setIsMobileOpen={setIsMobileMenuOpen}
       />
 
-      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[220px]'} ml-0`}>
+      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-[220px]"} ml-0`}>
         <AdminTopBar
-          title={getPageTitle()}
+          title={activeTabConfig.title}
           dateFrom={dateFrom}
           setDateFrom={setDateFrom}
           dateTo={dateTo}
           setDateTo={setDateTo}
-          onExpensesClick={() => setActiveTab(activeTab === "expenses" ? "overview" : "expenses")}
+          onExpensesClick={() => handleTabChange(activeTab === "expenses" ? "overview" : "expenses")}
           isExpensesActive={activeTab === "expenses"}
           orders={orders}
           onMenuClick={() => setIsMobileMenuOpen(true)}
         />
 
         <div className="p-4 lg:p-8">
-          {['overview', 'hostels', 'hotels', 'regular'].includes(activeTab) && (
-            <div className="flex justify-end mb-4 animate-fade-in">
-              <button
-                onClick={() => setShowInvoiceModal(true)}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 rounded-xl transition-all shadow-sm"
-              >
-                <FiFileText size={18} /> Generate Invoice
-              </button>
+          {saveMessage && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm">
+              {saveMessage}
             </div>
           )}
 
-          {activeTab !== "issues" && activeTab !== "expenses" && activeTab !== "analytics" && (
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${activeTab === "overview" ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-6 mb-8`}>
-              <KpiCard
-                label={activeTab === "overview" ? "Revenue (Overall)" : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Revenue`}
-                value={`₹${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                icon={BiRupee}
-                color="blue"
-                onClick={() => setActiveTab("overview")}
-                trend={activeTab === "overview" ? { direction: 'up', text: `Hostel: ₹${(stats.breakdown.hostelRevenue / 1000).toFixed(0)}k` } : null}
-                sparklineData={stats.sparklines.revenue}
-              />
-              <KpiCard
-                label="Total Orders"
-                value={stats.totalOrders}
-                icon={FiTrendingUp}
-                color="purple"
-                onClick={() => setActiveTab("overview")}
-                sparklineData={stats.sparklines.orders}
-              />
-              <KpiCard
-                label="KG Processed"
-                value={`${stats.totalKg.toFixed(1)}`}
-                icon={GiWeight}
-                color="green"
-                onClick={() => setActiveTab("hostels")}
-                sparklineData={stats.sparklines.kg}
-              />
-              <KpiCard
-                label={
-                  activeTab === "hostels" ? "Managed Hostels" :
-                    activeTab === "hotels" ? "Active Properties" :
-                      activeTab === "website" ? "Website Customers" : "B2B Clients"
-                }
-                value={stats.totalClients}
-                icon={FiUsers}
-                color="amber"
-                onClick={() => { if (activeTab === "overview") setActiveTab("regular"); }}
-                sparklineData={stats.sparklines.clients}
-              />
-              {activeTab === "overview" && (
-                <KpiCard
-                  label="Open Issues"
-                  value={stats.openIssuesCount}
-                  icon={FiAlertCircle}
-                  color="red"
-                  onClick={() => setActiveTab("issues")}
-                  trend={stats.openIssuesCount > 5 ? { direction: 'up', text: 'High' } : null}
-                  sparklineData={stats.sparklines.issues}
-                />
-              )}
-            </div>
+          {activeTabConfig.showHeaderActions && (
+            <AdminPageActions
+              onGenerateInvoice={() => setShowInvoiceModal(true)}
+              onLogOrder={() => setShowAddOrder(true)}
+            />
           )}
 
-          <div className="animate-fade-in">
-            {activeTab === "overview" && (
-              <AdminOverviewTab
-                orders={orders}
-                clients={clients}
-                daysInRange={daysInRange}
-                onDeleteData={handleDeleteData}
-              />
-            )}
-            {activeTab === "hostels" && (
-              <AdminHostelsTab orders={orders} daysInRange={daysInRange} />
-            )}
-            {activeTab === "hotels" && <AdminHotelsTab orders={orders} />}
-            {activeTab === "regular" && (
-              <AdminRegularTab
-                orders={orders}
-                onAddOrder={handleAddOrder}
-                onEditOrder={handleEditOrder}
-                onDeleteOrder={handleDeleteData}
-              />
-            )}
-            {activeTab === "issues" && (
-              <AdminIssuesTab
-                orders={orders}
-                onAddIssue={handleAddIssue}
-                onEditIssue={handleEditIssue}
-                onDeleteIssue={handleDeleteData}
-              />
-            )}
-            {activeTab === "expenses" && <AdminExpensesTab />}
-            {activeTab === "analytics" && (
-              <AdminAnalyticsTab
-                orders={orders}
-                screens={screenStats}
-                searches={searchStats}
-                totalUsers={totalUsers}
-              />
-            )}
-          </div>
+          {activeTabConfig.showKpis && (
+            <AdminDashboardKpis
+              activeTab={activeTab}
+              columnsClass={activeTabConfig.kpiColumnsClass}
+              onTabChange={handleTabChange}
+              stats={stats}
+            />
+          )}
+
+          <div className="animate-fade-in">{activeTabPanel}</div>
         </div>
       </main>
 
@@ -418,6 +193,25 @@ export default function AdminDashboard() {
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
         orders={orders}
+      />
+
+      <AdminAddOrderModal
+        isOpen={showAddOrder}
+        onClose={() => setShowAddOrder(false)}
+        onSuccess={({ loggedType, orderDate, propertyName }) => {
+          const isVisibleInCurrentFilter = isCurrentFilterShowingDate(orderDate);
+          setSaveMessage(
+            isVisibleInCurrentFilter
+              ? `Order saved for ${propertyName} on ${orderDate}.`
+              : `Order saved for ${propertyName} on ${orderDate}. It may be hidden by the current date filter.`
+          );
+
+          if (loggedType === "hostel") {
+            handleTabChange("hostels");
+          } else if (loggedType === "hotel") {
+            handleTabChange("hotels");
+          }
+        }}
       />
     </div>
   );

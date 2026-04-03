@@ -1,0 +1,81 @@
+import { FiActivity, FiAlertCircle, FiHome, FiInbox, FiLayout, FiPieChart } from "react-icons/fi";
+
+// Centralized tab metadata keeps the sidebar, page title, and layout rules in sync.
+export const ADMIN_TAB_CONFIG = {
+  overview: {
+    key: "overview",
+    title: "Dashboard Overview",
+    navLabel: "Overview",
+    navIcon: FiLayout,
+    showSidebar: true,
+    showHeaderActions: true,
+    showKpis: true,
+    kpiColumnsClass: "lg:grid-cols-5",
+  },
+  hostels: {
+    key: "hostels",
+    title: "Hostel Management",
+    navLabel: "Hostels",
+    navIcon: FiHome,
+    showSidebar: true,
+    showHeaderActions: true,
+    showKpis: true,
+    kpiColumnsClass: "lg:grid-cols-4",
+  },
+  hotels: {
+    key: "hotels",
+    title: "Hotel & Airbnb Analytics",
+    navLabel: "Hotels & Airbnbs",
+    navIcon: FiActivity,
+    showSidebar: true,
+    showHeaderActions: true,
+    showKpis: true,
+    kpiColumnsClass: "lg:grid-cols-4",
+  },
+  regular: {
+    key: "regular",
+    title: "Regular B2C Orders",
+    navLabel: "Regular Orders",
+    navIcon: FiInbox,
+    showSidebar: true,
+    showHeaderActions: false,
+    showKpis: true,
+    kpiColumnsClass: "lg:grid-cols-4",
+  },
+  issues: {
+    key: "issues",
+    title: "Issue Tracker",
+    navLabel: "Issues",
+    navIcon: FiAlertCircle,
+    showSidebar: true,
+    showHeaderActions: false,
+    showKpis: false,
+    kpiColumnsClass: "",
+    badgeKey: "issuesCount",
+  },
+  analytics: {
+    key: "analytics",
+    title: "Business Analytics",
+    navLabel: "Analytics",
+    navIcon: FiPieChart,
+    showSidebar: true,
+    showHeaderActions: false,
+    showKpis: false,
+    kpiColumnsClass: "",
+  },
+  expenses: {
+    key: "expenses",
+    title: "CEO Expenses",
+    navLabel: "Expenses",
+    showSidebar: false,
+    showHeaderActions: false,
+    showKpis: false,
+    kpiColumnsClass: "",
+  },
+};
+
+export const ADMIN_SIDEBAR_TABS = Object.values(ADMIN_TAB_CONFIG).filter((tab) => tab.showSidebar);
+
+export function getAdminTabConfig(tabKey) {
+  return ADMIN_TAB_CONFIG[tabKey] || ADMIN_TAB_CONFIG.overview;
+}
