@@ -1,16 +1,20 @@
-import { useMemo, useState } from "react";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { useState } from "react";
+import { FiChevronRight } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
+import EmptyState from "./EmptyState";
+import TabSectionCard from "./TabSectionCard";
+import { useHotelMetrics } from "../hooks/useHotelMetrics";
 
-const HOTEL_PROPERTIES = ["Airbnb Viman Nagar"];
-const HOSTEL_COLORS = { "Airbnb Viman Nagar": "#D97706" };
-
-function LinenSummaryCard({ name, color, orders, revenue }) {
+function HotelSummaryCard({ name, color, orders, revenue }) {
   const totals = {};
-  orders.forEach(o => {
-    if (o.details) Object.entries(o.details).forEach(([k, v]) => { totals[k] = (totals[k] || 0) + (v || 0); });
+  orders.forEach((order) => {
+    if (!order.details) return;
+    Object.entries(order.details).forEach(([key, value]) => {
+      totals[key] = (totals[key] || 0) + (value || 0);
+    });
   });
+
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2 mb-3">
@@ -18,16 +22,20 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
         <h3 className="text-sm font-bold text-gray-800">{name}</h3>
         <div className="ml-auto text-right">
           <span className="text-[10px] text-gray-400 font-medium block mb-0.5">
-            {orders.length} pckp • {Object.values(totals).reduce((a, b) => a + b, 0)} items
+            {orders.length} pckp • {Object.values(totals).reduce((sum, value) => sum + value, 0)} items
           </span>
-          {revenue !== undefined && (
-            <span className="text-xs font-bold text-green-600 flex items-center justify-end gap-0.5"><BiRupee size={12} />{revenue.toLocaleString()}</span>
-          )}
+          <span className="text-xs font-bold text-green-600 flex items-center justify-end gap-0.5">
+            <BiRupee size={12} />
+            {revenue.toLocaleString()}
+          </span>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
-        {Object.entries(totals).filter(([, v]) => v > 0).map(([k, v]) => (
-          <div key={k}><span className="text-gray-400">{k}</span><p className="font-bold text-gray-700">{v}</p></div>
+        {Object.entries(totals).filter(([, value]) => value > 0).map(([key, value]) => (
+          <div key={key}>
+            <span className="text-gray-400">{key}</span>
+            <p className="font-bold text-gray-700">{value}</p>
+          </div>
         ))}
       </div>
     </div>
@@ -35,32 +43,20 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
 }
 
 export default function AdminHotelsTab({ orders }) {
-  const hotelOrders = useMemo(() => orders.filter(o => o.type === "airbnb"), [orders]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { hotelSummaries, sortedHotelOrders } = useHotelMetrics(orders);
 
-  // Hotel summaries
-  // Hotel summaries
-  const hotelSummaries = useMemo(() =>
-    HOTEL_PROPERTIES.map(name => {
-      const ho = hotelOrders.filter(o => o.property === name);
-      const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0); // Calculate revenue
-      return {
-        name, orders: ho, revenue,
-        color: HOSTEL_COLORS[name] || "#6B7280"
-      };
-    }).filter(h => h.orders.length > 0), [hotelOrders]);
   return (
-    <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Hotel Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-base font-bold text-gray-900 mb-4">Hotels & Airbnbs</h2>
-        <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: "DM Sans, sans-serif" }}>
+      <TabSectionCard title="Hotels & Airbnbs" subtitle="Live property summaries and transaction history">
+        <div className="space-y-6 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hotelSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}
+            {hotelSummaries.map((summary) => (
+              <HotelSummaryCard key={summary.name} {...summary} />
+            ))}
           </div>
 
-          {/* Desktop Hotel Table */}
           <div className="hidden md:block overflow-x-auto mt-4">
             <table className="w-full min-w-[700px]">
               <thead>
@@ -75,23 +71,32 @@ export default function AdminHotelsTab({ orders }) {
                 </tr>
               </thead>
               <tbody>
-                {hotelOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-                  <tr 
-                    key={o.id} 
-                    onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+                {sortedHotelOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12">
+                      <EmptyState
+                        title="No hotel orders yet"
+                        message="New Airbnb or hotel orders will show up here automatically."
+                      />
+                    </td>
+                  </tr>
+                ) : sortedHotelOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}
                     className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors cursor-pointer group"
                   >
-                    <td className="px-4 py-3 text-sm text-gray-600">{o.date}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{o.property}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Bedsheet"] || o.details?.["Single Bedsheet"] || 0}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Pillow Cover"] || 0}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{o.details?.["Duvet Cover"] || 0}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.date}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{order.property}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.details?.["Bedsheet"] || order.details?.["Single Bedsheet"] || 0}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.details?.["Pillow Cover"] || 0}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{order.details?.["Duvet Cover"] || 0}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{(order.details?.["Bath Towel"] || 0) + (order.details?.["Hand Towel"] || 0)}</td>
                     <td className="px-4 py-3 text-sm font-bold text-gray-800">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-0.5">
                           <BiRupee size={12} className="mb-0.5" />
-                          <span>{o.amount?.toLocaleString()}</span>
+                          <span>{order.amount?.toLocaleString()}</span>
                         </div>
                         <FiChevronRight size={16} className="text-slate-400 group-hover:text-orange-500 transition-colors" />
                       </div>
@@ -102,55 +107,57 @@ export default function AdminHotelsTab({ orders }) {
             </table>
           </div>
 
-          {/* Mobile Card Layout */}
           <div className="md:hidden divide-y divide-gray-50 mt-4 border border-gray-100 rounded-xl overflow-hidden">
-            {hotelOrders.sort((a, b) => new Date(a.date) - new Date(b.date)).map(o => (
-              <div 
-                key={o.id}
-                onClick={() => { setSelectedOrder(o); setIsModalOpen(true); }}
+            {sortedHotelOrders.map((order) => (
+              <div
+                key={order.id}
+                onClick={() => { setSelectedOrder(order); setIsModalOpen(true); }}
                 className="p-4 active:bg-orange-50 transition-colors cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">{o.date}</span>
-                    <h4 className="text-sm font-bold text-gray-900">{o.property}</h4>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">{order.date}</span>
+                    <h4 className="text-sm font-bold text-gray-900">{order.property}</h4>
                   </div>
                   <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
                     <BiRupee size={12} className="text-slate-400" />
-                    <span>{o.amount?.toLocaleString()}</span>
+                    <span>{order.amount?.toLocaleString()}</span>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 pt-3 border-t border-gray-100/50">
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-gray-400">Bedsheets</span>
-                    <span className="font-bold text-slate-700">{o.details?.["Bedsheet"] || o.details?.["Single Bedsheet"] || 0}</span>
+                    <span className="font-bold text-slate-700">{order.details?.["Bedsheet"] || order.details?.["Single Bedsheet"] || 0}</span>
                   </div>
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-gray-400">Pillow Co.</span>
-                    <span className="font-bold text-slate-700">{o.details?.["Pillow Cover"] || 0}</span>
+                    <span className="font-bold text-slate-700">{order.details?.["Pillow Cover"] || 0}</span>
                   </div>
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-gray-400">Duvet Co.</span>
-                    <span className="font-bold text-slate-700">{o.details?.["Duvet Cover"] || 0}</span>
+                    <span className="font-bold text-slate-700">{order.details?.["Duvet Cover"] || 0}</span>
                   </div>
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="text-gray-400">Towels</span>
-                    <span className="font-bold text-slate-700">{(o.details?.["Bath Towel"] || 0) + (o.details?.["Hand Towel"] || 0)}</span>
+                    <span className="font-bold text-slate-700">{(order.details?.["Bath Towel"] || 0) + (order.details?.["Hand Towel"] || 0)}</span>
                   </div>
                 </div>
               </div>
             ))}
-            {hotelOrders.length === 0 && (
-              <div className="p-8 text-center text-sm text-gray-400 bg-gray-50/50 italic">
-                No orders discovered.
+            {sortedHotelOrders.length === 0 && (
+              <div className="p-4">
+                <EmptyState
+                  title="No hotel orders yet"
+                  message="New Airbnb or hotel orders will show up here automatically."
+                />
               </div>
             )}
           </div>
         </div>
-      </div>
+      </TabSectionCard>
 
-      <AdminOrderModal 
+      <AdminOrderModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         order={selectedOrder}

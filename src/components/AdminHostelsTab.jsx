@@ -5,14 +5,25 @@ import {
 import { FiChevronDown, FiChevronRight, FiXCircle } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
+import { normalizePropertyName } from "../utils/orderNormalization";
 
-const STUDENT_HOSTELS = ["Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha", "Kirti", "Tara", "Samshrushti"];
-const LINEN_HOSTELS = ["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3"];
-const HOSTEL_COLORS = {
+const DEFAULT_HOSTEL_COLORS = {
   "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706",
   "Aakansha": "#0891B2", "Kirti": "#BE185D", "Tara": "#DC2626", "Samshrushti": "#4338CA",
   "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706"
 };
+const FALLBACK_COLORS = ["#1976D2", "#7C3AED", "#059669", "#D97706", "#0891B2", "#BE185D", "#DC2626", "#4338CA"];
+const HIDDEN_HOSTEL_PROPERTIES = new Set([
+  "Aakansha Hostel Kothurd",
+  "Hostel99 koregaon park",
+  "Hostel99 Yerwada 1",
+  "Hostel99 Yerwada 2",
+  "Tara Hostel Kothurd",
+]);
+
+function getPropertyColor(name, index) {
+  return DEFAULT_HOSTEL_COLORS[name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+}
 
 const BarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -141,11 +152,25 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
     setPropertyFilter("All");
   };
 
-  const studentOrders = useMemo(() => orders.filter(o => o.type === "student"), [orders]);
-  const linenOrders = useMemo(() => orders.filter(o => o.type === "linen"), [orders]);
+  const visibleOrders = useMemo(
+    () => orders
+      .map((order) => ({ ...order, property: normalizePropertyName(order.property) }))
+      .filter((order) => !HIDDEN_HOSTEL_PROPERTIES.has(order.property)),
+    [orders]
+  );
+  const studentOrders = useMemo(() => visibleOrders.filter(o => o.type === "student"), [visibleOrders]);
+  const linenOrders = useMemo(() => visibleOrders.filter(o => o.type === "linen"), [visibleOrders]);
+  const studentProperties = useMemo(() =>
+    [...new Set(studentOrders.map(o => o.property).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [studentOrders]
+  );
+  const linenProperties = useMemo(() =>
+    [...new Set(linenOrders.map(o => o.property).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [linenOrders]
+  );
 
   const studentSummaries = useMemo(() =>
-    STUDENT_HOSTELS.map(name => {
+    studentProperties.map((name, index) => {
       const ho = studentOrders.filter(o => o.property === name);
       const kg = ho.reduce((s, o) => s + (o.weight || 0), 0);
       const clothes = ho.reduce((s, o) => s + (o.items || 0), 0);
@@ -154,13 +179,13 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       return {
         name, orders: ho.length, kg, clothes, students, revenue,
         avgKgPerStudent: students > 0 ? kg / students : 0,
-        color: HOSTEL_COLORS[name] || "#6B7280"
+        color: getPropertyColor(name, index)
       };
     }).filter(h => h.orders > 0),
-    [studentOrders]
+    [studentOrders, studentProperties]
   );
 
-  // ─── KEY FIX: chart data uses full date strings from daysInRange ───
+  // Build chart rows directly from the normalized full date strings in range.
   const studentChartData = useMemo(() =>
     daysInRange.map((fullDate, idx) => {
       const dayNum = parseInt(fullDate.split("-")[2], 10);
@@ -172,23 +197,23 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         : String(dayNum);
 
       const row = { day: label, fullDate };
-      STUDENT_HOSTELS.forEach(h => {
+      studentProperties.forEach(h => {
         row[h] = studentOrders
           .filter(o => o.property === h && o.date === fullDate)
           .reduce((s, o) => s + (o.weight || 0), 0);
       });
       return row;
     }),
-    [studentOrders, daysInRange]
+    [studentOrders, daysInRange, studentProperties]
   );
 
   const linenSummaries = useMemo(() =>
-    LINEN_HOSTELS.map(name => {
+    linenProperties.map((name, index) => {
       const ho = linenOrders.filter(o => o.property === name);
       const revenue = ho.reduce((s, o) => s + (o.amount || 0), 0);
-      return { name, orders: ho, revenue, color: HOSTEL_COLORS[name] || "#6B7280" };
+      return { name, orders: ho, revenue, color: getPropertyColor(name, index) };
     }).filter(h => h.orders.length > 0),
-    [linenOrders]
+    [linenOrders, linenProperties]
   );
 
   const unifiedOrders = useMemo(() =>
@@ -245,12 +270,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
             <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
           </div>
-          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 240 : 300} debounce={100} minWidth={0}>
+          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 240 : 300} debounce={100} minWidth={1} minHeight={1}>
             <BarChart
               data={studentChartData}
               margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}
               barGap={0}
-              // ─── KEY FIX: store fullDate from the clicked bar's data point ───
+              // Store the full date string from the clicked bar's data point.
               onClick={(data, index) => {
                 if (data && index !== undefined && studentChartData[index]) {
                   const clicked = studentChartData[index].fullDate;
@@ -317,7 +342,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               className="bg-slate-50 border border-slate-200 text-slate-700 text-[12px] font-bold rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 cursor-pointer"
             >
               <option value="All">All {view === "all" ? "Properties" : view === "student" ? "Student Hostels" : "Linen Hostels"}</option>
-              {(view === "all" ? [...STUDENT_HOSTELS, ...LINEN_HOSTELS] : view === "student" ? STUDENT_HOSTELS : LINEN_HOSTELS).map(h => (
+              {(view === "all" ? [...studentProperties, ...linenProperties] : view === "student" ? studentProperties : linenProperties).map(h => (
                 <option key={h} value={h}>{h}</option>
               ))}
             </select>
@@ -339,7 +364,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <tbody>
               {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
                 .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-                // ─── KEY FIX: match on full date string ───
+                // Match on the full normalized date string.
                 .filter(o => !chartDateFilter || o.date === chartDateFilter)
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(o => (
@@ -402,7 +427,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         <div className="md:hidden divide-y divide-gray-50 bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
           {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
             .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-            // ─── KEY FIX: match on full date string ───
+            // Match on the full normalized date string.
             .filter(o => !chartDateFilter || o.date === chartDateFilter)
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .map(o => (
