@@ -4,6 +4,7 @@ import AdminRoute from "./components/AdminRoute";
 import ClientProtectedRoute from "./components/ClientProtectedRoute";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import InvestorDashboard from "./pages/InvestorDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientCategoryOrders from "./pages/ClientCategoryOrders";
 import ClientOrderDetail from "./pages/ClientOrderDetail";
@@ -19,6 +20,7 @@ export default function App() {
 
           {/* Admin */}
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/investors" element={<AdminRoute><InvestorDashboard /></AdminRoute>} />
 
           {/* Client Portal */}
           <Route path="/client/dashboard" element={<ClientProtectedRoute><ClientDashboard /></ClientProtectedRoute>} />
