@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useHostelAuth } from "../context/HostelAuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopBar from "../components/AdminTopBar";
@@ -18,6 +19,7 @@ import { getAdminTabConfig } from "../config/adminTabs";
 import { getMonthStartString, getTodayString, useAdminDashboardData } from "../hooks/useAdminDashboardData";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { client, orders: baseOrders, logout } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,9 +71,15 @@ export default function AdminDashboard() {
   }, [dateFrom, dateTo]);
 
   const handleTabChange = useCallback((tab) => {
+    if (tab === "investors") {
+      setIsMobileMenuOpen(false);
+      navigate("/admin/investors");
+      return;
+    }
+
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!saveMessage) return undefined;

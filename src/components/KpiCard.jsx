@@ -25,7 +25,7 @@ export default function KpiCard({
     return (
         <div
             onClick={onClick}
-            className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col relative overflow-hidden transition-all duration-300
+            className={`bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col relative overflow-visible transition-all duration-300
                 ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-1' : ''}
                 ${config.border}
             `}
@@ -34,9 +34,9 @@ export default function KpiCard({
             {/* Top Row: Icon & Label */}
             <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div className="min-w-0 pr-2">
-                    <p className="text-[10px] sm:text-[11.5px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5 sm:mb-1 truncate">
+                    <div className="text-[10px] sm:text-[11.5px] font-bold text-[#94A3B8] uppercase tracking-wider mb-0.5 sm:mb-1 min-w-0">
                         {label}
-                    </p>
+                    </div>
                     <p className="text-xl sm:text-2xl font-extrabold text-[#0F172A] leading-tight tracking-tight truncate">
                         {value}
                     </p>
