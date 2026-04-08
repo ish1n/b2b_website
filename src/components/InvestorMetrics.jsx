@@ -210,6 +210,9 @@ export default function InvestorMetrics() {
   }, []);
 
   const quarterlySummary = useMemo(() => {
+    // SAFETY CHECK: If data isn't loaded yet, return 0
+    if (!metrics || !metrics.monthlyRevenue) return { q4Revenue: 0, q1Revenue: 0 };
+
     const q4Months = ["Oct 2025", "Nov 2025", "Dec 2025"];
     const q1Months = ["Jan 2026", "Feb 2026", "Mar 2026"];
 
@@ -222,13 +225,18 @@ export default function InvestorMetrics() {
       .reduce((sum, point) => sum + point.totalRevenue, 0);
 
     return { q4Revenue, q1Revenue };
-  }, [metrics.monthlyRevenue]);
+  }, [metrics]);
 
   const bestRecentMonth = useMemo(() => {
+    // SAFETY CHECK: If data isn't loaded yet, return a safe default
+    if (!metrics || !metrics.monthlyRevenue || metrics.monthlyRevenue.length === 0) {
+      return { month: "N/A", totalRevenue: 0 };
+    }
+
     return metrics.monthlyRevenue
       .slice(-3)
       .reduce((best, point) => (point.totalRevenue > best.totalRevenue ? point : best), metrics.monthlyRevenue[metrics.monthlyRevenue.length - 1]);
-  }, [metrics.monthlyRevenue]);
+  }, [metrics]);
 
   if (loading) {
     return (

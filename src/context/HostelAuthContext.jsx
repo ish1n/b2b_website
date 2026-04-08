@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo } 
 import { signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { getDoc, doc, onSnapshot, collection, setDoc } from "firebase/firestore";
-import { allHostelOrders } from "../data/hostelOrders";
 import { ORDER_CATEGORIES, ORDER_TYPES } from "../constants/orders";
 import { normalizeOrder } from "../utils/orderNormalization";
 
@@ -25,9 +24,9 @@ export function HostelAuthProvider({ children }) {
   const [websiteOrders, setWebsiteOrders] = useState([]);
 
   useEffect(() => {
-    let unsubscribeEdits = () => {};
-    let unsubscribeB2bOrders = () => {};
-    let unsubscribeWebsiteOrders = () => {};
+    let unsubscribeEdits = () => { };
+    let unsubscribeB2bOrders = () => { };
+    let unsubscribeWebsiteOrders = () => { };
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       unsubscribeEdits();
@@ -91,16 +90,14 @@ export function HostelAuthProvider({ children }) {
     };
   }, []);
 
-  const normalizedBaseOrders = useMemo(() => allHostelOrders.map((order) => normalizeOrder(order, "base")), []);
 
   const allOrdersMerged = useMemo(() => {
     const editedIds = new Set(firestoreEdits.map((order) => order.id));
-    const cleanBase = normalizedBaseOrders.filter((order) => !editedIds.has(order.id));
     const cleanB2b = b2bOrders.filter((order) => !editedIds.has(order.id));
     const cleanWebsite = websiteOrders.filter((order) => !editedIds.has(order.id));
 
-    return [...cleanBase, ...firestoreEdits, ...cleanB2b, ...cleanWebsite].filter((order) => !order.isDeleted);
-  }, [b2bOrders, firestoreEdits, normalizedBaseOrders, websiteOrders]);
+    return [...firestoreEdits, ...cleanB2b, ...cleanWebsite].filter((order) => !order.isDeleted);
+  }, [b2bOrders, firestoreEdits, websiteOrders]);
 
   const orders = useMemo(() => {
     if (!client) return [];

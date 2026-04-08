@@ -144,6 +144,7 @@ export default function AdminDashboard() {
   if (loading) return <LoadingSpinner fullscreen />;
 
   return (
+
     <div className="flex min-h-screen bg-[#F1F5F9]" style={{ fontFamily: "DM Sans, sans-serif" }}>
       <AdminSidebar
         activeTab={activeTab}
@@ -221,6 +222,7 @@ export default function AdminDashboard() {
           }
         }}
       />
+
     </div>
   );
 }
