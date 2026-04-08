@@ -2,10 +2,15 @@ import { useMemo, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { FiChevronDown, FiChevronRight, FiXCircle } from "react-icons/fi";
+
+import { FiChevronDown, FiChevronRight, FiXCircle, FiEdit2, FiTrash2 } from "react-icons/fi";
+
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
 import { normalizePropertyName } from "../utils/orderNormalization";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "../firebase";
+
 
 const DEFAULT_HOSTEL_COLORS = {
   "Tulsi": "#1976D2", "Adarsha": "#7C3AED", "Meera": "#059669", "Aardhana": "#D97706",
@@ -49,13 +54,13 @@ const BarTooltip = ({ active, payload, label }) => {
 
 function SummaryCard({ name, color, orders, kg, clothes, students, avgKgPerStudent, revenue }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative flex flex-col h-full">
       <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
       <div className="flex items-center gap-2.5 mb-4">
         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
         <h3 className="text-[14px] font-black text-[#0F172A] tracking-tight">{name}</h3>
       </div>
-      <div className="grid grid-cols-2 gap-y-3 gap-x-1">
+      <div className="grid grid-cols-2 gap-y-3 gap-x-1 mt-auto">
         {revenue !== undefined && (
           <div className="col-span-2 pb-3 border-b border-slate-50 mb-1 flex items-center justify-between">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Revenue</p>
@@ -107,7 +112,7 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
     }
   });
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative flex flex-col h-full">
       <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
@@ -126,7 +131,7 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
           )}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+      <div className="grid grid-cols-2 gap-y-3 gap-x-2 mt-auto">
         {Object.entries(totals).filter(([, v]) => v > 0).map(([k, v]) => (
           <div key={k}>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 truncate">{k}</p>
@@ -138,14 +143,80 @@ function LinenSummaryCard({ name, color, orders, revenue }) {
   );
 }
 
+// --- NEW COMBINED CARD COMPONENT ---
+function UnifiedSummaryCard({ name, color, studentOrderCount, linenOrderCount, kg, students, totalLinenItems, revenue }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-all group overflow-hidden relative flex flex-col h-full">
+      <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <h3 className="text-[14px] font-black text-[#0F172A] tracking-tight truncate">{name}</h3>
+        </div>
+        <div className="flex items-center gap-0.5 text-[14px] font-black text-green-700 bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
+          <BiRupee size={14} />
+          <span>{revenue?.toLocaleString() || 0}</span>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-2.5 flex flex-col justify-end mt-2">
+        {studentOrderCount > 0 && (
+          <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-100/60">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Student Laundry</span>
+              <span className="text-[10px] font-bold text-blue-500 bg-blue-100/50 px-1.5 py-0.5 rounded">{studentOrderCount} {studentOrderCount === 1 ? 'Order' : 'Orders'}</span>
+            </div>
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 leading-none mb-1">Total Weight</p>
+                <p className="text-[13px] font-black text-slate-800 leading-none">{kg.toFixed(1)} KG</p>
+              </div>
+              {students > 0 && (
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-slate-500 leading-none mb-1">Students</p>
+                  <p className="text-[13px] font-black text-slate-800 leading-none">{students}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {linenOrderCount > 0 && (
+          <div className="bg-purple-50/60 p-3 rounded-lg border border-purple-100/60">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">Linen Wash</span>
+              <span className="text-[10px] font-bold text-purple-500 bg-purple-100/50 px-1.5 py-0.5 rounded">{linenOrderCount} {linenOrderCount === 1 ? 'Order' : 'Orders'}</span>
+            </div>
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-[10px] font-bold text-slate-500 leading-none mb-1">Total Items</p>
+                <p className="text-[13px] font-black text-slate-800 leading-none">{totalLinenItems} Pcs</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // daysInRange is now an array of full "YYYY-MM-DD" strings
 export default function AdminHostelsTab({ orders, daysInRange }) {
   const [view, setView] = useState("student");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState("All");
-  // chartDateFilter stores a full "YYYY-MM-DD" string or null
   const [chartDateFilter, setChartDateFilter] = useState(null);
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
+      try {
+        await deleteDoc(doc(db, "b2b_orders", orderId));
+      } catch (error) {
+        console.error("Error deleting order:", error);
+        alert("Failed to delete order. Please check permissions.");
+      }
+    }
+  };
 
   const handleViewChange = (newView) => {
     setView(newView);
@@ -158,8 +229,10 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
       .filter((order) => !HIDDEN_HOSTEL_PROPERTIES.has(order.property)),
     [orders]
   );
+
   const studentOrders = useMemo(() => visibleOrders.filter(o => o.type === "student"), [visibleOrders]);
   const linenOrders = useMemo(() => visibleOrders.filter(o => o.type === "linen"), [visibleOrders]);
+
   const studentProperties = useMemo(() =>
     [...new Set(studentOrders.map(o => o.property).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [studentOrders]
@@ -185,11 +258,9 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
     [studentOrders, studentProperties]
   );
 
-  // Build chart rows directly from the normalized full date strings in range.
   const studentChartData = useMemo(() =>
     daysInRange.map((fullDate, idx) => {
       const dayNum = parseInt(fullDate.split("-")[2], 10);
-      // Show MM/DD at month boundaries for readability
       const prevDate = daysInRange[idx - 1];
       const isNewMonth = !prevDate || prevDate.slice(0, 7) !== fullDate.slice(0, 7);
       const label = isNewMonth
@@ -221,6 +292,46 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
     [studentOrders, linenOrders]
   );
 
+  // --- NEW COMBINED DATA LOGIC FOR 'ALL SECTORS' ---
+  const allProperties = useMemo(() =>
+    [...new Set([...studentProperties, ...linenProperties])].sort((a, b) => a.localeCompare(b)),
+    [studentProperties, linenProperties]
+  );
+
+  const unifiedSummaries = useMemo(() =>
+    allProperties.map((name, index) => {
+      const studentO = studentOrders.filter(o => o.property === name);
+      const linenO = linenOrders.filter(o => o.property === name);
+
+      const studentOrderCount = studentO.length;
+      const kg = studentO.reduce((s, o) => s + (o.weight || 0), 0);
+      const students = studentO.reduce((s, o) => s + (o.studentCount || 0), 0);
+
+      const linenOrderCount = linenO.length;
+      let totalLinenItems = 0;
+      linenO.forEach(o => {
+        if (o.details) {
+          Object.values(o.details).forEach(v => totalLinenItems += (v || 0));
+        }
+      });
+
+      const revenue = [...studentO, ...linenO].reduce((s, o) => s + (o.amount || 0), 0);
+
+      return {
+        name,
+        studentOrderCount,
+        linenOrderCount,
+        kg,
+        students,
+        totalLinenItems,
+        revenue,
+        color: getPropertyColor(name, index)
+      };
+    }).filter(h => h.studentOrderCount > 0 || h.linenOrderCount > 0),
+    [allProperties, studentOrders, linenOrders]
+  );
+  // -----------------------------------------------
+
   return (
     <div className="space-y-6" style={{ fontFamily: 'DM Sans, sans-serif' }}>
       {/* Toggle */}
@@ -245,19 +356,19 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight uppercase tracking-widest">Unified Property Summary</h2>
-              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">Combining {studentSummaries.length + linenSummaries.length} Properties</span>
+              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">Combining {unifiedSummaries.length} Properties</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {studentSummaries.map(s => <SummaryCard key={s.name} {...s} />)}
-              {linenSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+              {/* NOW MAPPING OVER OUR NEW UNIFIED LIST */}
+              {unifiedSummaries.map(s => <UnifiedSummaryCard key={s.name} {...s} />)}
             </div>
           </div>
         ) : view === "student" ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
             {studentSummaries.map(s => <SummaryCard key={s.name} {...s} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
             {linenSummaries.map(s => <LinenSummaryCard key={s.name} name={s.name} color={s.color} orders={s.orders} revenue={s.revenue} />)}
           </div>
         )}
@@ -275,7 +386,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
               data={studentChartData}
               margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}
               barGap={0}
-              // Store the full date string from the clicked bar's data point.
               onClick={(data, index) => {
                 if (data && index !== undefined && studentChartData[index]) {
                   const clicked = studentChartData[index].fullDate;
@@ -326,7 +436,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 onClick={() => setChartDateFilter(null)}
                 className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-[12px] font-bold hover:bg-indigo-100 transition-colors"
               >
-                {/* Show friendly MM/DD label */}
                 {`${chartDateFilter.slice(5, 7)}/${chartDateFilter.slice(8, 10)}`} <FiXCircle size={14} />
               </button>
             )}
@@ -359,12 +468,12 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Metric / Qty</th>
                 <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Details</th>
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Billed Amount</th>
+                <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Action</th>
               </tr>
             </thead>
             <tbody>
               {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
                 .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-                // Match on the full normalized date string.
                 .filter(o => !chartDateFilter || o.date === chartDateFilter)
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(o => (
@@ -417,6 +526,31 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                         <FiChevronRight size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors ml-1" />
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(o);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex"
+                          title="Edit Order"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteOrder(o.id);
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex"
+                          title="Delete Order"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -427,7 +561,6 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
         <div className="md:hidden divide-y divide-gray-50 bg-white border border-gray-100 rounded-xl overflow-hidden mt-4">
           {(view === "all" ? unifiedOrders : view === "student" ? studentOrders : linenOrders)
             .filter(o => propertyFilter === "All" || o.property === propertyFilter)
-            // Match on the full normalized date string.
             .filter(o => !chartDateFilter || o.date === chartDateFilter)
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .map(o => (

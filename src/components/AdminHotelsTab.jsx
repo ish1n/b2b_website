@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronRight, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
 import EmptyState from "./EmptyState";
 import TabSectionCard from "./TabSectionCard";
 import { useHotelMetrics } from "../hooks/useHotelMetrics";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 function HotelSummaryCard({ name, color, orders, revenue }) {
   const totals = {};
@@ -46,6 +48,16 @@ export default function AdminHotelsTab({ orders }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { hotelSummaries, sortedHotelOrders } = useHotelMetrics(orders);
+  const handleDeleteOrder = async (orderId) => {
+    if (window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
+      try {
+        await deleteDoc(doc(db, "b2b_orders", orderId));
+      } catch (error) {
+        console.error("Error deleting order:", error);
+        alert("Failed to delete order. Please check permissions.");
+      }
+    }
+  };
 
   return (
     <div className="space-y-6" style={{ fontFamily: "DM Sans, sans-serif" }}>
@@ -67,13 +79,14 @@ export default function AdminHotelsTab({ orders }) {
                   <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Pillow Cover</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Duvet Cover</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Towels</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Amount</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">Amount</th>
+                  <th className="text-center text-xs font-semibold text-gray-500 px-4 py-3 rounded-tr-xl">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedHotelOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12">
+                    <td colSpan="8" className="px-6 py-12">
                       <EmptyState
                         title="No hotel orders yet"
                         message="New Airbnb or hotel orders will show up here automatically."
@@ -99,6 +112,31 @@ export default function AdminHotelsTab({ orders }) {
                           <span>{order.amount?.toLocaleString()}</span>
                         </div>
                         <FiChevronRight size={16} className="text-slate-400 group-hover:text-orange-500 transition-colors" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(order);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors inline-flex"
+                          title="Edit Order"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteOrder(order.id);
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex"
+                          title="Delete Order"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>

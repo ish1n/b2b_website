@@ -1,18 +1,29 @@
 import { ORDER_CATEGORIES, ORDER_CHANNELS, ORDER_STATUSES, ORDER_TYPES, normalizeOrderStatus } from "../constants/orders";
 import { getCategoryForProperty } from "../data/hostelOrders";
 
+// --- ADDED ALIASES HERE TO FIX CASE SENSITIVITY AND DUPLICATES ---
 const CANONICAL_PROPERTY_NAMES = {
   aakansha: "Aakansha",
   akansha: "Aakansha",
+  "aakansha hostel": "Aakansha",
   adarsha: "Adarsha",
+  "adarsha hostel": "Adarsha",
   aardhana: "Aardhana",
   ardhana: "Aardhana",
+  "aardhana hostel": "Aardhana",
   kirti: "Kirti",
+  "kirti hostel": "Kirti",
   meera: "Meera",
+  "meera hostel": "Meera",
   samridhi: "Samridhi",
+  "samridhi hostel": "Samridhi",
   samshrushti: "Samshrushti",
+  "samshrushti hostel": "Samshrushti",
   tara: "Tara",
+  "tara hostel": "Tara",
   tulsi: "Tulsi",
+  "tulsi hostel": "Tulsi",       // Maps "tulsi hostel" -> "Tulsi"
+  "tulsi boys hostel": "Tulsi",  // Maps "tulsi boys hostel" -> "Tulsi"
   hostel99: "Hostel 99",
   "hostel 99": "Hostel 99",
   "hostel99 koregaon park": "Hostel99 koregaon park",
@@ -47,9 +58,11 @@ export function normalizePropertyName(value) {
   const trimmed = String(value || "").trim();
   if (!trimmed) return "Unknown Property";
 
+  // This converts whatever the user typed to lowercase (e.g. "Tulsi Hostel" -> "tulsi hostel")
   const collapsed = trimmed.replace(/\s+/g, " ").toLowerCase();
   const alphanumeric = collapsed.replace(/[^a-z0-9 ]/g, "").trim();
 
+  // If "tulsi hostel" is found in our dictionary above, it returns exactly "Tulsi"
   return CANONICAL_PROPERTY_NAMES[collapsed]
     || CANONICAL_PROPERTY_NAMES[alphanumeric]
     || trimmed.split(" ").map((part) => part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : part).join(" ");
