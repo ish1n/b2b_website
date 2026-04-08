@@ -6,6 +6,18 @@ import { HOTEL_ITEMS, ITEM_RATE_MAP, STUDENT_RATE_PER_KG } from "../config/order
 import { ORDER_CATEGORIES, ORDER_STATUSES, ORDER_TYPES } from "../constants/orders";
 import { normalizePropertyName } from "../utils/orderNormalization";
 
+// --- ADDED: Known lists of properties for the dropdowns ---
+const KNOWN_PROPERTIES = {
+  hostel: [
+    "Tulsi", "Adarsha", "Meera", "Aardhana", "Aakansha",
+    "Kirti", "Tara", "Samshrushti", "Hostel 99",
+    "Hostel 99 no-88", "Hostel 99 no-3"
+  ],
+  hotel: [
+    "Airbnb Viman Nagar", "Airbnb Koregaon Park" // Add your common hotels here
+  ]
+};
+
 const getTodayString = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
 
 export default function AdminAddOrderModal({ isOpen, onClose, onSuccess }) {
@@ -189,17 +201,27 @@ export default function AdminAddOrderModal({ isOpen, onClose, onSuccess }) {
               </div>
             )}
 
+            {/* --- CHANGED SECTION: Added datalist and list attribute --- */}
             <div>
               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Property Name</label>
               <input
                 type="text"
+                list="property-suggestions"
                 value={propertyName}
                 onChange={(event) => setPropertyName(event.target.value)}
                 className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                placeholder="e.g., Stanza Living, Airbnb Viman Nagar"
+                placeholder={orderCategory === "hostel" ? "e.g., Tulsi" : "e.g., Airbnb Viman Nagar"}
                 required
               />
+
+              <datalist id="property-suggestions">
+                {orderCategory === "hostel"
+                  ? KNOWN_PROPERTIES.hostel.map(p => <option key={p} value={p} />)
+                  : KNOWN_PROPERTIES.hotel.map(p => <option key={p} value={p} />)
+                }
+              </datalist>
             </div>
+            {/* --------------------------------------------------------- */}
 
             <div>
               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Order Date</label>

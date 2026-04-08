@@ -1,10 +1,60 @@
-import { FiX } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiX, FiEdit2, FiCheck, FiLoader } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function AdminOrderModal({ isOpen, onClose, order }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    status: "Pending",
+    amount: 0,
+    weight: 0,
+    studentCount: 0,
+    items: 0
+  });
+
+  // Load the current order data into the edit form whenever the modal opens
+  useEffect(() => {
+    if (order) {
+      setEditForm({
+        status: order.status || "Pending",
+        amount: order.amount || 0,
+        weight: order.weight || 0,
+        studentCount: order.studentCount || 0,
+        items: order.items || 0
+      });
+      setIsEditing(false); // Always start in "View" mode
+    }
+  }, [order, isOpen]);
+
   if (!isOpen || !order) return null;
 
-  // Render Status Badge
+  // The function that securely updates the exact document without duplicating it
+  const handleUpdate = async () => {
+    setIsSubmitting(true);
+    try {
+      const orderRef = doc(db, "b2b_orders", order.id);
+
+      await updateDoc(orderRef, {
+        status: editForm.status,
+        amount: Number(editForm.amount),
+        weight: Number(editForm.weight),
+        studentCount: Number(editForm.studentCount),
+        items: Number(editForm.items)
+      });
+
+      setIsEditing(false);
+      onClose();
+    } catch (error) {
+      console.error("Error updating order:", error);
+      alert("Failed to update order. Make sure it exists in b2b_orders.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const s = (status || "Pending").toLowerCase();
     if (s.includes("delivered") || s.includes("completed")) {
@@ -18,13 +68,8 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Blurred Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-      {/* Modal Content */}
       <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col sm:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-gray-100 bg-[#F8FAFC]">
@@ -33,15 +78,32 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
             <div className="flex items-center gap-2 mt-1.5">
               <p className="text-[12px] font-bold text-slate-500">{order.date}</p>
               <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              {getStatusBadge(order.status)}
+              {isEditing ? (
+                <select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  className="text-[10px] font-black rounded-full uppercase tracking-wider px-2 py-1 border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              ) : (
+                getStatusBadge(order.status)
+              )}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors"
-          >
-            <FiX size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {!isEditing && (
+              <button onClick={() => setIsEditing(true)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors" title="Edit Order">
+                <FiEdit2 size={18} />
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors">
+              <FiX size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -50,128 +112,32 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Weight</p>
-                  <p className="text-[18px] font-black text-[#0F172A]">{order.weight?.toFixed(1) || '0.0'} <span className="text-[12px] text-slate-500">kg</span></p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Weight (kg)</p>
+                  {isEditing ? (
+                    <input type="number" step="0.1" value={editForm.weight} onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                  ) : (
+                    <p className="text-[18px] font-black text-[#0F172A]">{order.weight?.toFixed(1) || '0.0'} <span className="text-[12px] text-slate-500">kg</span></p>
+                  )}
                 </div>
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Students</p>
-                  <p className="text-[18px] font-black text-[#0F172A]">{order.studentCount || '—'}</p>
+                  {isEditing ? (
+                    <input type="number" value={editForm.studentCount} onChange={(e) => setEditForm({ ...editForm, studentCount: e.target.value })} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                  ) : (
+                    <p className="text-[18px] font-black text-[#0F172A]">{order.studentCount || '—'}</p>
+                  )}
                 </div>
               </div>
-
               <div>
                 <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Service Details</h3>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-[14px] font-bold text-slate-600">Wash Type</span>
-                  <span className="text-[14px] font-black text-[#0F172A]">Wash & Fold/Iron</span>
+                <div className="flex items-center justify-between py-2 border-b border-slate-50">
+                  <span className="text-[14px] font-bold text-slate-600">Total Clothes (pcs)</span>
+                  {isEditing ? (
+                    <input type="number" value={editForm.items} onChange={(e) => setEditForm({ ...editForm, items: e.target.value })} className="w-24 text-right text-[14px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                  ) : (
+                    <span className="text-[14px] font-black text-[#0F172A]">{order.items || 0} pcs</span>
+                  )}
                 </div>
-                {order.items && (
-                  <div className="flex items-center justify-between py-2 border-t border-slate-50">
-                    <span className="text-[14px] font-bold text-slate-600">Total Clothes</span>
-                    <span className="text-[14px] font-black text-[#0F172A]">{order.items} pcs</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : order.channel === 'Website' ? (
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-                  <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Ordered Products</h3>
-                  <span className="text-[12px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                    {order.items || 0} {order.items === 1 ? 'Product' : 'Products'}
-                  </span>
-                </div>
-
-                {order.itemsList && order.itemsList.length > 0 ? (
-                  <div className="space-y-2">
-                    {order.itemsList.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100/50">
-                        <div className="flex flex-col">
-                          <span className="text-[13.5px] font-bold text-slate-700">{item.name || item.title}</span>
-                          <span className="text-[11px] font-bold text-slate-400">Qty: {item.quantity}</span>
-                        </div>
-                        <div className="flex items-center gap-0.5 text-[14px] font-black text-slate-700">
-                          <BiRupee size={12} />
-                          <span>{(item.price * item.quantity).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[13px] font-medium text-slate-500 italic py-4 text-center">Standard Item Count: {order.items} pcs</p>
-                )}
-              </div>
-
-              {order.address && (
-                <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
-                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Delivery Address</p>
-                  <p className="text-[13px] font-bold text-slate-600 leading-relaxed">
-                    {typeof order.address === 'object'
-                      ? `${order.address.street || ''}, ${order.address.city || ''}, ${order.address.zipCode || ''}`
-                      : order.address}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : order.type === 'regular' || order.category === 'B2C_RETAIL' ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Weight</p>
-                  <p className="text-[18px] font-black text-[#0F172A]">{order.weight?.toFixed(1) || '0.0'} <span className="text-[12px] text-slate-500">kg</span></p>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Clothes</p>
-                  <p className="text-[18px] font-black text-[#0F172A]">{order.items || '—'} pcs</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Service Details</h3>
-
-                {/* Dynamically Render Array of Services OR Fallback to Original */}
-                {order.servicesList && order.servicesList.length > 0 ? (
-                  <div className="space-y-2 py-2">
-                    {order.servicesList.map((srv, idx) => (
-                      <div key={idx} className="bg-white border border-slate-100 rounded-lg p-3 flex justify-between items-center shadow-sm">
-                        <div>
-                          <p className="text-[13px] font-black text-[#0F172A]">{srv.type === 'Other' ? (srv.customName || 'Other') : srv.type}</p>
-                          <p className="text-[11px] font-bold text-slate-500 mt-0.5">
-                            {srv.weight ? `${srv.weight} kg` : ''}
-                            {srv.weight && srv.items ? ' • ' : ''}
-                            {srv.items ? `${srv.items} pcs` : ''}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[14px] font-black text-blue-600">₹{srv.amount || 0}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between py-2">
-                    <span className="text-[14px] font-bold text-slate-600">Wash Type</span>
-                    <span className="text-[14px] font-black text-[#0F172A]">{order.service?.split(" —")[0] || 'Wash & Fold'}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between py-2 border-t border-slate-50 mt-2">
-                  <span className="text-[14px] font-bold text-slate-600">Channel</span>
-                  <span className="text-[14px] font-black text-[#0F172A]">{order.channel || 'Direct'}</span>
-                </div>
-                {order.customerNumber && (
-                  <div className="flex items-center justify-between py-2 border-t border-slate-50">
-                    <span className="text-[14px] font-bold text-slate-600">Contact Number</span>
-                    <span className="text-[14px] font-black text-[#0F172A]">{order.customerNumber}</span>
-                  </div>
-                )}
-                {order.notes && (
-                  <div className="flex flex-col py-2 border-t border-slate-50">
-                    <span className="text-[14px] font-bold text-slate-600 mb-1">Instructions / Notes</span>
-                    <span className="text-[13px] font-medium text-slate-500 italic p-3 bg-slate-50 rounded-lg">{order.notes}</span>
-                  </div>
-                )}
               </div>
             </div>
           ) : (
@@ -179,15 +145,19 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
               <div>
                 <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
                   <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Item Breakdown</h3>
-                  <span className="text-[12px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {Object.values(order.details || {}).reduce((s, v) => s + v, 0) || order.items || 0} Pieces Total
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Total Pcs:</span>
+                    {isEditing ? (
+                      <input type="number" value={editForm.items} onChange={(e) => setEditForm({ ...editForm, items: e.target.value })} className="w-16 text-center text-[12px] font-black text-blue-600 bg-white border border-slate-200 rounded px-1 outline-none" />
+                    ) : (
+                      <span className="text-[12px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{order.items || Object.values(order.details || {}).reduce((s, v) => s + v, 0) || 0}</span>
+                    )}
+                  </div>
                 </div>
-
                 {order.details && Object.keys(order.details).length > 0 ? (
                   <div className="space-y-2">
                     {Object.entries(order.details).filter(([, v]) => v > 0).map(([item, qty]) => (
-                      <div key={item} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
+                      <div key={item} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg opacity-80">
                         <span className="text-[14px] font-bold text-slate-600">{item}</span>
                         <span className="text-[14px] font-black text-[#0F172A]">{qty}</span>
                       </div>
@@ -203,29 +173,29 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-[#F8FAFC]">
-          {order.channel === 'Website' && (
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
-                <span>Subtotal</span>
-                <span className="text-slate-700 font-black">₹{order.subtotal?.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
-                <span>Delivery Fee</span>
-                <span className="text-slate-700 font-black">₹{order.deliveryFee || 0}</span>
-              </div>
-              <div className="flex justify-between text-[13px] text-slate-500 font-medium">
-                <span>Convenience Fee</span>
-                <span className="text-slate-700 font-black">₹{order.convenienceFee || 0}</span>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100/50">
+          <div className="flex items-center justify-between pt-2">
             <span className="text-[12px] font-black text-slate-500 uppercase tracking-widest">Total Billed</span>
             <div className="flex items-center gap-1 text-[24px] font-black text-[#1976D2]">
               <BiRupee size={24} className="mb-0.5" />
-              <span>{order.amount?.toLocaleString() || '0'}</span>
+              {isEditing ? (
+                <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} className="w-28 text-right bg-white border border-slate-300 rounded-lg px-2 py-1 text-[20px] outline-none focus:border-blue-500" />
+              ) : (
+                <span>{order.amount?.toLocaleString() || '0'}</span>
+              )}
             </div>
           </div>
+
+          {isEditing && (
+            <div className="mt-6 flex gap-3">
+              <button onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 text-[14px] font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleUpdate} disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white text-[14px] font-bold rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
+                {isSubmitting ? <FiLoader className="animate-spin" /> : <FiCheck />}
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
