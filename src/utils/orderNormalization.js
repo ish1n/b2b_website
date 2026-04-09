@@ -1,5 +1,6 @@
 import { ORDER_CATEGORIES, ORDER_CHANNELS, ORDER_STATUSES, ORDER_TYPES, normalizeOrderStatus } from "../constants/orders";
 import { getCategoryForProperty } from "../data/hostelOrders";
+import { getTodayString } from "./dateUtils";
 
 // --- ADDED ALIASES HERE TO FIX CASE SENSITIVITY AND DUPLICATES ---
 const CANONICAL_PROPERTY_NAMES = {
@@ -38,9 +39,7 @@ const CANONICAL_PROPERTY_NAMES = {
   "airbnb viman nagar, pune": "Airbnb Viman Nagar",
 };
 
-function getTodayString() {
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
-}
+// getTodayString imported from ./dateUtils
 
 function normalizeDate(raw) {
   if (!raw) return getTodayString();
@@ -132,11 +131,10 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     customerNumber: rawOrder.customerNumber || rawOrder.userPhone || rawOrder.phoneNumber || rawOrder.customerPhone || "",
     channel: rawOrder.channel || (source === "website" ? ORDER_CHANNELS.WEBSITE : rawOrder.channel),
     service: rawOrder.service || "Order",
+    source,
   };
 
   if (source === "website") {
-    normalized.category = ORDER_CATEGORIES.B2C_RETAIL;
-    normalized.type = ORDER_TYPES.REGULAR;
     normalized.channel = ORDER_CHANNELS.WEBSITE;
     normalized.customerName = rawOrder.userName || rawOrder.customerName || "Website Customer";
     normalized.customerNumber = rawOrder.userPhone || rawOrder.phoneNumber || rawOrder.customerPhone || "no contact";

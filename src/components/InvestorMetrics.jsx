@@ -257,15 +257,19 @@ export default function InvestorMetrics() {
               <FiBarChart2 size={14} />
               Investor Snapshot
             </div>
-            <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-slate-950 lg:text-3xl">{metrics.reportTitle}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              The page now leads with the business story first: revenue scale, growth, mix, margin, and EBITDA.
-              Unsupported placeholder sections have been removed so investors only see report-backed information.
+            <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-slate-950 lg:text-3xl">
+              {metrics.reportTitle}
+            </h2>
+            <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
+              The Andes story is one of rapid and successful transformation. Starting as a B2C-focused laundry pilot, 
+              the business has pivoted into a high-scale B2B revenue engine. This report details our path from 
+              initial retail operations to securing large-scale institutional contracts, resulting in 
+              significant revenue acceleration and robust segment margins.
             </p>
           </div>
 
           <div className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:w-auto">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Updated On</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Official Report</p>
             <p className="mt-2 text-lg font-extrabold tracking-tight text-slate-950">{metrics.reportUpdatedOn}</p>
           </div>
         </div>
@@ -300,9 +304,9 @@ export default function InvestorMetrics() {
             />
             <SnapshotMetric
               label="GMV"
-              tooltip="Gross Merchandise Value, including MIT Hostel, Hostel 99, IBIS, Airbnb, and regular orders."
+              tooltip="Gross Merchandise Value (GMV) represents the total transacted value of all services processed through the Andes platform."
               value={formatCurrencyCompact(metrics.gmv)}
-              note="MIT Hostel, Hostel 99, IBIS, Airbnb, and regular orders"
+              note="MIT Hostel, Hostel 99, IBIS, Airbnb, and Regular orders"
               icon={IndianRupee}
               tone="slate"
             />
@@ -329,19 +333,19 @@ export default function InvestorMetrics() {
           <InsightCard
             icon={FiTrendingUp}
             title="Revenue accelerated sharply in Q1 2026"
-            body={`${formatCurrency(quarterlySummary.q1Revenue)} in Q1 2026 versus ${formatCurrency(quarterlySummary.q4Revenue)} in Q4 2025 translates to ${formatPercent(metrics.qoqGrowthPct)} quarter-on-quarter growth.`}
+            body={`Total revenue grew to ${formatCurrency(quarterlySummary.q1Revenue)} in Q1 2026. This representing a 80.3% quarter-on-quarter acceleration compared to Q4 2025. This growth signals rapid scale in our core B2B channels.`}
             tone="green"
           />
           <InsightCard
             icon={FiUsers}
             title="B2B is the primary revenue engine"
-            body={`B2B contributes ${formatPercent(metrics.b2bShare)} of the Jan-Mar 2026 revenue base, while B2C contributes ${formatPercent(metrics.b2cShare)}.`}
+            body={`B2B now contributes ${formatPercent(metrics.b2bShare)} of the revenue mix. From Nov 2024 (B2C-only), we've successfully pivoted to high-volume institutional contracts while maintaining a B2C pilot.`}
             tone="blue"
           />
           <InsightCard
             icon={metrics.ebitdaBreakdown.ebitda < 0 ? FiAlertCircle : FiCheckCircle}
-            title="Margins are healthy, but EBITDA is still under watch"
-            body={`Gross margin is ${formatPercent(metrics.b2cMarginPct)} for B2C and ${formatPercent(metrics.b2bMarginPct)} for B2B, yet ${metrics.ebitdaBreakdown.monthLabel} EBITDA remains at ${formatCurrency(metrics.ebitdaBreakdown.ebitda)}.`}
+            title="Margins are healthy; EBITDA remains under watch"
+            body={`Gross margin remains strong at ${formatPercent(metrics.b2cMarginPct)} (B2C) and ${formatPercent(metrics.b2bMarginPct)} (B2B). Our ${metrics.ebitdaBreakdown.monthLabel} EBITDA is currently ${formatCurrency(metrics.ebitdaBreakdown.ebitda)} due to scaling fixed costs.`}
             tone={metrics.ebitdaBreakdown.ebitda < 0 ? "rose" : "green"}
           />
         </div>
@@ -468,18 +472,20 @@ export default function InvestorMetrics() {
                     tooltip="Inputs used in the B2C gross margin calculation."
                   />
                 </div>
-                <p className="mt-2"><span className="font-bold text-slate-900">Selling price:</span> Rs 80/kg</p>
-                <p><span className="font-bold text-slate-900">Variable cost:</span> Rs 26.4/kg</p>
+                <p className="mt-2"><span className="font-bold text-slate-900">Selling Price:</span> ₹80/kg</p>
+                <p><span className="font-bold text-slate-900">Var. Cost:</span> ₹26.4/kg</p>
+                <p className="mt-1 text-[10px] text-slate-400">Chemicals (₹5), Electricity (₹7.9), Ironing (₹10.5), Packaging (₹3)</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
                 <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
                   <LabelWithInfo
                     text="B2B Inputs"
-                    tooltip="Inputs used in the B2B gross margin calculation."
+                    tooltip="Inputs used in the B2B gross margin calculation (Selling Price - Variable Cost) / Selling Price."
                   />
                 </div>
-                <p className="mt-2"><span className="font-bold text-slate-900">Selling price:</span> Rs 55/kg</p>
-                <p><span className="font-bold text-slate-900">Variable cost:</span> Rs 24.98/kg</p>
+                <p className="mt-2"><span className="font-bold text-slate-900">Selling Price:</span> ₹55/kg</p>
+                <p><span className="font-bold text-slate-900">Var. Cost:</span> ₹24.98/kg</p>
+                <p className="mt-1 text-[10px] text-slate-400">Chemicals (₹5), Electricity (₹7.87), Ironing (₹10.5), Packaging (₹1.61)</p>
               </div>
             </div>
           </div>

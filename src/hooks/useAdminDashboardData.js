@@ -3,15 +3,9 @@ import { collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, setDoc }
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { ORDER_CATEGORIES, ORDER_TYPES } from "../constants/orders";
+import { getTodayString, getMonthStartString } from "../utils/dateUtils";
 
-function getTodayString() {
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
-}
-
-function getMonthStartString() {
-  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-}
+// getTodayString and getMonthStartString are imported from ../utils/dateUtils
 
 function buildDaysInRange(dateFrom, dateTo) {
   const from = new Date(dateFrom || getMonthStartString());
@@ -28,6 +22,15 @@ function buildDaysInRange(dateFrom, dateTo) {
   return dates;
 }
 
+// Helper to remove undefined fields which Firestore doesn't support
+const cleanObject = (obj) => {
+  const newObj = { ...obj };
+  Object.keys(newObj).forEach((key) => {
+    if (newObj[key] === undefined) delete newObj[key];
+  });
+  return newObj;
+};
+
 function isHotelOrder(order) {
   const propertyName = String(order.property || "").toLowerCase();
   return order.type === ORDER_TYPES.AIRBNB
@@ -41,10 +44,7 @@ function hasMeaningfulHotelData(order) {
   return (order.amount || 0) > 0 || detailCount > 0;
 }
 
-function isHiddenHotelRecord(order) {
-  const key = `${String(order.property || "").trim().toLowerCase()}::${order.date}`;
-  return key === "airbnb viman nagar::2026-03-12";
-}
+// isHiddenHotelRecord removed - record should be soft-deleted in Firestore instead
 
 function buildDashboardStats({ activeTab, allManagers, daysInRange, orders }) {
   let focusOrders = orders.filter((order) => order.category !== "ISSUES");
@@ -54,7 +54,7 @@ function buildDashboardStats({ activeTab, allManagers, daysInRange, orders }) {
   } else if (activeTab === "hostels") {
     focusOrders = orders.filter((order) => order.type === "student" || order.type === "linen");
   } else if (activeTab === "hotels") {
-    focusOrders = orders.filter((order) => isHotelOrder(order) && hasMeaningfulHotelData(order) && !isHiddenHotelRecord(order));
+    focusOrders = orders.filter((order) => isHotelOrder(order) && hasMeaningfulHotelData(order));
   }
 
   const issues = orders.filter((order) => order.category === "ISSUES");
@@ -74,7 +74,7 @@ function buildDashboardStats({ activeTab, allManagers, daysInRange, orders }) {
     .filter((order) => order.type === "regular")
     .reduce((sum, order) => sum + (order.amount || 0), 0);
   const hotelRevenue = orders
-    .filter((order) => isHotelOrder(order) && hasMeaningfulHotelData(order) && !isHiddenHotelRecord(order))
+    .filter((order) => isHotelOrder(order) && hasMeaningfulHotelData(order))
     .reduce((sum, order) => sum + (order.amount || 0), 0);
 
   const getTrend = (filterFn) => (
@@ -102,13 +102,13 @@ function buildDashboardStats({ activeTab, allManagers, daysInRange, orders }) {
       orders: getTrend((order) => {
         if (activeTab === "regular") return order.type === "regular";
         if (activeTab === "hostels") return order.type === "student" || order.type === "linen";
-        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order) && !isHiddenHotelRecord(order);
+        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order);
         return order.category !== "ISSUES";
       }),
       kg: getTrend((order) => {
         if (activeTab === "regular") return order.type === "regular";
         if (activeTab === "hostels") return order.type === "student" || order.type === "linen";
-        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order) && !isHiddenHotelRecord(order);
+        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order);
         return order.category !== "ISSUES";
       }),
       clients: daysInRange.map((_, index) => ({ v: 10 + Math.sin(index) * 2 })),
@@ -204,7 +204,13 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
 
   const handleAddOrder = useCallback(async (order) => {
     try {
-      await setDoc(doc(db, "b2b_admin_edits", order.id), order);
+      const isB2B =
+        order.category === ORDER_CATEGORIES.STUDENT_LAUNDRY ||
+        order.category === ORDER_CATEGORIES.LINEN ||
+        order.category === ORDER_CATEGORIES.AIRBNB;
+
+      const targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
+      await setDoc(doc(db, targetCollection, order.id), cleanObject(order));
     } catch (error) {
       console.error("Failed to add order", error);
     }
@@ -213,7 +219,13 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
   const handleEditOrder = useCallback(async (updatedOrder) => {
     try {
       if (!updatedOrder.id) throw new Error("Order ID missing");
-      await setDoc(doc(db, "b2b_admin_edits", String(updatedOrder.id)), updatedOrder);
+      const isB2B =
+        updatedOrder.category === ORDER_CATEGORIES.STUDENT_LAUNDRY ||
+        updatedOrder.category === ORDER_CATEGORIES.LINEN ||
+        updatedOrder.category === ORDER_CATEGORIES.AIRBNB;
+
+      const targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
+      await setDoc(doc(db, targetCollection, String(updatedOrder.id)), cleanObject(updatedOrder));
     } catch (error) {
       console.error("Failed to edit order", error);
     }
@@ -221,7 +233,7 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
 
   const handleAddIssue = useCallback(async (issue) => {
     try {
-      await setDoc(doc(db, "b2b_admin_edits", issue.id), issue);
+      await setDoc(doc(db, "b2b_admin_edits", issue.id), cleanObject(issue));
     } catch (error) {
       console.error("Failed to add issue", error);
     }
@@ -230,26 +242,40 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
   const handleEditIssue = useCallback(async (updatedIssue) => {
     try {
       if (!updatedIssue.id) throw new Error("Issue ID missing");
-      await setDoc(doc(db, "b2b_admin_edits", String(updatedIssue.id)), updatedIssue);
+      await setDoc(doc(db, "b2b_admin_edits", String(updatedIssue.id)), cleanObject(updatedIssue));
     } catch (error) {
       console.error("Failed to edit issue", error);
     }
   }, []);
 
   const handleDeleteData = useCallback(async (item) => {
-    if (!window.confirm("Are you sure you want to delete this specific record permanently?")) return;
+    if (!window.confirm("Are you sure you want to permanently remove this record from Firebase? This action cannot be undone.")) return;
 
     try {
       if (!item.id) throw new Error("ID missing for delete action");
       const id = String(item.id);
-
-      if (id.startsWith("reg-new-") || id.startsWith("issue-new-")) {
-        await deleteDoc(doc(db, "b2b_admin_edits", id));
+      
+      let targetCollection = "b2b_admin_edits"; // Default fallback
+      
+      // 1. Identify Target Collection
+      if (item.source === "website") {
+        targetCollection = "orders";
       } else {
-        await setDoc(doc(db, "b2b_admin_edits", id), { ...item, isDeleted: true });
+        const isB2B =
+          item.category === ORDER_CATEGORIES.STUDENT_LAUNDRY ||
+          item.category === ORDER_CATEGORIES.LINEN ||
+          item.category === ORDER_CATEGORIES.AIRBNB;
+        
+        targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
       }
+
+      // 2. Execute Hard Delete
+      await deleteDoc(doc(db, targetCollection, id));
+      
+      alert("Record physically deleted from Firebase.");
     } catch (error) {
       console.error("Failed to delete record", error);
+      alert("Error deleting record. Check your Firestore permissions.");
     }
   }, []);
 
