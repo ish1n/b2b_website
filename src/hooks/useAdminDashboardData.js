@@ -96,7 +96,7 @@ function buildDashboardStats({ activeTab, allManagers, daysInRange, orders }) {
       revenue: getTrend((order) => {
         if (activeTab === "regular") return order.type === "regular";
         if (activeTab === "hostels") return order.type === "student" || order.type === "linen";
-        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order) && !isHiddenHotelRecord(order);
+        if (activeTab === "hotels") return isHotelOrder(order) && hasMeaningfulHotelData(order);
         return order.category !== "ISSUES";
       }),
       orders: getTrend((order) => {
