@@ -15,12 +15,13 @@ import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
 import AdminAddOrderModal from "../components/AdminAddOrderModal";
 import AdminPageActions from "../components/AdminPageActions";
 import AdminDashboardKpis from "../components/AdminDashboardKpis";
+import DashboardSkeleton from "../components/DashboardSkeleton";
 import { getAdminTabConfig } from "../config/adminTabs";
 import { getMonthStartString, getTodayString, useAdminDashboardData } from "../hooks/useAdminDashboardData";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { client, orders: baseOrders, logout } = useHostelAuth();
+  const { client, orders: baseOrders, logout, isDataLoaded } = useHostelAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAddOrder, setShowAddOrder] = useState(false);
@@ -178,23 +179,30 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {activeTabConfig.showHeaderActions && (
-            <AdminPageActions
-              onGenerateInvoice={() => setShowInvoiceModal(true)}
-              onLogOrder={() => setShowAddOrder(true)}
-            />
-          )}
+          {/* Show Skeleton Loader while Firebase initial sync is happening */}
+          {!isDataLoaded ? (
+            <DashboardSkeleton />
+          ) : (
+            <>
+              {activeTabConfig.showHeaderActions && (
+                <AdminPageActions
+                  onGenerateInvoice={() => setShowInvoiceModal(true)}
+                  onLogOrder={() => setShowAddOrder(true)}
+                />
+              )}
 
-          {activeTabConfig.showKpis && (
-            <AdminDashboardKpis
-              activeTab={activeTab}
-              columnsClass={activeTabConfig.kpiColumnsClass}
-              onTabChange={handleTabChange}
-              stats={stats}
-            />
-          )}
+              {activeTabConfig.showKpis && (
+                <AdminDashboardKpis
+                  activeTab={activeTab}
+                  columnsClass={activeTabConfig.kpiColumnsClass}
+                  onTabChange={handleTabChange}
+                  stats={stats}
+                />
+              )}
 
-          <div className="animate-fade-in">{activeTabPanel}</div>
+              <div className="animate-fade-in">{activeTabPanel}</div>
+            </>
+          )}
         </div>
       </main>
 

@@ -4,72 +4,76 @@ import { db } from "../firebase";
 
 
 // Default metrics shape must match what InvestorMetrics.jsx expects.
+// Default metrics shape must match what InvestorMetrics.jsx expects.
+// Default metrics shape must match what InvestorMetrics.jsx expects.
 const DEFAULT_METRICS = {
-    reportTitle: "Andes Investor Report — Jan–Mar 2026",
+    reportVersion: "2026.1", // Used to trigger force-updates on old DB docs
+    reportTitle: "Andes Net Profits & Monthly Revenue",
     reportUpdatedOn: "April 2026",
     summaryPeriod: "Jan–Mar 2026",
     growthComparisonPeriod: "Q4 2025 vs Q1 2026",
 
     // Snapshot KPIs
-    totalRevenue: 5400000,
-    qoqGrowthPct: 32.5,
-    arrr: 21600000,
-    gmv: 64500000,
+    totalRevenue: 343361,
+    qoqGrowthPct: 80.3,
+    arrr: 1373444,
+    gmv: 910536,
 
-    // Revenue mix (Jan–Mar 2026)
-    b2bShare: 68,
-    b2cShare: 32,
-    totalB2bRevenue: 3672000,
-    totalB2cRevenue: 1728000,
+    // Revenue mix (Jan–Mar 2026 summary)
+    // Avg Revenue = 343361 / 3 = 114454
+    // B2C Total = 38856
+    // B2B Total = 304505
+    b2bShare: 88.7,
+    b2cShare: 11.3,
+    totalB2bRevenue: 304505,
+    totalB2cRevenue: 38856,
 
-    // Margin
+    // Margin Quality
     b2cMarginPct: 67,
-    b2bMarginPct: 54.6,
+    b2bMarginPct: 55,
 
     // EBITDA snapshot (Feb 2026)
     ebitdaBreakdown: {
         monthLabel: "Feb 2026",
-        revenue: 1820000,
-        variableCost: 820000,
-        fixedCost: 680000,
-        ebitda: 320000,
+        revenue: 165743,
+        variableCost: 76824,
+        fixedCost: 93000,
+        ebitda: -4081,
     },
 
     // Revenue streams
     revenueStreams: {
         b2c: [
+            "Wash & Iron",
             "Wash & Fold",
-            "Dry Cleaning",
-            "Express Delivery",
+            "Dry Cleaning (clothes, shoes, bags & more)",
         ],
         b2b: [
-            "MIT Hostel",
-            "Hostel 99",
-            "IBIS Hotel",
-            "Airbnb Partner",
-            "Corporate Bulk",
+            "Wash & Fold",
+            "Wash & Iron",
+            "Dry Cleaning",
         ],
     },
 
     // Monthly trend (Nov 2024 – Mar 2026)
     monthlyRevenue: [
-        { month: "Nov 2024", b2cRevenue: 320000,  b2bRevenue: 580000,  totalRevenue: 900000,  b2cShare: 35.6, b2bShare: 64.4 },
-        { month: "Dec 2024", b2cRevenue: 340000,  b2bRevenue: 620000,  totalRevenue: 960000,  b2cShare: 35.4, b2bShare: 64.6 },
-        { month: "Jan 2025", b2cRevenue: 360000,  b2bRevenue: 660000,  totalRevenue: 1020000, b2cShare: 35.3, b2bShare: 64.7 },
-        { month: "Feb 2025", b2cRevenue: 380000,  b2bRevenue: 700000,  totalRevenue: 1080000, b2cShare: 35.2, b2bShare: 64.8 },
-        { month: "Mar 2025", b2cRevenue: 400000,  b2bRevenue: 740000,  totalRevenue: 1140000, b2cShare: 35.1, b2bShare: 64.9 },
-        { month: "Apr 2025", b2cRevenue: 420000,  b2bRevenue: 780000,  totalRevenue: 1200000, b2cShare: 35.0, b2bShare: 65.0 },
-        { month: "May 2025", b2cRevenue: 450000,  b2bRevenue: 830000,  totalRevenue: 1280000, b2cShare: 35.2, b2bShare: 64.8 },
-        { month: "Jun 2025", b2cRevenue: 480000,  b2bRevenue: 880000,  totalRevenue: 1360000, b2cShare: 35.3, b2bShare: 64.7 },
-        { month: "Jul 2025", b2cRevenue: 500000,  b2bRevenue: 920000,  totalRevenue: 1420000, b2cShare: 35.2, b2bShare: 64.8 },
-        { month: "Aug 2025", b2cRevenue: 520000,  b2bRevenue: 960000,  totalRevenue: 1480000, b2cShare: 35.1, b2bShare: 64.9 },
-        { month: "Sep 2025", b2cRevenue: 540000,  b2bRevenue: 1000000, totalRevenue: 1540000, b2cShare: 35.1, b2bShare: 64.9 },
-        { month: "Oct 2025", b2cRevenue: 560000,  b2bRevenue: 1060000, totalRevenue: 1620000, b2cShare: 34.6, b2bShare: 65.4 },
-        { month: "Nov 2025", b2cRevenue: 580000,  b2bRevenue: 1080000, totalRevenue: 1660000, b2cShare: 35.0, b2bShare: 65.0 },
-        { month: "Dec 2025", b2cRevenue: 600000,  b2bRevenue: 1200000, totalRevenue: 1800000, b2cShare: 33.3, b2bShare: 66.7 },
-        { month: "Jan 2026", b2cRevenue: 540000,  b2bRevenue: 1160000, totalRevenue: 1700000, b2cShare: 31.8, b2bShare: 68.2 },
-        { month: "Feb 2026", b2cRevenue: 580000,  b2bRevenue: 1240000, totalRevenue: 1820000, b2cShare: 31.9, b2bShare: 68.1 },
-        { month: "Mar 2026", b2cRevenue: 608000,  b2bRevenue: 1272000, totalRevenue: 1880000, b2cShare: 32.3, b2bShare: 67.7 },
+        { month: "Nov 2024", b2cRevenue: 5062,  b2bRevenue: 0,      totalRevenue: 5062,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Dec 2024", b2cRevenue: 4544,  b2bRevenue: 0,      totalRevenue: 4544,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Jan 2025", b2cRevenue: 2756,  b2bRevenue: 0,      totalRevenue: 2756,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Feb 2025", b2cRevenue: 4115,  b2bRevenue: 0,      totalRevenue: 4115,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Mar 2025", b2cRevenue: 3696,  b2bRevenue: 0,      totalRevenue: 3696,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Apr 2025", b2cRevenue: 11390, b2bRevenue: 0,      totalRevenue: 11390,  b2cShare: 100,  b2bShare: 0 },
+        { month: "May 2025", b2cRevenue: 2270,  b2bRevenue: 1485,   totalRevenue: 3755,   b2cShare: 60.5, b2bShare: 39.5 },
+        { month: "Jun 2025", b2cRevenue: 2089,  b2bRevenue: 0,      totalRevenue: 2089,   b2cShare: 100,  b2bShare: 0 },
+        { month: "Jul 2025", b2cRevenue: 1621,  b2bRevenue: 28050,  totalRevenue: 29671,  b2cShare: 5.5,  b2bShare: 94.5 },
+        { month: "Aug 2025", b2cRevenue: 2573,  b2bRevenue: 119570, totalRevenue: 122143, b2cShare: 2.1,  b2bShare: 97.9 },
+        { month: "Sep 2025", b2cRevenue: 159,   b2bRevenue: 105875, totalRevenue: 106034, b2cShare: 0.15, b2bShare: 99.85 },
+        { month: "Oct 2025", b2cRevenue: 408,   b2bRevenue: 56599,  totalRevenue: 57007,  b2cShare: 0.7,  b2bShare: 99.3 },
+        { month: "Nov 2025", b2cRevenue: 5000,  b2bRevenue: 68491,  totalRevenue: 73491,  b2cShare: 6.8,  b2bShare: 93.2 },
+        { month: "Dec 2025", b2cRevenue: 10346, b2bRevenue: 49620,  totalRevenue: 59966,  b2cShare: 17.2, b2bShare: 82.8 },
+        { month: "Jan 2026", b2cRevenue: 5038,  b2bRevenue: 54123,  totalRevenue: 59161,  b2cShare: 8.5,  b2bShare: 91.5 },
+        { month: "Feb 2026", b2cRevenue: 18233, b2bRevenue: 147510, totalRevenue: 165743, b2cShare: 11.0, b2bShare: 89.0 },
+        { month: "Mar 2026", b2cRevenue: 15585, b2bRevenue: 102872, totalRevenue: 118457, b2cShare: 13.2, b2bShare: 86.8 },
     ],
 };
 
@@ -86,24 +90,31 @@ export function useInvestorMetrics() {
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Deep-merge with defaults so stale/old Firebase docs
-                    // don't crash the UI when nested fields are missing.
-                    const merged = {
-                        ...DEFAULT_METRICS,
-                        ...data,
-                        ebitdaBreakdown: {
-                            ...DEFAULT_METRICS.ebitdaBreakdown,
-                            ...(data.ebitdaBreakdown || {}),
-                        },
-                        revenueStreams: {
-                            ...DEFAULT_METRICS.revenueStreams,
-                            ...(data.revenueStreams || {}),
-                        },
-                        monthlyRevenue: Array.isArray(data.monthlyRevenue) && data.monthlyRevenue.length > 0
-                            ? data.monthlyRevenue
-                            : DEFAULT_METRICS.monthlyRevenue,
-                    };
-                    setMetrics(merged);
+                    
+                    // Force Upgrade Logic: If DB is on an old version, overwrite it with the 2026.1 truth
+                    if (data.reportVersion !== DEFAULT_METRICS.reportVersion || data.reportTitle !== DEFAULT_METRICS.reportTitle) {
+                        console.log("Upgrading investor dashboard to version 2026.1...");
+                        await setDoc(docRef, DEFAULT_METRICS);
+                        setMetrics(DEFAULT_METRICS);
+                    } else {
+                        // Deep-merge for minor manual edits
+                        const merged = {
+                            ...DEFAULT_METRICS,
+                            ...data,
+                            ebitdaBreakdown: {
+                                ...DEFAULT_METRICS.ebitdaBreakdown,
+                                ...(data.ebitdaBreakdown || {}),
+                            },
+                            revenueStreams: {
+                                ...DEFAULT_METRICS.revenueStreams,
+                                ...(data.revenueStreams || {}),
+                            },
+                            monthlyRevenue: Array.isArray(data.monthlyRevenue) && data.monthlyRevenue.length > 0
+                                ? data.monthlyRevenue
+                                : DEFAULT_METRICS.monthlyRevenue,
+                        };
+                        setMetrics(merged);
+                    }
                 } else {
                     // No document yet — write the default shape and use it.
                     await setDoc(docRef, DEFAULT_METRICS);

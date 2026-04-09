@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FiX, FiEdit2, FiCheck, FiLoader } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function AdminOrderModal({ isOpen, onClose, order }) {
@@ -31,25 +31,43 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
   if (!isOpen || !order) return null;
 
-  // The function that securely updates the exact document without duplicating it
+  // Helper to remove undefined fields which Firestore doesn't support
+  const cleanObject = (obj) => {
+    const newObj = { ...obj };
+    Object.keys(newObj).forEach((key) => {
+      if (newObj[key] === undefined) delete newObj[key];
+    });
+    return newObj;
+  };
+
+  // The function that securely updates the exact document in the correct collection
   const handleUpdate = async () => {
     setIsSubmitting(true);
     try {
-      const orderRef = doc(db, "b2b_orders", order.id);
+      // Branch collection based on category roles
+      const isB2B = 
+        order.category === "STUDENT_LAUNDRY" || 
+        order.category === "LINEN" || 
+        order.category === "AIRBNB";
+      
+      const targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
+      const docRef = doc(db, targetCollection, String(order.id));
 
-      await updateDoc(orderRef, {
+      await setDoc(docRef, cleanObject({
+        ...order,
         status: editForm.status,
         amount: Number(editForm.amount),
         weight: Number(editForm.weight),
         studentCount: Number(editForm.studentCount),
-        items: Number(editForm.items)
-      });
+        items: Number(editForm.items),
+        updatedAt: new Date().toISOString()
+      }));
 
       setIsEditing(false);
       onClose();
     } catch (error) {
       console.error("Error updating order:", error);
-      alert("Failed to update order. Make sure it exists in b2b_orders.");
+      alert("Failed to update order. Please check Firestore permissions.");
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +86,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => { setIsEditing(false); onClose(); }} />
 
       <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md overflow-hidden animate-slide-up sm:animate-fade-in flex flex-col sm:max-h-[90vh]">
         {/* Header */}
@@ -100,7 +118,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 <FiEdit2 size={18} />
               </button>
             )}
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors">
+            <button onClick={() => { setIsEditing(false); onClose(); }} className="p-2 text-slate-400 hover:text-[#DC2626] hover:bg-red-50 rounded-xl transition-colors">
               <FiX size={20} />
             </button>
           </div>

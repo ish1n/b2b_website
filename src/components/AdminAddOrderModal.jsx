@@ -5,6 +5,7 @@ import { FiX, FiLoader, FiPlus, FiTrash2 } from "react-icons/fi";
 import { HOTEL_ITEMS, ITEM_RATE_MAP, STUDENT_RATE_PER_KG } from "../config/orderRateCard";
 import { ORDER_CATEGORIES, ORDER_STATUSES, ORDER_TYPES } from "../constants/orders";
 import { normalizePropertyName } from "../utils/orderNormalization";
+import { getTodayString } from "../utils/dateUtils";
 
 // --- ADDED: Known lists of properties for the dropdowns ---
 const KNOWN_PROPERTIES = {
@@ -18,7 +19,7 @@ const KNOWN_PROPERTIES = {
   ]
 };
 
-const getTodayString = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
+// getTodayString imported from ../utils/dateUtils
 
 export default function AdminAddOrderModal({ isOpen, onClose, onSuccess }) {
   const [orderCategory, setOrderCategory] = useState("hostel");

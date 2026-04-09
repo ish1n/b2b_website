@@ -8,7 +8,8 @@ import { FiChevronDown, FiChevronRight, FiXCircle, FiEdit2, FiTrash2 } from "rea
 import { BiRupee } from "react-icons/bi";
 import AdminOrderModal from "./AdminOrderModal";
 import { normalizePropertyName } from "../utils/orderNormalization";
-import { doc, deleteDoc } from "firebase/firestore";
+import { useWindowWidth } from "../hooks/windowHooks";
+import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 
@@ -207,13 +208,41 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState("All");
   const [chartDateFilter, setChartDateFilter] = useState(null);
-  const handleDeleteOrder = async (orderId) => {
-    if (window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
+  const windowWidth = useWindowWidth();
+
+  // Helper to remove undefined fields which Firestore doesn't support
+  const cleanObject = (obj) => {
+    const newObj = { ...obj };
+    Object.keys(newObj).forEach((key) => {
+      if (newObj[key] === undefined) delete newObj[key];
+    });
+    return newObj;
+  };
+
+  const handleDeleteOrder = async (order) => {
+    if (!order?.id) return;
+    if (window.confirm("Are you sure you want to permanently remove this record from Firebase? This action cannot be undone.")) {
       try {
-        await deleteDoc(doc(db, "b2b_orders", orderId));
+        // 1. Identify Target Collection
+        let targetCollection = "b2b_orders";
+        if (order.source === "website") {
+          targetCollection = "orders";
+        } else {
+          const isB2B = 
+            order.category === "STUDENT_LAUNDRY" || 
+            order.category === "LINEN" || 
+            order.category === "AIRBNB";
+          
+          targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
+        }
+
+        // 2. Execute Hard Delete
+        await deleteDoc(doc(db, targetCollection, String(order.id)));
+
+        alert("Record physically deleted from Firebase.");
       } catch (error) {
-        console.error("Error deleting order:", error);
-        alert("Failed to delete order. Please check permissions.");
+        console.error("Error hard-deleting order:", error);
+        alert("Failed to remove record. Please check Firestore permissions.");
       }
     }
   };
@@ -381,10 +410,10 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
             <h2 className="text-[15px] font-black text-[#0F172A] tracking-tight">Daily KG Distribution</h2>
             <p className="text-[12px] font-medium text-slate-400">Linen weight trends across student properties</p>
           </div>
-          <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 240 : 300} debounce={100} minWidth={1} minHeight={1}>
+          <ResponsiveContainer width="100%" height={windowWidth < 640 ? 240 : 300} debounce={100} minWidth={1} minHeight={1}>
             <BarChart
               data={studentChartData}
-              margin={{ top: 10, right: 10, left: window.innerWidth < 640 ? -25 : -10, bottom: 0 }}
+              margin={{ top: 10, right: 10, left: windowWidth < 640 ? -25 : -10, bottom: 0 }}
               barGap={0}
               onClick={(data, index) => {
                 if (data && index !== undefined && studentChartData[index]) {
@@ -400,13 +429,13 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                 axisLine={false}
                 tickLine={false}
                 dy={10}
-                interval={window.innerWidth < 640 ? 2 : 0}
+                interval={windowWidth < 640 ? 2 : 0}
               />
               <YAxis
                 tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 700 }}
                 axisLine={false}
                 tickLine={false}
-                width={window.innerWidth < 640 ? 30 : 45}
+                width={windowWidth < 640 ? 30 : 45}
               />
               <Tooltip content={<BarTooltip />} cursor={{ fill: '#F8FAFC' }} />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }} />
@@ -542,7 +571,7 @@ export default function AdminHostelsTab({ orders, daysInRange }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteOrder(o.id);
+                            handleDeleteOrder(o);
                           }}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex"
                           title="Delete Order"

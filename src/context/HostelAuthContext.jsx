@@ -22,6 +22,7 @@ export function HostelAuthProvider({ children }) {
   const [firestoreEdits, setFirestoreEdits] = useState([]);
   const [b2bOrders, setB2bOrders] = useState([]);
   const [websiteOrders, setWebsiteOrders] = useState([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
     let unsubscribeEdits = () => { };
@@ -58,27 +59,50 @@ export function HostelAuthProvider({ children }) {
         console.error("Auth initialization error:", error.message);
       }
 
+      let loadedCount = 0;
+      const checkAllLoaded = () => {
+        loadedCount++;
+        if (loadedCount >= 3) setIsDataLoaded(true);
+      };
+
       unsubscribeEdits = onSnapshot(
         collection(db, "b2b_admin_edits"),
-        (snapshot) => setFirestoreEdits(snapshot.docs.map((docSnapshot) => normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "admin"))),
-        (error) => console.error("Orders sync error:", error.message),
+        (snapshot) => {
+          setFirestoreEdits(snapshot.docs.map((docSnapshot) => normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "admin")));
+          checkAllLoaded();
+        },
+        (error) => {
+          console.error("Orders sync error:", error.message);
+          checkAllLoaded();
+        },
       );
 
       unsubscribeB2bOrders = onSnapshot(
         collection(db, "b2b_orders"),
-        (snapshot) => setB2bOrders(snapshot.docs.map((docSnapshot) => normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "b2b"))),
-        (error) => console.error("B2B Orders sync error:", error.message),
+        (snapshot) => {
+          setB2bOrders(snapshot.docs.map((docSnapshot) => normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "b2b")));
+          checkAllLoaded();
+        },
+        (error) => {
+          console.error("B2B Orders sync error:", error.message);
+          checkAllLoaded();
+        },
       );
 
       unsubscribeWebsiteOrders = onSnapshot(
         collection(db, "orders"),
         (snapshot) => {
-          const liveWebsiteOrders = snapshot.docs
-            .map((docSnapshot) => normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "website"))
-            .filter((order) => order.date >= new Date().toISOString().split("T")[0]);
-          setWebsiteOrders(liveWebsiteOrders);
+          setWebsiteOrders(
+            snapshot.docs.map((docSnapshot) =>
+              normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "website")
+            )
+          );
+          checkAllLoaded();
         },
-        (error) => console.error("Website Orders sync error:", error.message),
+        (error) => {
+          console.error("Website Orders sync error:", error.message);
+          checkAllLoaded();
+        },
       );
     });
 
@@ -92,11 +116,31 @@ export function HostelAuthProvider({ children }) {
 
 
   const allOrdersMerged = useMemo(() => {
-    const editedIds = new Set(firestoreEdits.map((order) => order.id));
-    const cleanB2b = b2bOrders.filter((order) => !editedIds.has(order.id));
-    const cleanWebsite = websiteOrders.filter((order) => !editedIds.has(order.id));
+    // Partition 1: Build a map of "Primary" records (Admin edits & B2B logged orders)
+    // In our new architecture:
+    // - b2b_admin_edits stores Regular Orders & Issues
+    // - b2b_orders stores Hostels & Hotels & Airbnb
+    const primaryRecordsMap = new Map();
 
-    return [...firestoreEdits, ...cleanB2b, ...cleanWebsite].filter((order) => !order.isDeleted);
+    // First load B2B orders (Hostels/Hotels)
+    b2bOrders.forEach(order => primaryRecordsMap.set(order.id, order));
+    
+    // Then load Admin Edits (Regular/Issues)
+    // If an ID exists in both (unlikely given category separation), Admin Edits win
+    firestoreEdits.forEach(order => primaryRecordsMap.set(order.id, order));
+
+    // Partition 2: Merge in website orders, but ONLY if they haven't been "overridden" by a primary record
+    const merged = [...primaryRecordsMap.values()];
+    const primaryIds = new Set(primaryRecordsMap.keys());
+
+    websiteOrders.forEach((webOrder) => {
+      if (!primaryIds.has(webOrder.id)) {
+        merged.push(webOrder);
+      }
+    });
+
+    // Cleanup: Filter out soft-deleted records
+    return merged.filter((order) => !order.isDeleted);
   }, [b2bOrders, firestoreEdits, websiteOrders]);
 
   const orders = useMemo(() => {
@@ -170,7 +214,7 @@ export function HostelAuthProvider({ children }) {
   }, []);
 
   return (
-    <HostelAuthContext.Provider value={{ client, orders, isAdmin, login, logout, setAuthenticatedUser, addIssue }}>
+    <HostelAuthContext.Provider value={{ client, orders, isAdmin, login, logout, setAuthenticatedUser, addIssue, isDataLoaded }}>
       {children}
     </HostelAuthContext.Provider>
   );
