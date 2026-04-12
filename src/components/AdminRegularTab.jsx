@@ -278,6 +278,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   <td className="px-6 py-4">
                     <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{order.customerName || "Anonymous"}</p>
                     <p className="text-[11px] font-medium text-slate-400">{order.customerNumber || "no contact"}</p>
+                    {order.address && (
+                      <p className="text-[10px] font-medium text-slate-400 mt-1 truncate max-w-[200px]">{order.address}</p>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 mb-1">
@@ -354,6 +357,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 <div>
                   <h4 className="text-sm font-black text-[#0F172A]">{order.customerName || "Anonymous"}</h4>
                   <p className="text-[10px] font-bold text-slate-400">{order.customerNumber || "NO CONTACT"}</p>
+                  {order.address && (
+                    <p className="text-[9px] text-slate-500 mt-1 truncate max-w-[180px]">{order.address}</p>
+                  )}
                 </div>
                 <div className="flex flex-col items-end">
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mb-1.5 ${STATUS_BADGE[order.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
