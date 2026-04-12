@@ -3,10 +3,10 @@ import { FiCheckCircle, FiClock, FiAlertTriangle, FiPlus, FiX, FiCheck, FiEdit2,
 import { BiRupee } from "react-icons/bi";
 import EmptyState from "./EmptyState";
 
-const ISSUE_TYPES = ["Missing Items", "Damage", "Quality Issue", "Return Pending", "Weight Dispute", "Bags Pending"];
+const ISSUE_TYPES = ["Missing Items", "Damage", "Quality Issue", "Stain Issue", "Return Pending", "Weight Dispute", "Bags Pending"];
 const SEVERITY_ORDER = { critical: 0, pending: 1 };
 const RESOLVE_COLORS = { Unresolved: "bg-red-100 text-red-600", Checking: "bg-yellow-100 text-yellow-700", Resolved: "bg-green-100 text-green-600" };
-const TYPE_COLORS = { "Missing Items": "#DC2626", "Damage": "#D97706", "Quality Issue": "#7C3AED", "Return Pending": "#0891B2", "Weight Dispute": "#BE185D", "Bags Pending": "#DC2626" };
+const TYPE_COLORS = { "Missing Items": "#DC2626", "Damage": "#D97706", "Quality Issue": "#7C3AED", "Stain Issue": "#9333EA", "Return Pending": "#0891B2", "Weight Dispute": "#BE185D", "Bags Pending": "#DC2626" };
 
 export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDeleteIssue }) {
   const [showModal, setShowModal] = useState(false);
