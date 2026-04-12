@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { FiX, FiDownload, FiFileText } from 'react-icons/fi';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
 
 export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
@@ -14,6 +15,10 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
     const [clientName, setClientName] = useState("");
     const [clientAddress, setClientAddress] = useState("");
     const [selectedProperty, setSelectedProperty] = useState("GROUP_STUDENT");
+    const handleRateChange = (value) => {
+        if (isNegativeNumberInput(value)) return;
+        setRate(value);
+    };
 
     // Group Definitions
     const HOSTEL_GROUPS = {
@@ -441,7 +446,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
                         </div>
                         <div>
                             <label className="block text-xs font-bold text-gray-700 mb-1">Rate per {getUnitLabel(selectedProperty)} *</label>
-                            <input type="number" step="0.01" value={rate} onChange={e => setRate(e.target.value)}
+                            <input type="number" min="0" step="0.01" value={rate} onChange={e => handleRateChange(e.target.value)}
                                 className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" required />
                         </div>
                     </div>

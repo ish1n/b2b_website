@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiCalendar, FiChevronRight } from "react-icons/fi";
+import { FiPlus, FiX, FiCheck, FiSmartphone, FiMessageSquare, FiShoppingBag, FiPhone, FiUser, FiEdit2, FiTrash2, FiInbox, FiCheckCircle, FiCalendar, FiChevronRight, FiMapPin } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import EmptyState from "./EmptyState";
 import AdminOrderModal from "./AdminOrderModal";
@@ -7,6 +7,7 @@ import FilterPills from "./FilterPills";
 import TabSectionCard from "./TabSectionCard";
 import {
   createEmptyRegularOrderForm,
+  createRegularServiceLine,
   getServiceLabel,
   REGULAR_CHANNELS,
   REGULAR_RATE_MAP,
@@ -14,14 +15,18 @@ import {
   REGULAR_STATUS_OPTIONS,
   useRegularOrders,
 } from "../hooks/useRegularOrders";
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
-const CHANNEL_ICONS = { App: FiSmartphone, Website: FiShoppingBag, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
-const CHANNEL_COLORS = { App: "#1976D2", Website: "#6366F1", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
+const CHANNEL_ICONS = { App: FiSmartphone, Auto: FiMapPin, Website: FiShoppingBag, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
+const CHANNEL_COLORS = { App: "#1976D2", Auto: "#0EA5E9", Website: "#6366F1", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
 const STATUS_BADGE = {
   Delivered: "bg-emerald-50 text-emerald-700 border-emerald-100",
   Confirmed: "bg-blue-50 text-blue-700 border-blue-100",
   Pending: "bg-amber-50 text-amber-700 border-amber-100",
+  Processing: "bg-indigo-50 text-indigo-700 border-indigo-100",
 };
+
+const POSITIVE_NUMERIC_FIELDS = new Set(["amount"]);
 
 export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDeleteOrder }) {
   const [channelFilter, setChannelFilter] = useState("All");
@@ -33,41 +38,109 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
   const { channelStats, filteredOrders } = useRegularOrders(orders, channelFilter);
 
   const openEditModal = (order) => {
+    const breakdownFromOrder = (order.serviceBreakdown && order.serviceBreakdown.length > 0)
+      ? order.serviceBreakdown.map((line) =>
+          createRegularServiceLine({
+            serviceType: line.name || line.serviceType || REGULAR_SERVICE_TYPES[0],
+            weight: line.weight ? String(line.weight) : "",
+            quantity: line.quantity ? String(line.quantity) : "",
+            amount: line.amount ? String(line.amount) : "",
+          })
+        )
+      : [
+          createRegularServiceLine({
+            serviceType: getServiceLabel(order.service),
+            amount: order.amount ? String(order.amount) : "",
+          }),
+        ];
+
     setForm({
       id: order.id,
       customerName: order.customerName || "",
       phone: order.customerNumber || "",
       channel: order.channel || "App",
-      serviceType: getServiceLabel(order.service),
-      weight: order.weight || "",
-      clothes: order.items || "",
-      amount: order.amount || "",
+      amount: order.amount ? String(order.amount) : "",
       pickupDate: order.date || "",
       deliveryDate: order.deliveryDate || "",
       notes: order.notes || "",
       status: order.status || "Confirmed",
+      serviceBreakdown: breakdownFromOrder,
     });
     setShowModal(true);
   };
 
   const updateForm = (key, value) => {
-    const updated = { ...form, [key]: value };
+    if (POSITIVE_NUMERIC_FIELDS.has(key) && isNegativeNumberInput(value)) return;
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
-    if ((key === "weight" || key === "serviceType") && updated.weight) {
-      const rate = REGULAR_RATE_MAP[updated.serviceType] || 0;
-      const weight = parseFloat(updated.weight) || 0;
-      if (rate > 0 && weight > 0) updated.amount = (rate * weight).toFixed(0);
-    }
+  const parseNumberValue = (value) => {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
 
-    setForm(updated);
+  const updateServiceLine = (lineId, field, value) => {
+    if (["weight", "quantity", "amount"].includes(field) && isNegativeNumberInput(value)) return;
+    setForm((prev) => ({
+      ...prev,
+      serviceBreakdown: prev.serviceBreakdown.map((line) =>
+        line.id === lineId ? { ...line, [field]: value } : line
+      ),
+    }));
+  };
+
+  const addServiceLine = () => {
+    setForm((prev) => ({
+      ...prev,
+      serviceBreakdown: [...prev.serviceBreakdown, createRegularServiceLine()],
+    }));
+  };
+
+  const removeServiceLine = (lineId) => {
+    setForm((prev) => {
+      if (prev.serviceBreakdown.length === 1) return prev;
+      return {
+        ...prev,
+        serviceBreakdown: prev.serviceBreakdown.filter((line) => line.id !== lineId),
+      };
+    });
   };
 
   const resetForm = () => {
     setForm(createEmptyRegularOrderForm());
   };
 
+  const breakdownLines = form.serviceBreakdown && form.serviceBreakdown.length > 0
+    ? form.serviceBreakdown
+    : [createRegularServiceLine()];
+
   const handleSubmit = () => {
-    if (!form.customerName || !form.amount) return;
+    const parsedBreakdown = breakdownLines.map((line) => ({
+      name: line.serviceType || REGULAR_SERVICE_TYPES[0],
+      weight: parseNumberValue(line.weight),
+      quantity: parseNumberValue(line.quantity),
+      amount: parseNumberValue(line.amount),
+    }));
+
+    const totalWeight = parsedBreakdown.reduce((sum, item) => sum + item.weight, 0);
+    const totalQuantity = parsedBreakdown.reduce((sum, item) => sum + item.quantity, 0);
+    const breakdownAmount = parsedBreakdown.reduce((sum, item) => sum + item.amount, 0);
+    const manualAmount = parseNumberValue(form.amount);
+    const finalAmount = manualAmount > 0 ? manualAmount : breakdownAmount;
+
+    if (!form.customerName || finalAmount <= 0) return;
+
+    const summaryParts = parsedBreakdown.map((item) => {
+      const metrics = [];
+      if (item.quantity > 0) metrics.push(`${Number.isInteger(item.quantity) ? item.quantity : item.quantity.toFixed(1)} pcs`);
+      if (item.weight > 0) metrics.push(`${item.weight.toFixed(1)} kg`);
+      return `${item.name}${metrics.length ? ` (${metrics.join(" • ")})` : ""}`;
+    }).filter(Boolean);
+
+    const primaryService = parsedBreakdown[0]?.name || "Regular Service";
+    const serviceLabel = parsedBreakdown.length <= 1
+      ? primaryService
+      : `${primaryService} + ${parsedBreakdown.length - 1} more`;
 
     const nextOrder = {
       id: form.id || `reg-new-${Date.now()}`,
@@ -77,14 +150,16 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       channel: form.channel,
       date: form.pickupDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       deliveryDate: form.deliveryDate || "",
-      amount: parseFloat(form.amount) || 0,
+      amount: finalAmount,
       status: form.status,
-      items: parseInt(form.clothes, 10) || 1,
-      weight: parseFloat(form.weight) || 0,
+      items: Math.max(1, Math.round(totalQuantity)),
+      weight: totalWeight,
       customerName: form.customerName,
       customerNumber: form.phone,
-      service: `${form.serviceType}${form.weight ? ` — ${form.weight} KG` : ""}`,
+      service: serviceLabel,
       notes: form.notes,
+      serviceBreakdown: parsedBreakdown,
+      serviceBreakdownSummary: summaryParts.join(", "),
     };
 
     if (form.id) {
@@ -99,6 +174,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
     resetForm();
     setTimeout(() => setToast(""), 3000);
   };
+
+  const breakdownAmountTotal = breakdownLines.reduce((sum, line) => sum + parseNumberValue(line.amount), 0);
+  const displayedAmountValue = form.amount !== "" ? form.amount : breakdownAmountTotal;
 
   return (
     <div className="space-y-8" style={{ fontFamily: "DM Sans, sans-serif" }}>
@@ -166,7 +244,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       </div>
 
       <TabSectionCard title="Retail Transaction Log" subtitle={`${filteredOrders.length} total orders found`}>
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto max-h-[520px] overflow-y-auto">
           <table className="w-full min-w-[900px]">
             <thead className="bg-[#F8FAFC]">
               <tr>
@@ -208,7 +286,24 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                         {order.channel || "direct"}
                       </span>
                     </div>
-                    <p className="text-[11px] font-medium text-slate-400 italic truncate max-w-[150px]">{order.notes || "No special notes"}</p>
+                    <p className="text-[11px] font-medium text-slate-400 italic truncate max-w-[150px]">{order.notes || order.serviceBreakdownSummary || "No special notes"}</p>
+                    {order.serviceBreakdown?.length > 1 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {order.serviceBreakdown.map((line, index) => {
+                          const qty = Number(line.quantity);
+                          const wt = Number(line.weight);
+                          return (
+                            <span key={`${line.name}-${index}`} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-50 text-slate-500 border border-slate-100">
+                              {line.name}
+                              {(qty > 0 || wt > 0) && " • "}
+                              {qty > 0 && `${qty} pcs`}
+                              {qty > 0 && wt > 0 && " / "}
+                              {wt > 0 && `${wt.toFixed(1)} kg`}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <p className="text-[13px] font-black text-slate-800">{order.weight?.toFixed(1) || "0.0"} <span className="text-[10px] text-slate-400">kg</span></p>
@@ -281,6 +376,24 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   <span className="text-[11px] font-black text-slate-700">{order.weight?.toFixed(1)} KG / {order.items} PCS</span>
                 </div>
               </div>
+              <p className="text-[10px] font-medium text-slate-400 italic">{order.notes || order.serviceBreakdownSummary || "No special notes"}</p>
+              {order.serviceBreakdown?.length > 1 && (
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                  {order.serviceBreakdown.map((line, index) => {
+                    const qty = Number(line.quantity);
+                    const wt = Number(line.weight);
+                    return (
+                      <span key={`${line.name}-${index}`} className="px-2 py-1 rounded-full border border-slate-100 bg-white text-slate-500 shadow-sm">
+                        {line.name}
+                        {(qty > 0 || wt > 0) && " • "}
+                        {qty > 0 && `${qty} pcs`}
+                        {qty > 0 && wt > 0 && " / "}
+                        {wt > 0 && `${wt.toFixed(1)} kg`}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
                 <div className="flex items-center gap-1.5">
@@ -398,38 +511,80 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
               </div>
 
               <div className="pt-4 border-t border-slate-50">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Service Profile & Metrics</label>
-                <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <div className="col-span-2">
-                    <select
-                      value={form.serviceType}
-                      onChange={(event) => updateForm("serviceType", event.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                    >
-                      {REGULAR_SERVICE_TYPES.map((serviceType) => (
-                        <option key={serviceType} value={serviceType}>{serviceType}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      step="any"
-                      value={form.weight}
-                      onChange={(event) => updateForm("weight", event.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                      placeholder="Weight (KG)"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      value={form.clothes}
-                      onChange={(event) => updateForm("clothes", event.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
-                      placeholder="Item Count"
-                    />
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Service Breakdown</label>
+                  <button
+                    type="button"
+                    onClick={addServiceLine}
+                    className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-lg border border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all"
+                  >
+                    <FiPlus size={12} /> Add service
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {form.serviceBreakdown.map((line, index) => (
+                    <div key={line.id} className="bg-slate-50/50 rounded-2xl border border-slate-100 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Service {index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeServiceLine(line.id)}
+                          disabled={form.serviceBreakdown.length === 1}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <select
+                          value={line.serviceType}
+                          onChange={(event) => updateServiceLine(line.id, "serviceType", event.target.value)}
+                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                        >
+                          {REGULAR_SERVICE_TYPES.map((serviceType) => (
+                            <option key={serviceType} value={serviceType}>{serviceType}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          value={line.weight}
+                          onChange={(event) => updateServiceLine(line.id, "weight", event.target.value)}
+                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                          placeholder="Weight (KG)"
+                        />
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-3">
+                        <input
+                          type="number"
+                          min="0"
+                          value={line.quantity}
+                          onChange={(event) => updateServiceLine(line.id, "quantity", event.target.value)}
+                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                          placeholder="Item Count"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={line.amount}
+                          onChange={(event) => updateServiceLine(line.id, "amount", event.target.value)}
+                          className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:border-blue-500 focus:outline-none"
+                          placeholder="Amount"
+                        />
+                        <div className="flex items-center justify-end text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+                          <span>
+                            Std rate:{" "}
+                            {REGULAR_RATE_MAP[line.serviceType] > 0 ? `₹${REGULAR_RATE_MAP[line.serviceType]}/kg` : "custom"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest">
+                        <span>Line total</span>
+                        <span className="font-black text-slate-700">₹{parseNumberValue(line.amount).toFixed(0)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -442,7 +597,8 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                     </div>
                     <input
                       type="number"
-                      value={form.amount}
+                      min="0"
+                      value={displayedAmountValue}
                       onChange={(event) => updateForm("amount", event.target.value)}
                       className={`w-full pl-10 pr-4 py-4 rounded-xl text-[18px] font-black focus:outline-none border transition-all ${
                         form.amount ? "bg-blue-50/50 border-blue-200 text-blue-700" : "bg-slate-50 border-slate-200 text-slate-700"
@@ -450,18 +606,6 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                       placeholder="0"
                     />
                   </div>
-                </div>
-                <div className="flex items-end pb-1.5">
-                  {form.weight && REGULAR_RATE_MAP[form.serviceType] > 0 && (
-                    <div className="text-[11px] font-bold text-slate-400 leading-tight">
-                      Standard Pricing Rate:
-                      <br />
-                      <div className="flex items-center gap-0.5 text-blue-500">
-                        <BiRupee size={10} />
-                        <span>{REGULAR_RATE_MAP[form.serviceType]}/kg applied</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

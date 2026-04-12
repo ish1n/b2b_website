@@ -55,9 +55,11 @@ const SNAPSHOT_TONES = {
 };
 
 const formatCurrency = (value) => {
-  const absolute = Math.abs(Number(value));
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return "—";
+  const absolute = Math.abs(numericValue);
   const formatted = new Intl.NumberFormat("en-IN").format(absolute);
-  return Number(value) < 0 ? `-Rs ${formatted}` : `Rs ${formatted}`;
+  return numericValue < 0 ? `-₹${formatted}` : `₹${formatted}`;
 };
 
 const formatCurrencyCompact = (value) => {
@@ -73,6 +75,7 @@ const formatCurrencyCompact = (value) => {
 
 const formatPercent = (value) => {
   const numericValue = Number(value);
+  if (isNaN(numericValue)) return "—";
   const scaledByTen = numericValue * 10;
   const digits = Number.isInteger(numericValue) ? 0 : Number.isInteger(scaledByTen) ? 1 : 2;
   return `${numericValue.toFixed(digits)}%`;
@@ -190,7 +193,7 @@ function StreamList({ title, tooltip, items }) {
         <LabelWithInfo text={title} tooltip={tooltip} />
       </h3>
       <ul className="mt-3 space-y-2.5 text-sm font-medium text-slate-700">
-        {items.map((item) => (
+        {(items || []).map((item) => (
           <li key={item} className="rounded-2xl bg-slate-50 px-4 py-2.5">
             {item}
           </li>
@@ -216,26 +219,27 @@ export default function InvestorMetrics() {
     const q4Months = ["Oct 2025", "Nov 2025", "Dec 2025"];
     const q1Months = ["Jan 2026", "Feb 2026", "Mar 2026"];
 
-    const q4Revenue = metrics.monthlyRevenue
-      .filter((point) => q4Months.includes(point.month))
-      .reduce((sum, point) => sum + point.totalRevenue, 0);
+    const q4Revenue = (metrics.monthlyRevenue || [])
+      .filter((point) => point && q4Months.includes(point.month))
+      .reduce((sum, point) => sum + (Number(point.totalRevenue) || 0), 0);
 
-    const q1Revenue = metrics.monthlyRevenue
-      .filter((point) => q1Months.includes(point.month))
-      .reduce((sum, point) => sum + point.totalRevenue, 0);
+    const q1Revenue = (metrics.monthlyRevenue || [])
+      .filter((point) => point && q1Months.includes(point.month))
+      .reduce((sum, point) => sum + (Number(point.totalRevenue) || 0), 0);
 
     return { q4Revenue, q1Revenue };
   }, [metrics]);
 
   const bestRecentMonth = useMemo(() => {
     // SAFETY CHECK: If data isn't loaded yet, return a safe default
-    if (!metrics || !metrics.monthlyRevenue || metrics.monthlyRevenue.length === 0) {
+    const revenue = metrics?.monthlyRevenue || [];
+    if (revenue.length === 0) {
       return { month: "N/A", totalRevenue: 0 };
     }
 
-    return metrics.monthlyRevenue
+    return revenue
       .slice(-3)
-      .reduce((best, point) => (point.totalRevenue > best.totalRevenue ? point : best), metrics.monthlyRevenue[metrics.monthlyRevenue.length - 1]);
+      .reduce((best, point) => ((Number(point.totalRevenue) || 0) > (Number(best.totalRevenue) || 0) ? point : best), revenue[revenue.length - 1]);
   }, [metrics]);
 
   if (loading) {
@@ -587,14 +591,14 @@ export default function InvestorMetrics() {
                 </tr>
               </thead>
               <tbody>
-                {metrics.monthlyRevenue.map((row) => (
-                  <tr key={row.month} className="bg-white odd:bg-white even:bg-slate-50/40">
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-900">{row.month}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row.b2cRevenue)}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row.b2bRevenue)}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row.totalRevenue)}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatPercent(row.b2cShare)}</td>
-                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatPercent(row.b2bShare)}</td>
+                {(metrics?.monthlyRevenue || []).map((row) => (
+                  <tr key={row?.month || Math.random()} className="bg-white odd:bg-white even:bg-slate-50/40">
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-bold text-slate-900">{row?.month || "—"}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row?.b2cRevenue || 0)}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row?.b2bRevenue || 0)}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatCurrency(row?.totalRevenue || 0)}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatPercent(row?.b2cShare || 0)}</td>
+                    <td className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">{formatPercent(row?.b2bShare || 0)}</td>
                   </tr>
                 ))}
               </tbody>

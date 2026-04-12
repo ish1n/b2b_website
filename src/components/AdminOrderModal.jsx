@@ -3,6 +3,7 @@ import { FiX, FiEdit2, FiCheck, FiLoader } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
 export default function AdminOrderModal({ isOpen, onClose, order }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +41,11 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
     return newObj;
   };
 
+  const updatePositiveField = (field, rawValue) => {
+    if (isNegativeNumberInput(rawValue)) return;
+    setEditForm((prev) => ({ ...prev, [field]: rawValue }));
+  };
+
   // The function that securely updates the exact document in the correct collection
   const handleUpdate = async () => {
     setIsSubmitting(true);
@@ -61,7 +67,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
         studentCount: Number(editForm.studentCount),
         items: Number(editForm.items),
         updatedAt: new Date().toISOString()
-      }));
+      }), { merge: true });
 
       setIsEditing(false);
       onClose();
@@ -132,7 +138,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Weight (kg)</p>
                   {isEditing ? (
-                    <input type="number" step="0.1" value={editForm.weight} onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                    <input type="number" step="0.1" min="0" value={editForm.weight} onChange={(e) => updatePositiveField("weight", e.target.value)} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
                   ) : (
                     <p className="text-[18px] font-black text-[#0F172A]">{order.weight?.toFixed(1) || '0.0'} <span className="text-[12px] text-slate-500">kg</span></p>
                   )}
@@ -140,7 +146,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Students</p>
                   {isEditing ? (
-                    <input type="number" value={editForm.studentCount} onChange={(e) => setEditForm({ ...editForm, studentCount: e.target.value })} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                    <input type="number" min="0" value={editForm.studentCount} onChange={(e) => updatePositiveField("studentCount", e.target.value)} className="w-full text-[16px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
                   ) : (
                     <p className="text-[18px] font-black text-[#0F172A]">{order.studentCount || '—'}</p>
                   )}
@@ -151,7 +157,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                 <div className="flex items-center justify-between py-2 border-b border-slate-50">
                   <span className="text-[14px] font-bold text-slate-600">Total Clothes (pcs)</span>
                   {isEditing ? (
-                    <input type="number" value={editForm.items} onChange={(e) => setEditForm({ ...editForm, items: e.target.value })} className="w-24 text-right text-[14px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
+                    <input type="number" min="0" value={editForm.items} onChange={(e) => updatePositiveField("items", e.target.value)} className="w-24 text-right text-[14px] font-black text-[#0F172A] bg-white border border-slate-200 rounded px-2 py-1 outline-none" />
                   ) : (
                     <span className="text-[14px] font-black text-[#0F172A]">{order.items || 0} pcs</span>
                   )}
@@ -166,7 +172,7 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
                   <div className="flex items-center gap-2">
                     <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Total Pcs:</span>
                     {isEditing ? (
-                      <input type="number" value={editForm.items} onChange={(e) => setEditForm({ ...editForm, items: e.target.value })} className="w-16 text-center text-[12px] font-black text-blue-600 bg-white border border-slate-200 rounded px-1 outline-none" />
+                    <input type="number" min="0" value={editForm.items} onChange={(e) => updatePositiveField("items", e.target.value)} className="w-16 text-center text-[12px] font-black text-blue-600 bg-white border border-slate-200 rounded px-1 outline-none" />
                     ) : (
                       <span className="text-[12px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{order.items || Object.values(order.details || {}).reduce((s, v) => s + v, 0) || 0}</span>
                     )}
@@ -189,18 +195,42 @@ export default function AdminOrderModal({ isOpen, onClose, order }) {
           )}
         </div>
 
+        {order.serviceBreakdown?.length > 0 && (
+          <div className="p-6 space-y-3 border-t border-slate-100">
+            <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Service Breakdown</div>
+            <div className="space-y-2">
+              {order.serviceBreakdown.map((item) => (
+                <div key={`${item.name}-${item.quantity}-${item.amount}`} className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                  <div>
+                    <p className="text-[13px] font-bold text-slate-700">{item.name}</p>
+                    <p className="text-[11px] text-slate-500">
+                      {item.quantity ? `${item.quantity} pcs` : "—"}
+                      {item.weight ? ` • ${item.weight} kg` : ""}
+                    </p>
+                  </div>
+                  {item.amount ? (
+                    <div className="text-[13px] font-black text-[#0F172A]">
+                      <BiRupee size={14} className="inline-block" /> {item.amount.toLocaleString()}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="p-6 border-t border-gray-100 bg-[#F8FAFC]">
           <div className="flex items-center justify-between pt-2">
             <span className="text-[12px] font-black text-slate-500 uppercase tracking-widest">Total Billed</span>
-            <div className="flex items-center gap-1 text-[24px] font-black text-[#1976D2]">
-              <BiRupee size={24} className="mb-0.5" />
-              {isEditing ? (
-                <input type="number" value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} className="w-28 text-right bg-white border border-slate-300 rounded-lg px-2 py-1 text-[20px] outline-none focus:border-blue-500" />
-              ) : (
-                <span>{order.amount?.toLocaleString() || '0'}</span>
-              )}
-            </div>
+              <div className="flex items-center gap-1 text-[24px] font-black text-[#1976D2]">
+                <BiRupee size={24} className="mb-0.5" />
+                {isEditing ? (
+                  <input type="number" min="0" value={editForm.amount} onChange={(e) => updatePositiveField("amount", e.target.value)} className="w-28 text-right bg-white border border-slate-300 rounded-lg px-2 py-1 text-[20px] outline-none focus:border-blue-500" />
+                ) : (
+                  <span>{order.amount?.toLocaleString() || '0'}</span>
+                )}
+              </div>
           </div>
 
           {isEditing && (
