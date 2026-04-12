@@ -6,6 +6,7 @@ import { HOTEL_ITEMS, ITEM_RATE_MAP, STUDENT_RATE_PER_KG } from "../config/order
 import { ORDER_CATEGORIES, ORDER_STATUSES, ORDER_TYPES } from "../constants/orders";
 import { normalizePropertyName } from "../utils/orderNormalization";
 import { getTodayString } from "../utils/dateUtils";
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
 // --- ADDED: Known lists of properties for the dropdowns ---
 const KNOWN_PROPERTIES = {
@@ -64,7 +65,28 @@ export default function AdminAddOrderModal({ isOpen, onClose, onSuccess }) {
     setHotelItems([{ name: "Single Bedsheet", quantity: 1, rate: ITEM_RATE_MAP["Single Bedsheet"] }]);
   };
 
+  const handleWeightChange = (value) => {
+    if (isNegativeNumberInput(value)) return;
+    setWeight(value);
+  };
+
+  const handleStudentCountChange = (value) => {
+    if (isNegativeNumberInput(value)) return;
+    setStudentCount(value);
+  };
+
+  const handleTotalClothesChange = (value) => {
+    if (isNegativeNumberInput(value)) return;
+    setTotalClothes(value);
+  };
+
+  const handleStudentRateChange = (value) => {
+    if (isNegativeNumberInput(value)) return;
+    setStudentRate(value);
+  };
+
   const handleHotelItemChange = (index, field, value) => {
+    if ((field === "quantity" || field === "rate") && isNegativeNumberInput(value)) return;
     const nextItems = [...hotelItems];
     if (field === "name") {
       nextItems[index].name = value;
@@ -242,22 +264,22 @@ export default function AdminAddOrderModal({ isOpen, onClose, onSuccess }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Weight (kg)</label>
-                    <input type="number" step="any" min="0" value={weight} onChange={(event) => setWeight(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 45.5" required />
+                    <input type="number" step="any" min="0" value={weight} onChange={(event) => handleWeightChange(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 45.5" required />
                   </div>
                   <div>
                     <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Number of Students</label>
-                    <input type="number" min="1" value={studentCount} onChange={(event) => setStudentCount(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 20" required />
+                    <input type="number" min="1" value={studentCount} onChange={(event) => handleStudentCountChange(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 20" required />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Clothes</label>
-                  <input type="number" min="1" value={totalClothes} onChange={(event) => setTotalClothes(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 150" />
+                  <input type="number" min="1" value={totalClothes} onChange={(event) => handleTotalClothesChange(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 150" />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Rate Per KG</label>
-                  <input type="number" min="0" step="0.01" value={studentRate} onChange={(event) => setStudentRate(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 55" />
+                  <input type="number" min="0" step="0.01" value={studentRate} onChange={(event) => handleStudentRateChange(event.target.value)} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-[#0F172A] focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., 55" />
                 </div>
 
                 <div>

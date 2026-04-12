@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 
-// Default metrics shape must match what InvestorMetrics.jsx expects.
 // Default metrics shape must match what InvestorMetrics.jsx expects.
 // Default metrics shape must match what InvestorMetrics.jsx expects.
 const DEFAULT_METRICS = {
@@ -19,10 +18,7 @@ const DEFAULT_METRICS = {
     arrr: 1373444,
     gmv: 910536,
 
-    // Revenue mix (Jan–Mar 2026 summary)
-    // Avg Revenue = 343361 / 3 = 114454
-    // B2C Total = 38856
-    // B2B Total = 304505
+    // Revenue mix
     b2bShare: 88.7,
     b2cShare: 11.3,
     totalB2bRevenue: 304505,
@@ -32,7 +28,7 @@ const DEFAULT_METRICS = {
     b2cMarginPct: 67,
     b2bMarginPct: 55,
 
-    // EBITDA snapshot (Feb 2026)
+    // EBITDA snapshot
     ebitdaBreakdown: {
         monthLabel: "Feb 2026",
         revenue: 165743,
@@ -43,19 +39,11 @@ const DEFAULT_METRICS = {
 
     // Revenue streams
     revenueStreams: {
-        b2c: [
-            "Wash & Iron",
-            "Wash & Fold",
-            "Dry Cleaning (clothes, shoes, bags & more)",
-        ],
-        b2b: [
-            "Wash & Fold",
-            "Wash & Iron",
-            "Dry Cleaning",
-        ],
+        b2c: ["Wash & Iron", "Wash & Fold", "Dry Cleaning (clothes, shoes, bags & more)"],
+        b2b: ["Wash & Fold", "Wash & Iron", "Dry Cleaning"],
     },
 
-    // Monthly trend (Nov 2024 – Mar 2026)
+    // Monthly trend
     monthlyRevenue: [
         { month: "Nov 2024", b2cRevenue: 5062,  b2bRevenue: 0,      totalRevenue: 5062,   b2cShare: 100,  b2bShare: 0 },
         { month: "Dec 2024", b2cRevenue: 4544,  b2bRevenue: 0,      totalRevenue: 4544,   b2cShare: 100,  b2bShare: 0 },
@@ -77,6 +65,35 @@ const DEFAULT_METRICS = {
     ],
 };
 
+function sanitizeMetrics(data) {
+    const s = { ...DEFAULT_METRICS, ...data };
+    
+    // Ensure nested objects are hard-sanitized against null/missing subfields
+    s.ebitdaBreakdown = {
+        monthLabel: String(s.ebitdaBreakdown?.monthLabel || DEFAULT_METRICS.ebitdaBreakdown.monthLabel),
+        revenue: Number(s.ebitdaBreakdown?.revenue || 0),
+        variableCost: Number(s.ebitdaBreakdown?.variableCost || 0),
+        fixedCost: Number(s.ebitdaBreakdown?.fixedCost || 0),
+        ebitda: Number(s.ebitdaBreakdown?.ebitda || 0),
+    };
+
+    s.revenueStreams = {
+        b2c: Array.isArray(s.revenueStreams?.b2c) ? s.revenueStreams.b2c : DEFAULT_METRICS.revenueStreams.b2c,
+        b2b: Array.isArray(s.revenueStreams?.b2b) ? s.revenueStreams.b2b : DEFAULT_METRICS.revenueStreams.b2b,
+    };
+
+    s.monthlyRevenue = (Array.isArray(s.monthlyRevenue) ? s.monthlyRevenue : DEFAULT_METRICS.monthlyRevenue).map(p => ({
+        ...p,
+        b2cRevenue: Number(p.b2cRevenue || 0),
+        b2bRevenue: Number(p.b2bRevenue || 0),
+        totalRevenue: Number(p.totalRevenue || 0),
+        b2cShare: Number(p.b2cShare || 0),
+        b2bShare: Number(p.b2bShare || 0),
+    }));
+
+    return s;
+}
+
 export function useInvestorMetrics() {
     const [metrics, setMetrics] = useState(DEFAULT_METRICS);
     const [loading, setLoading] = useState(true);
@@ -91,58 +108,38 @@ export function useInvestorMetrics() {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    // Force Upgrade Logic: If DB is on an old version, overwrite it with the 2026.1 truth
                     if (data.reportVersion !== DEFAULT_METRICS.reportVersion || data.reportTitle !== DEFAULT_METRICS.reportTitle) {
                         console.log("Upgrading investor dashboard to version 2026.1...");
                         await setDoc(docRef, DEFAULT_METRICS);
                         setMetrics(DEFAULT_METRICS);
                     } else {
-                        // Deep-merge for minor manual edits
-                        const merged = {
-                            ...DEFAULT_METRICS,
-                            ...data,
-                            ebitdaBreakdown: {
-                                ...DEFAULT_METRICS.ebitdaBreakdown,
-                                ...(data.ebitdaBreakdown || {}),
-                            },
-                            revenueStreams: {
-                                ...DEFAULT_METRICS.revenueStreams,
-                                ...(data.revenueStreams || {}),
-                            },
-                            monthlyRevenue: Array.isArray(data.monthlyRevenue) && data.monthlyRevenue.length > 0
-                                ? data.monthlyRevenue
-                                : DEFAULT_METRICS.monthlyRevenue,
-                        };
-                        setMetrics(merged);
+                        setMetrics(sanitizeMetrics(data));
                     }
                 } else {
-                    // No document yet — write the default shape and use it.
                     await setDoc(docRef, DEFAULT_METRICS);
                     setMetrics(DEFAULT_METRICS);
                 }
             } catch (error) {
                 console.error("Error fetching investor metrics:", error);
-                // Keep DEFAULT_METRICS as fallback on network errors.
             } finally {
                 setLoading(false);
             }
         }
-        fetchMetrics();
-    }, []);
+    fetchMetrics();
+}, []);
 
-    const saveMetrics = async (newMetrics) => {
+    const saveMetrics = useCallback(async (nextMetrics) => {
         setIsSaving(true);
         try {
-            await setDoc(docRef, newMetrics, { merge: true });
-            setMetrics(newMetrics);
-            return true;
+            const payload = sanitizeMetrics(nextMetrics);
+            await setDoc(docRef, payload, { merge: true });
+            setMetrics(payload);
         } catch (error) {
             console.error("Error saving investor metrics:", error);
-            return false;
         } finally {
             setIsSaving(false);
         }
-    };
+    }, [docRef]);
 
     return { metrics, loading, isSaving, saveMetrics };
 }

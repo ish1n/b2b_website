@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-export const REGULAR_CHANNELS = ["All", "App", "Website", "WhatsApp", "Outlet", "Call", "Student"];
+export const REGULAR_CHANNELS = ["All", "App", "Auto", "Website", "WhatsApp", "Outlet", "Call", "Student"];
 export const REGULAR_SERVICE_TYPES = ["Wash & Fold", "Wash & Iron", "Wash & Fold + Iron", "Dry Clean", "Other"];
 export const REGULAR_RATE_MAP = {
   "Wash & Fold": 55,
@@ -11,20 +11,31 @@ export const REGULAR_RATE_MAP = {
 };
 export const REGULAR_STATUS_OPTIONS = ["Confirmed", "Pickup Done", "In Progress", "Delivered", "Pending"];
 
+const generateServiceLineId = () => `svc-line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+export function createRegularServiceLine(overrides = {}) {
+  return {
+    id: generateServiceLineId(),
+    serviceType: REGULAR_SERVICE_TYPES[0],
+    weight: "",
+    quantity: "",
+    amount: "",
+    ...overrides,
+  };
+}
+
 export function createEmptyRegularOrderForm() {
   return {
     customerName: "",
     phone: "",
     channel: "App",
-    serviceType: "Wash & Fold",
-    weight: "",
-    clothes: "",
     amount: "",
     pickupDate: "",
     deliveryDate: "",
     notes: "",
     status: "Confirmed",
     id: null,
+    serviceBreakdown: [createRegularServiceLine()],
   };
 }
 

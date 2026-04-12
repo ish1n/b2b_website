@@ -210,7 +210,7 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
         order.category === ORDER_CATEGORIES.AIRBNB;
 
       const targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
-      await setDoc(doc(db, targetCollection, order.id), cleanObject(order));
+      await setDoc(doc(db, targetCollection, order.id), cleanObject(order), { merge: true });
     } catch (error) {
       console.error("Failed to add order", error);
     }
@@ -225,7 +225,7 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
         updatedOrder.category === ORDER_CATEGORIES.AIRBNB;
 
       const targetCollection = isB2B ? "b2b_orders" : "b2b_admin_edits";
-      await setDoc(doc(db, targetCollection, String(updatedOrder.id)), cleanObject(updatedOrder));
+      await setDoc(doc(db, targetCollection, String(updatedOrder.id)), cleanObject(updatedOrder), { merge: true });
     } catch (error) {
       console.error("Failed to edit order", error);
     }
@@ -260,6 +260,8 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
       // 1. Identify Target Collection
       if (item.source === "website") {
         targetCollection = "orders";
+      } else if (item.source === "cartdetails") {
+        targetCollection = "cartdetails";
       } else {
         const isB2B =
           item.category === ORDER_CATEGORIES.STUDENT_LAUNDRY ||

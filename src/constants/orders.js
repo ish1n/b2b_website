@@ -20,10 +20,12 @@ export const ORDER_STATUSES = {
   PROCESSING: "Processing",
   DELIVERED: "Delivered",
   RESOLVED: "Resolved",
+  CANCELLED: "Cancelled",
 };
 
 export const ORDER_CHANNELS = {
   APP: "App",
+  AUTO: "Auto",
   WEBSITE: "Website",
   WHATSAPP: "WhatsApp",
   OUTLET: "Outlet",
@@ -38,6 +40,7 @@ export function normalizeOrderStatus(status) {
   if (["processing", "active", "in progress"].includes(normalized)) return ORDER_STATUSES.PROCESSING;
   if (["paid", "shipped", "confirmed"].includes(normalized)) return ORDER_STATUSES.CONFIRMED;
   if (normalized === "resolved") return ORDER_STATUSES.RESOLVED;
+  if (["cancelled", "canceled"].includes(normalized)) return ORDER_STATUSES.CANCELLED;
   return status || ORDER_STATUSES.PENDING;
 }
 

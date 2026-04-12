@@ -12,7 +12,8 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     id: null, date: "", issueType: "Missing Items", description: "",
-    linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: ""
+    linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "",
+    originalService: ""
   });
   const [statusFilter, setStatusFilter] = useState("All"); // All, Unresolved, Checking, Resolved, Critical
 
@@ -26,7 +27,8 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
       assignedTo: issue.reportedBy || "",
       severity: issue.severity || "pending",
       resolveStatus: issue.resolveStatus || "Unresolved",
-      solution: issue.solution || ""
+      solution: issue.solution || "",
+      originalService: issue.service || ""
     });
     setShowModal(true);
   };
@@ -50,14 +52,15 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
   const checkingCount = allIssues.filter(i => i.resolveStatus === "Checking").length;
 
   const handleSubmit = () => {
-    if (!form.description) return;
+    const descriptionValue = (form.description || form.originalService || "").trim();
+    if (!descriptionValue && !form.id) return;
     const issueData = {
       property: "Issues",
       category: "ISSUES",
       type: "issue",
       date: form.date || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       amount: 0,
-      service: form.description,
+      service: descriptionValue,
       issueType: form.issueType,
       severity: form.severity,
       resolveStatus: form.resolveStatus,
@@ -76,7 +79,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
     }
 
     setShowModal(false);
-    setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" });
+    setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "", originalService: "" });
   };
 
   return (
@@ -100,7 +103,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
             </div>
           </button>
         ))}
-        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "" }); setShowModal(true); }} className="col-span-2 lg:ml-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-red-600 text-white text-[12px] font-black rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95 uppercase tracking-widest">
+        <button onClick={() => { setForm({ id: null, date: "", issueType: "Missing Items", description: "", linkedHostel: "", assignedTo: "", severity: "pending", resolveStatus: "Unresolved", solution: "", originalService: "" }); setShowModal(true); }} className="col-span-2 lg:ml-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-red-600 text-white text-[12px] font-black rounded-xl hover:bg-red-700 transition-all shadow-md active:scale-95 uppercase tracking-widest">
           <FiPlus size={18} /> Report New Issue
         </button>
       </div>
@@ -192,7 +195,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg flex flex-col overflow-hidden animate-slide-up sm:animate-fade-in">
+          <div className="relative bg-white sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg flex flex-col overflow-hidden animate-slide-up sm:animate-fade-in max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)]">
             <div className="flex items-center justify-between p-6 sm:p-8 border-b border-gray-50 bg-slate-50/30 flex-shrink-0">
               <div>
                 <h2 className="text-lg font-black text-[#0F172A] tracking-tight">{form.id ? 'Modify Issue Report' : 'New Issue Report'}</h2>
@@ -270,7 +273,7 @@ export default function AdminIssuesTab({ orders, onAddIssue, onEditIssue, onDele
 
             <div className="mt-8 flex gap-3">
               <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-black text-[13px] rounded-xl hover:bg-slate-200 transition-all uppercase tracking-widest">Cancel</button>
-              <button onClick={handleSubmit} disabled={!form.description}
+              <button onClick={handleSubmit} disabled={!form.description && !form.id}
                 className="flex-[2] py-3.5 bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black text-[13px] rounded-xl transition-all shadow-lg active:scale-95 uppercase tracking-widest">
                 {form.id ? 'Update Record' : 'Submit for Review'}
               </button>

@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { getDoc, doc, onSnapshot, collection, setDoc } from "firebase/firestore";
-import { ORDER_CATEGORIES, ORDER_TYPES } from "../constants/orders";
+import { getDoc, doc, onSnapshot, collection, setDoc, query, where } from "firebase/firestore";
+import { ORDER_CATEGORIES, ORDER_TYPES, ORDER_STATUSES } from "../constants/orders";
 import { normalizeOrder } from "../utils/orderNormalization";
 
 const HostelAuthContext = createContext(null);
@@ -22,13 +22,14 @@ export function HostelAuthProvider({ children }) {
   const [firestoreEdits, setFirestoreEdits] = useState([]);
   const [b2bOrders, setB2bOrders] = useState([]);
   const [websiteOrders, setWebsiteOrders] = useState([]);
+  const [cartOrders, setCartOrders] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
     let unsubscribeEdits = () => { };
     let unsubscribeB2bOrders = () => { };
     let unsubscribeWebsiteOrders = () => { };
-
+    let unsubscribeCartDetails = () => { };
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       unsubscribeEdits();
       unsubscribeB2bOrders();
@@ -40,6 +41,7 @@ export function HostelAuthProvider({ children }) {
         setFirestoreEdits([]);
         setB2bOrders([]);
         setWebsiteOrders([]);
+        setCartOrders([]);
         sessionStorage.removeItem("hostelClient");
         return;
       }
@@ -62,7 +64,7 @@ export function HostelAuthProvider({ children }) {
       let loadedCount = 0;
       const checkAllLoaded = () => {
         loadedCount++;
-        if (loadedCount >= 3) setIsDataLoaded(true);
+        if (loadedCount >= 4) setIsDataLoaded(true);
       };
 
       unsubscribeEdits = onSnapshot(
@@ -104,6 +106,22 @@ export function HostelAuthProvider({ children }) {
           checkAllLoaded();
         },
       );
+
+      unsubscribeCartDetails = onSnapshot(
+        collection(db, "cartdetails"),
+        (snapshot) => {
+          setCartOrders(
+            snapshot.docs.map((docSnapshot) =>
+              normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "cartdetails")
+            )
+          );
+          checkAllLoaded();
+        },
+        (error) => {
+          console.error("Cartdetails sync error:", error.message);
+          checkAllLoaded();
+        },
+      );
     });
 
     return () => {
@@ -111,6 +129,7 @@ export function HostelAuthProvider({ children }) {
       unsubscribeEdits();
       unsubscribeB2bOrders();
       unsubscribeWebsiteOrders();
+      unsubscribeCartDetails();
     };
   }, []);
 
@@ -122,7 +141,13 @@ export function HostelAuthProvider({ children }) {
     // - b2b_orders stores Hostels & Hotels & Airbnb
     const primaryRecordsMap = new Map();
 
-    // First load B2B orders (Hostels/Hotels)
+    // First load Cartdetails orders (Regular B2C orders)
+    cartOrders.forEach(order => {
+      if (order.status === ORDER_STATUSES.CANCELLED) return;
+      primaryRecordsMap.set(order.id, order);
+    });
+
+    // Next load B2B orders (Hostels/Hotels)
     b2bOrders.forEach(order => primaryRecordsMap.set(order.id, order));
     
     // Then load Admin Edits (Regular/Issues)
@@ -134,6 +159,7 @@ export function HostelAuthProvider({ children }) {
     const primaryIds = new Set(primaryRecordsMap.keys());
 
     websiteOrders.forEach((webOrder) => {
+      if (webOrder.status === ORDER_STATUSES.CANCELLED) return;
       if (!primaryIds.has(webOrder.id)) {
         merged.push(webOrder);
       }
@@ -141,7 +167,7 @@ export function HostelAuthProvider({ children }) {
 
     // Cleanup: Filter out soft-deleted records
     return merged.filter((order) => !order.isDeleted);
-  }, [b2bOrders, firestoreEdits, websiteOrders]);
+  }, [cartOrders, b2bOrders, firestoreEdits, websiteOrders]);
 
   const orders = useMemo(() => {
     if (!client) return [];

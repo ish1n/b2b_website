@@ -12,6 +12,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from "recharts";
 import { BiRupee } from "react-icons/bi";
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
 /* ─── constants ─── */
 const CATEGORIES = [
@@ -54,6 +55,10 @@ export default function AdminExpensesTab() {
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [monthFilter, setMonthFilter] = useState("All");
   const [catFilter, setCatFilter] = useState("All");
+  const handleAmountChange = (value) => {
+    if (isNegativeNumberInput(value)) return;
+    setForm((prev) => ({ ...prev, amount: value }));
+  };
 
   /* ─── Firestore listener ─── */
   useEffect(() => {
@@ -573,8 +578,8 @@ export default function AdminExpensesTab() {
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
                       <BiRupee size={22} />
                     </div>
-                    <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                      className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
+                  <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => handleAmountChange(e.target.value)}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
                   </div>
                   {errors.amount && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.amount}</p>}
                 </div>

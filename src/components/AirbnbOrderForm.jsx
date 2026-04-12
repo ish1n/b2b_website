@@ -3,6 +3,7 @@ import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { FiPlus, FiTrash2, FiLoader } from "react-icons/fi";
+import { isNegativeNumberInput } from "../utils/numberInputUtils";
 
 const COMMON_ITEMS = [
     "Single Bedsheet", "Double Bedsheet", "Duvet Cover",
@@ -23,10 +24,11 @@ export default function AirbnbOrderForm({ clientName, onSuccess }) {
     };
 
     const handleItemChange = (index, field, value) => {
-        const newItems = [...items];
-        newItems[index][field] = value;
-        setItems(newItems);
-    };
+    if (field === "quantity" && isNegativeNumberInput(value)) return;
+    const newItems = [...items];
+    newItems[index][field] = value;
+    setItems(newItems);
+  };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
