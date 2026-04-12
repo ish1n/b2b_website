@@ -216,20 +216,22 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     normalized.property = "Regular Customers";
     normalized.channel = mapCartSelectionSource(rawOrder.selectionSource);
     normalized.serviceBreakdown = breakdown;
-    normalized.serviceBreakdownSummary = summaryParts.join(", ");
-    const firstService = breakdown[0]?.name || "Regular Service";
-    normalized.service = breakdown.length <= 1 ? firstService : `${firstService} + ${breakdown.length - 1} more`;
-    normalized.amount = normalizeNumber(rawOrder.totalCost ?? rawOrder.totalWithFee ?? rawOrder.originalTotalCost ?? rawOrder.originalAmount);
-    const itemsFromBreakdown = breakdown.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  normalized.serviceBreakdownSummary = summaryParts.join(", ");
+  const firstService = breakdown[0]?.name || "Regular Service";
+  normalized.service = breakdown.length <= 1 ? firstService : `${firstService} + ${breakdown.length - 1} more`;
+  normalized.amount = normalizeNumber(rawOrder.totalCost ?? rawOrder.totalWithFee ?? rawOrder.originalTotalCost ?? rawOrder.originalAmount);
+  const itemsFromBreakdown = breakdown.reduce((sum, item) => sum + (item.quantity || 0), 0);
     normalized.items = normalizeNumber(rawOrder.totalItems ?? rawOrder.clothesCount ?? itemsFromBreakdown);
     normalized.weight = normalizeNumber(rawOrder.clothesWeightKg ?? normalized.weight);
     normalized.status = normalizeOrderStatus(rawOrder.status || rawOrder.orderStatus || rawOrder.paymentStatus);
     if (cartCreatedDate) {
       normalized.date = normalizeDate(cartCreatedDate);
     }
-    normalized.customerName = (rawOrder.userName || rawOrder.customerName || "Regular Customer").trim();
-    normalized.customerNumber = rawOrder.userMobile || rawOrder.customerPhone || rawOrder.userPhone || "";
-    normalized.details = normalized.details || rawOrder.breakdown || {};
+  normalized.customerName = (rawOrder.userName || rawOrder.customerName || "Regular Customer").trim();
+  normalized.customerNumber = rawOrder.userMobile || rawOrder.customerPhone || rawOrder.userPhone || "";
+  normalized.details = normalized.details || rawOrder.breakdown || {};
+  const addressCandidate = rawOrder.userEnteredAddress || rawOrder.location?.address || rawOrder.address || rawOrder.userAddress || "";
+  normalized.address = addressCandidate ? addressCandidate.trim() : "";
   }
 
   if (source === "b2b") {

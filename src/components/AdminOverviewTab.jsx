@@ -283,95 +283,113 @@ function RevenueSources({ buildPeriodData, categorySparklines, todayString }) {
               </div>
 
               {expandedProperties.length > 0 ? (
-                <>
-                  {/* Desktop table */}
-                  <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-[#F8FAFC] border-y border-gray-100">
-                          <th className="text-left text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">Property</th>
-                          <th className="text-right text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">Revenue</th>
-                          <th className="text-right text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">Orders</th>
-                          <th className="text-right text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">KG</th>
-                          <th className="text-right text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">Clothes</th>
-                          <th className="text-right text-[10px] font-black text-[#64748B] px-5 py-3 uppercase tracking-widest">Students</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {expandedProperties.map((row, i) => (
-                          <tr key={row.property} className="border-b border-gray-50 hover:bg-[#F8FAFC]/60 transition-colors">
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ backgroundColor: PROPERTY_COLORS[i % PROPERTY_COLORS.length] }}>
-                                  {row.property.charAt(0)}
-                                </div>
-                                <span className="text-[13px] font-bold text-[#0F172A]">{row.property}</span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-0.5 text-[13px] font-black" style={{ color: expandedCat.color }}>
-                                <span className="text-[11px]">₹</span>
-                                <span>{row.revenue.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-3.5 text-[13px] font-extrabold text-[#475569] text-right">{row.orders}</td>
-                            <td className="px-5 py-3.5 text-[13px] font-bold text-[#64748B] text-right">{row.kg > 0 ? row.kg.toFixed(1) : "—"}</td>
-                            <td className="px-5 py-3.5 text-[13px] font-bold text-[#64748B] text-right">{row.clothes > 0 ? row.clothes : "—"}</td>
-                            <td className="px-5 py-3.5 text-[13px] font-bold text-[#64748B] text-right">{row.students > 0 ? row.students : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-[#F8FAFC] border-t-2 border-gray-200">
-                          <td className="px-5 py-3 text-[11px] font-black text-[#0F172A] uppercase tracking-wider">Total</td>
-                          <td className="px-5 py-3 text-right">
-                            <div className="flex items-center justify-end gap-0.5 text-[13px] font-black text-[#0F172A]">
-                              <span className="text-[11px]">₹</span>
-                              <span>{expandedProperties.reduce((s, r) => s + r.revenue, 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-[13px] font-black text-[#0F172A] text-right">{expandedProperties.reduce((s, r) => s + r.orders, 0)}</td>
-                          <td className="px-5 py-3 text-[13px] font-black text-[#0F172A] text-right">{expandedProperties.reduce((s, r) => s + r.kg, 0).toFixed(1)}</td>
-                          <td className="px-5 py-3 text-[13px] font-black text-[#0F172A] text-right">{expandedProperties.reduce((s, r) => s + r.clothes, 0) || "—"}</td>
-                          <td className="px-5 py-3 text-[13px] font-black text-[#0F172A] text-right">{expandedProperties.reduce((s, r) => s + r.students, 0) || "—"}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                <div className="space-y-4 p-4 md:p-6 bg-slate-50/50">
+                  {expandedProperties.map((row, i) => {
+                    const totalPropsRev = expandedProperties.reduce((s, r) => s + r.revenue, 0) || 1;
+                    const share = ((row.revenue / totalPropsRev) * 100).toFixed(1);
+                    const hasEntryModes = row.entryModes && (row.entryModes.bulk.orders > 0 || row.entryModes.student.orders > 0);
 
-                  {/* Mobile cards */}
-                  <div className="sm:hidden divide-y divide-gray-50">
-                    {expandedProperties.map((row, i) => (
-                      <div key={row.property} className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ backgroundColor: PROPERTY_COLORS[i % PROPERTY_COLORS.length] }}>
+                    return (
+                      <div key={row.property} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all p-5">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[13px] font-black shadow-inner" style={{ backgroundColor: PROPERTY_COLORS[i % PROPERTY_COLORS.length] }}>
                               {row.property.charAt(0)}
                             </div>
-                            <span className="text-[13px] font-bold text-[#0F172A]">{row.property}</span>
-                          </div>
-                          <div className="flex items-center gap-0.5 text-[14px] font-black" style={{ color: expandedCat.color }}>
-                            <span className="text-[11px]">₹</span>
-                            <span>{row.revenue.toLocaleString("en-IN")}</span>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2">
-                          {[
-                            { label: "Orders", value: row.orders },
-                            { label: "KG", value: row.kg > 0 ? row.kg.toFixed(1) : "—" },
-                            { label: "Clothes", value: row.clothes || "—" },
-                            { label: "Students", value: row.students || "—" },
-                          ].map((stat) => (
-                            <div key={stat.label} className="bg-slate-50/80 rounded-lg p-2 border border-slate-100/50 text-center">
-                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{stat.label}</p>
-                              <p className="text-[12px] font-black text-slate-700">{stat.value}</p>
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Property</p>
+                              <h4 className="text-[16px] font-bold text-[#0F172A] leading-none mb-1.5">{row.property}</h4>
+                              <p className="text-[11px] font-bold text-slate-500">
+                                {row.orders} orders · {row.kg > 0 ? `${row.kg.toFixed(1)} kg · ` : ''}{share}% share
+                              </p>
                             </div>
-                          ))}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Revenue</p>
+                            <div className="text-[20px] font-black text-[#0F172A] leading-none">
+                              <span className="text-[14px] mr-0.5">₹</span>
+                              {row.revenue.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </div>
+                          </div>
                         </div>
+
+                        {hasEntryModes && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4 border-t border-dashed border-slate-100">
+                            {/* Bulk */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-between">
+                              <div>
+                                <div className="flex justify-between items-center mb-3">
+                                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hostel Bulk</p>
+                                  <p className="text-[10px] font-bold text-slate-400">{row.entryModes.bulk.orders} orders</p>
+                                </div>
+                                <p className="text-[16px] font-black text-[#0F172A] mb-2">
+                                  <span className="text-[12px] mr-0.5">₹</span>
+                                  {row.entryModes.bulk.revenue.toLocaleString("en-IN")}
+                                </p>
+                                <p className="text-[11px] font-bold text-slate-500 mb-4">
+                                  {row.entryModes.bulk.kg > 0 ? `${row.entryModes.bulk.kg.toFixed(1)} kg` : '0 kg'}
+                                  {' — '}
+                                  {row.entryModes.bulk.clothes > 0 ? `${row.entryModes.bulk.clothes} pcs` : '- pcs'}
+                                </p>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-[#94A3B8] pt-3 border-t border-slate-200/50 mt-auto">
+                                <span>Path</span>
+                                <span className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors">Drill In</span>
+                              </div>
+                            </div>
+                            
+                            {/* Student */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col justify-between">
+                              <div>
+                                <div className="flex justify-between items-center mb-3">
+                                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Student Orders</p>
+                                  <p className="text-[10px] font-bold text-slate-400">{row.entryModes.student.orders} orders</p>
+                                </div>
+                                <p className="text-[16px] font-black text-[#0F172A] mb-2">
+                                  <span className="text-[12px] mr-0.5">₹</span>
+                                  {row.entryModes.student.revenue.toLocaleString("en-IN")}
+                                </p>
+                                <p className="text-[11px] font-bold text-slate-500 mb-4">
+                                  {row.entryModes.student.kg > 0 ? `${row.entryModes.student.kg.toFixed(1)} kg` : '0 kg'}
+                                  {' — '}
+                                  {row.entryModes.student.clothes > 0 ? `${row.entryModes.student.clothes} pcs` : '- pcs'}
+                                  {' — '}
+                                  {row.entryModes.student.students > 0 ? `${row.entryModes.student.students} students` : '- students'}
+                                </p>
+
+                                {row.entryModes.student.details && row.entryModes.student.details.length > 0 && (
+                                  <div className="mt-2 mb-4 space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                                    {row.entryModes.student.details.map((detail, idx) => (
+                                      <div key={detail.id || idx} className="bg-white rounded-lg p-2.5 flex justify-between items-center border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                                        <div className="overflow-hidden pr-2">
+                                          <p className="text-[11px] font-bold text-[#0F172A] truncate" title={detail.name || "Student"}>
+                                            {detail.name || "Student"}
+                                          </p>
+                                          <p className="text-[9px] font-black text-slate-400 mt-0.5 truncate tracking-wide">
+                                            {detail.room ? `Room ${detail.room}` : null}
+                                            {detail.room && detail.service ? ' · ' : null}
+                                            {detail.service || "Laundry"}
+                                          </p>
+                                        </div>
+                                        <div className="text-[11px] font-black text-emerald-600 shrink-0">
+                                          ₹{detail.amount?.toLocaleString("en-IN") || 0}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-[#94A3B8] pt-3 border-t border-slate-200/50 mt-auto">
+                                <span>Path</span>
+                                <span className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors">Drill In</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="py-8 text-center text-[12px] text-[#94A3B8] font-medium">
                   No property-level data for this category in this period.

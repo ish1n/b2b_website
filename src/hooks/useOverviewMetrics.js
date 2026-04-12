@@ -72,6 +72,27 @@ function buildCategoryBreakdown(filteredOrders, totalRevenue) {
 }
 
 // ── Build per-property drill-down within each category ───────────
+const ENTRY_MODES = ["bulk", "student"];
+const ENTRY_MODE_ENABLED_CATEGORIES = new Set([ORDER_CATEGORIES.STUDENT_LAUNDRY, ORDER_CATEGORIES.LINEN, "BULK_LAUNDRY"]);
+
+function createEmptyEntryStats() {
+  return { revenue: 0, kg: 0, clothes: 0, students: 0, orders: 0, details: [] };
+}
+
+function determineEntryMode(order) {
+  if (order?.details?.entryMode) {
+    return order.details.entryMode === "student" ? "student" : "bulk";
+  }
+  if (order.studentName || (order.details?.studentServices?.length)) {
+    return "student";
+  }
+  return "bulk";
+}
+
+function shouldTrackEntryModes(catKey) {
+  return ENTRY_MODE_ENABLED_CATEGORIES.has(catKey);
+}
+
 function buildPropertyBreakdown(filteredOrders) {
   const result = {};
   filteredOrders.forEach((order) => {
@@ -79,13 +100,57 @@ function buildPropertyBreakdown(filteredOrders) {
     const prop = order.property || order.tenant || order.channel || "Unknown";
     if (!result[cat.key]) result[cat.key] = {};
     if (!result[cat.key][prop]) {
-      result[cat.key][prop] = { property: prop, revenue: 0, kg: 0, clothes: 0, students: 0, orders: 0 };
+      result[cat.key][prop] = {
+        property: prop,
+        revenue: 0,
+        kg: 0,
+        clothes: 0,
+        students: 0,
+        orders: 0,
+      };
+      if (shouldTrackEntryModes(cat.key)) {
+        result[cat.key][prop].entryModes = {
+          bulk: createEmptyEntryStats(),
+          student: createEmptyEntryStats(),
+        };
+      }
     }
     const row = result[cat.key][prop];
-    row.revenue += order.amount || 0;
-    row.kg += order.weight || 0;
-    row.clothes += order.items || 0;
-    row.students += order.studentCount || 0;
+    const entryMode = determineEntryMode(order);
+    const entryStats = row.entryModes ? row.entryModes[entryMode] : null;
+
+    const amount = order.amount || 0;
+    const weight = order.weight || 0;
+    const clothes = order.items || 0;
+    const students = order.studentCount || 0;
+
+    if (entryStats) {
+      entryStats.revenue += amount;
+      entryStats.kg += weight;
+      entryStats.clothes += clothes;
+      entryStats.students += students;
+      entryStats.orders += 1;
+      if (entryMode === "student") {
+        const detail = {
+          id: order.id,
+          name: order.studentName || order.customerName || "Student",
+          room: order.studentRoom || order.details?.room || "",
+          phone: order.studentPhone || order.studentContact || order.customerNumber || "",
+          service: order.service || "Student Laundry",
+          amount: amount,
+        };
+        const exists = entryStats.details.some((item) => item.id === detail.id);
+        if (!exists) {
+          entryStats.details.push(detail);
+          if (entryStats.details.length > 10) entryStats.details.shift();
+        }
+      }
+    }
+
+    row.revenue += amount;
+    row.kg += weight;
+    row.clothes += clothes;
+    row.students += students;
     row.orders += 1;
   });
   const sorted = {};
