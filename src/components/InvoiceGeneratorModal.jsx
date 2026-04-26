@@ -24,7 +24,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
     const HOSTEL_GROUPS = {
         "GROUP_STUDENT": {
             label: "Student Hostels Group (Tulsi, Meera, etc.)",
-            properties: ["Tulsi", "Adarsha", "Meera", "Kirti", "Aardhana", "Aakansha", "Tara", "Samshrushti"],
+            properties: ["Tulsi", "Adarsha", "Meera", "Kirti", "Aardhana", "Aakansha", "Tara", "Samshrushti", "Gurukul", "Samriddhi", "Curie"],
             unit: "Kg"
         },
         "GROUP_99": {
