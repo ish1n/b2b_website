@@ -321,7 +321,7 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
         const [iy, im, id] = invoiceDate.split("-");
         const formattedInvDate = `${id}/${im}/${iy}`;
 
-        doc.text(`Hotel Name: ${selectedProperty === "ALL" ? "TOTAL INVOICE" : (HOSTEL_GROUPS[selectedProperty]?.label || selectedProperty)}`, 14, detailsY);
+        doc.text(`Hostel Name: ${selectedProperty === "ALL" ? "TOTAL INVOICE" : (HOSTEL_GROUPS[selectedProperty]?.label || selectedProperty)}`, 14, detailsY);
         doc.text(`Invoice Number: ${invoiceNo}`, 14, detailsY + 6);
         doc.text(`Invoice Date: ${formattedInvDate}`, 14, detailsY + 12);
 
