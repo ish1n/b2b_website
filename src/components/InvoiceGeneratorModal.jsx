@@ -3,6 +3,7 @@ import { FiX, FiDownload, FiFileText } from 'react-icons/fi';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { isNegativeNumberInput } from "../utils/numberInputUtils";
+import signatureImage from "../assets/signature.jpeg";
 
 
 export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
@@ -122,7 +123,15 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
 
     if (!isOpen) return null;
 
-    const generatePDF = () => {
+    const loadSignature = () =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = signatureImage;
+        });
+
+    const generatePDF = async () => {
         if (!startDate || !endDate || !invoiceNo || !clientName || !rate) {
             alert("Please fill in all required fields (Dates, Invoice No, Client Name, Rate).");
             return;
@@ -372,17 +381,27 @@ export default function InvoiceGeneratorModal({ isOpen, onClose, orders }) {
         doc.text("IFSC code: HDFC0000149", 14, footerY + 27);
 
         // 3. Signature Area
-        const sigX = pageWidth - 60;
+        const sigX = pageWidth - 70;
+        const signatureImageWidth = 56;
+        const signatureImageHeight = 24;
+        const signatureImageY = footerY + 6;
+        const signatureCenterX = sigX + signatureImageWidth / 2;
+
+        try {
+            const signature = await loadSignature();
+            doc.addImage(signature, "JPEG", sigX, signatureImageY, signatureImageWidth, signatureImageHeight);
+        } catch (error) {
+            // Fallback if image loading fails.
+            doc.setFont("helvetica", "bold");
+            doc.text("ARYAN GUPTA", signatureCenterX, footerY + 20, { align: "center" });
+            doc.setFontSize(8);
+            doc.text("FOUNDER & CEO, ANDES", signatureCenterX, footerY + 25, { align: "center" });
+            doc.setFontSize(10);
+        }
+
+        doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
-        doc.text("ARYAN GUPTA", sigX + 23, footerY + 20, { align: "center" });
-        doc.setFontSize(8);
-        doc.text("FOUNDER & CEO, ANDES", sigX + 23, footerY + 25, { align: "center" });
-        doc.setFontSize(10);
-        doc.text("Authorized Signature", sigX + 23, footerY + 31, { align: "center" });
-        
-        // Horizontal line for signature
-        doc.setDrawColor(200, 200, 200);
-        doc.line(sigX, footerY + 15, sigX + 46, footerY + 15);
+        doc.text("Authorized Signatory", signatureCenterX, footerY + 34, { align: "center" });
 
         // Save PDF
         doc.save(`${invoiceNo}_${selectedProperty}.pdf`);
