@@ -14,6 +14,7 @@ import OrderTable from "./OrderTable";
 import AdminOrderModal from "./AdminOrderModal";
 import { ORDER_STATUSES } from "../constants/orders";
 import { useOverviewMetrics } from "../hooks/useOverviewMetrics";
+import ExpandedOverviewLayout from "./ExpandedOverviewLayout";
 
 // ── Constants ────────────────────────────────────────────────────
 const AVATAR_COLORS = ["#1976D2", "#7C3AED", "#059669", "#DC2626", "#D97706", "#0891B2", "#BE185D"];
@@ -597,6 +598,7 @@ export default function AdminOverviewTab({ orders, daysInRange }) {
 
   return (
     <div className="space-y-6" style={{ fontFamily: "DM Sans, sans-serif" }}>
+      <ExpandedOverviewLayout orders={orders} />
 
       {/* P0 HERO: Revenue Sources with Period Toggle + Sparklines + Trends + Drill-Down */}
       <RevenueSources

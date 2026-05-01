@@ -1,6 +1,7 @@
 import { ORDER_CATEGORIES, ORDER_CHANNELS, ORDER_STATUSES, ORDER_TYPES, normalizeOrderStatus } from "../constants/orders";
 import { getCategoryForProperty } from "../data/hostelOrders";
 import { getTodayString } from "./dateUtils";
+import { ITEM_RATE_MAP, STUDENT_RATE_PER_KG } from "../config/orderRateCard";
 
 // --- ADDED ALIASES HERE TO FIX CASE SENSITIVITY AND DUPLICATES ---
 const CANONICAL_PROPERTY_NAMES = {
@@ -31,7 +32,15 @@ const CANONICAL_PROPERTY_NAMES = {
   "hostel99 yerwada 1": "Hostel99 Yerwada 1",
   "hostel99 yerwada 2": "Hostel99 Yerwada 2",
   "hostel 99 no-88": "Hostel 99 no-88",
+  "hostel99 no. 88": "Hostel 99 no-88",
+  "hostel99 no 88": "Hostel 99 no-88",
+  "hostel 99 no. 88": "Hostel 99 no-88",
+  "hostel 99 no 88": "Hostel 99 no-88",
   "hostel 99 no-3": "Hostel 99 no-3",
+  "hostel99 no. 3": "Hostel 99 no-3",
+  "hostel99 no 3": "Hostel 99 no-3",
+  "hostel 99 no. 3": "Hostel 99 no-3",
+  "hostel 99 no 3": "Hostel 99 no-3",
   "regular customers": "Regular Customers",
   issues: "Issues",
   "airbnb viman nagar": "Airbnb Viman Nagar",
@@ -43,9 +52,25 @@ const CANONICAL_PROPERTY_NAMES = {
 
 function normalizeDate(raw) {
   if (!raw) return getTodayString();
-  if (typeof raw === "string") return raw;
-  if (raw?.toDate) return raw.toDate().toISOString().split("T")[0];
-  return getTodayString();
+  if (typeof raw === "string") {
+    // If it's a string like "2026-05-01T12:00:00", split and take the date part
+    if (raw.includes("T")) return raw.split("T")[0];
+    return raw;
+  }
+  
+  let d;
+  if (raw?.toDate) {
+    d = raw.toDate();
+  } else if (raw instanceof Date) {
+    d = raw;
+  } else if (typeof raw === "number") {
+    d = new Date(raw);
+  } else {
+    return getTodayString();
+  }
+
+  // Use local time, not UTC
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function normalizeNumber(value, fallback = 0) {
@@ -175,6 +200,8 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     id: String(rawOrder.id || rawOrder.orderId || `${source}-${Date.now()}`),
     ...rawOrder,
     property,
+    createdAtRaw: rawOrder.createdAt,
+    updatedAtRaw: rawOrder.updatedAt,
     date: normalizeDate(rawOrder.date || rawOrder.createdAt),
     amount: normalizeNumber(rawOrder.amount ?? rawOrder.totalPrice),
     items: normalizeNumber(rawOrder.items, itemsFromPartnerMap),
@@ -186,12 +213,16 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     details: normalizeDetails(rawOrder),
     customerName: rawOrder.customerName || rawOrder.userName || "",
     customerNumber: rawOrder.customerNumber || rawOrder.userPhone || rawOrder.phoneNumber || rawOrder.customerPhone || "",
-    channel: rawOrder.channel || (source === "website" ? ORDER_CHANNELS.WEBSITE : rawOrder.channel),
+    channel: mapCartSelectionSource(rawOrder.selectionSource || rawOrder.location?.selectionSource || rawOrder.channel || (source === "website" ? "website" : "")),
+    deliveryDate: rawOrder.deliveryDate || rawOrder.dropTime || "",
     service: rawOrder.service || "Order",
     source,
   };
 
   if (source === "website") {
+    normalized.category = ORDER_CATEGORIES.B2C_RETAIL;
+    normalized.type = ORDER_TYPES.REGULAR;
+    normalized.property = "Regular Customers";
     normalized.channel = ORDER_CHANNELS.WEBSITE;
     normalized.customerName = rawOrder.userName || rawOrder.customerName || "Website Customer";
     normalized.customerNumber = rawOrder.userPhone || rawOrder.phoneNumber || rawOrder.customerPhone || "no contact";
@@ -209,12 +240,12 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
       return `${item.name}${metrics ? ` (${metrics})` : ""}`;
     }).filter(Boolean);
 
-    const cartCreatedDate = rawOrder.createdAt || (rawOrder.orderTimestamp ? new Date(Number(rawOrder.orderTimestamp)).toISOString().split("T")[0] : undefined);
+    const cartCreatedDate = rawOrder.createdAt || (rawOrder.orderTimestamp ? Number(rawOrder.orderTimestamp) : undefined);
 
     normalized.category = ORDER_CATEGORIES.B2C_RETAIL;
     normalized.type = ORDER_TYPES.REGULAR;
     normalized.property = "Regular Customers";
-    normalized.channel = mapCartSelectionSource(rawOrder.selectionSource);
+    normalized.channel = mapCartSelectionSource(rawOrder.selectionSource || rawOrder.location?.selectionSource || rawOrder.channel);
     normalized.serviceBreakdown = breakdown;
   normalized.serviceBreakdownSummary = summaryParts.join(", ");
   const firstService = breakdown[0]?.name || "Regular Service";
@@ -232,11 +263,45 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
   normalized.details = normalized.details || rawOrder.breakdown || {};
   const addressCandidate = rawOrder.userEnteredAddress || rawOrder.location?.address || rawOrder.address || rawOrder.userAddress || "";
   normalized.address = addressCandidate ? addressCandidate.trim() : "";
+  normalized.deliveryDate = rawOrder.deliveryDate || rawOrder.dropTime || "";
   }
 
   if (source === "b2b") {
     normalized.category = rawOrder.category || inferredCategory;
     normalized.type = rawOrder.type || inferredType;
+
+    // Parse B2B specific fields (Student Laundry)
+    if (rawOrder.hostelTotalClothes !== undefined) {
+      normalized.items = normalizeNumber(rawOrder.hostelTotalClothes, normalized.items);
+    }
+    if (rawOrder.hostelTotalWeightKg !== undefined) {
+      normalized.weight = normalizeNumber(rawOrder.hostelTotalWeightKg, normalized.weight);
+    }
+    if (rawOrder.hostelTotalStudents !== undefined) {
+      normalized.studentCount = normalizeNumber(rawOrder.hostelTotalStudents, normalized.studentCount);
+    }
+
+    // Parse B2B specific fields (Linen)
+    // The UI expects `details` to be an object of key-value pairs for linen items
+    if (rawOrder.partnerItems && typeof rawOrder.partnerItems === "object") {
+      normalized.details = rawOrder.partnerItems;
+    } else if (rawOrder.details && typeof rawOrder.details === "string") {
+      normalized.serviceBreakdownSummary = rawOrder.details;
+    }
+
+    // Dynamic Revenue Calculation (if missing)
+    if (!normalized.amount) {
+      if (normalized.type === "student") {
+        normalized.amount = (normalized.weight || 0) * STUDENT_RATE_PER_KG;
+      } else if (normalized.type === "linen" && normalized.details && typeof normalized.details === "object") {
+        let linenTotal = 0;
+        Object.entries(normalized.details).forEach(([item, quantity]) => {
+          const rate = ITEM_RATE_MAP[item] || 0;
+          linenTotal += ((parseFloat(quantity) || 0) * rate);
+        });
+        normalized.amount = linenTotal;
+      }
+    }
   }
 
   if (normalized.category === ORDER_CATEGORIES.ISSUES) {
