@@ -12,8 +12,9 @@ export const CATEGORIES = {
 };
 
 export function getCategoryForProperty(property) {
-  if (["Hostel 99", "Hostel 99 no-88", "Hostel 99 no-3", "Airbnb Viman Nagar"].includes(property)) {
-    return property === "Airbnb Viman Nagar" ? CATEGORIES.AIRBNB : CATEGORIES.LINEN;
+  const propLower = String(property).toLowerCase();
+  if (propLower.includes("hostel 99") || propLower.includes("hostel99") || propLower.includes("airbnb viman nagar")) {
+    return propLower.includes("airbnb") ? CATEGORIES.AIRBNB : CATEGORIES.LINEN;
   }
   if (["Samridhi", "Gurukul"].includes(property)) return CATEGORIES.BULK_LAUNDRY;
   if (property === "Regular Customers") return CATEGORIES.B2C_RETAIL;

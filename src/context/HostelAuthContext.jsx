@@ -141,31 +141,41 @@ export function HostelAuthProvider({ children }) {
     // - b2b_orders stores Hostels & Hotels & Airbnb
     const primaryRecordsMap = new Map();
 
-    // First load Cartdetails orders (Regular B2C orders)
+    // 1. Base Data: Cartdetails
     cartOrders.forEach(order => {
       if (order.status === ORDER_STATUSES.CANCELLED) return;
       primaryRecordsMap.set(order.id, order);
     });
 
-    // Next load B2B orders (Hostels/Hotels)
-    b2bOrders.forEach(order => primaryRecordsMap.set(order.id, order));
-    
-    // Then load Admin Edits (Regular/Issues)
-    // If an ID exists in both (unlikely given category separation), Admin Edits win
-    firestoreEdits.forEach(order => primaryRecordsMap.set(order.id, order));
-
-    // Partition 2: Merge in website orders, but ONLY if they haven't been "overridden" by a primary record
-    const merged = [...primaryRecordsMap.values()];
-    const primaryIds = new Set(primaryRecordsMap.keys());
-
-    websiteOrders.forEach((webOrder) => {
-      if (webOrder.status === ORDER_STATUSES.CANCELLED) return;
-      if (!primaryIds.has(webOrder.id)) {
-        merged.push(webOrder);
+    // 2. Base Data: Website Orders
+    websiteOrders.forEach((order) => {
+      if (order.status === ORDER_STATUSES.CANCELLED) return;
+      const existing = primaryRecordsMap.get(order.id);
+      if (existing) {
+        primaryRecordsMap.set(order.id, { ...existing, ...order });
+      } else {
+        primaryRecordsMap.set(order.id, order);
       }
     });
 
-    // Cleanup: Filter out soft-deleted records
+    // 3. Base Data: B2B Orders
+    b2bOrders.forEach(order => primaryRecordsMap.set(order.id, order));
+    
+    // 4. Overrides: Admin Edits (Regular/Issues)
+    firestoreEdits.forEach(order => {
+      const existing = primaryRecordsMap.get(order.id);
+      if (existing) {
+        const merged = { ...existing, ...order };
+        if (!order.deliveryDate && existing.deliveryDate) merged.deliveryDate = existing.deliveryDate;
+        if (!order.customerNumber && existing.customerNumber) merged.customerNumber = existing.customerNumber;
+        if (!order.channel && existing.channel) merged.channel = existing.channel;
+        primaryRecordsMap.set(order.id, merged);
+      } else {
+        primaryRecordsMap.set(order.id, order);
+      }
+    });
+
+    const merged = [...primaryRecordsMap.values()];
     return merged.filter((order) => !order.isDeleted);
   }, [cartOrders, b2bOrders, firestoreEdits, websiteOrders]);
 

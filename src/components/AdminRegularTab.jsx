@@ -16,6 +16,7 @@ import {
   useRegularOrders,
 } from "../hooks/useRegularOrders";
 import { isNegativeNumberInput } from "../utils/numberInputUtils";
+import { calculateTAT } from "../utils/dateUtils";
 
 const CHANNEL_ICONS = { App: FiSmartphone, Auto: FiMapPin, Website: FiShoppingBag, WhatsApp: FiMessageSquare, Outlet: FiShoppingBag, Call: FiPhone, Student: FiUser };
 const CHANNEL_COLORS = { App: "#1976D2", Auto: "#0EA5E9", Website: "#6366F1", WhatsApp: "#25D366", Outlet: "#D97706", Call: "#7C3AED", Student: "#059669" };
@@ -65,6 +66,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       notes: order.notes || "",
       status: order.status || "Confirmed",
       serviceBreakdown: breakdownFromOrder,
+      originalOrder: order,
     });
     setShowModal(true);
   };
@@ -142,14 +144,16 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
       ? primaryService
       : `${primaryService} + ${parsedBreakdown.length - 1} more`;
 
+    const baseOrder = form.originalOrder || {};
     const nextOrder = {
+      ...baseOrder,
       id: form.id || `reg-new-${Date.now()}`,
       property: "Regular Customers",
       category: "B2C_RETAIL",
       type: "regular",
       channel: form.channel,
       date: form.pickupDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
-      deliveryDate: form.deliveryDate || "",
+      deliveryDate: form.deliveryDate || baseOrder.deliveryDate || "",
       amount: finalAmount,
       status: form.status,
       items: Math.max(1, Math.round(totalQuantity)),
@@ -255,6 +259,7 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Pickup Date</th>
                 <th className="text-left text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Delivery Date</th>
                 <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Status</th>
+                <th className="text-center text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">TAT</th>
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Actions</th>
               </tr>
             </thead>
@@ -325,6 +330,11 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                       {order.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="text-[12px] font-bold text-slate-500 whitespace-nowrap">
+                      {calculateTAT(order.createdAtRaw, order.updatedAtRaw)}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                       <button onClick={(event) => { event.stopPropagation(); openEditModal(order); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
@@ -365,6 +375,9 @@ export default function AdminRegularTab({ orders, onAddOrder, onEditOrder, onDel
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border mb-1.5 ${STATUS_BADGE[order.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
                     {order.status}
                   </span>
+                  <div className="text-[9px] font-bold text-slate-400 mb-1">
+                    TAT: {calculateTAT(order.createdAtRaw, order.updatedAtRaw)}
+                  </div>
                   <div className="flex items-center gap-0.5 text-sm font-black text-blue-600">
                     <BiRupee size={12} className="text-blue-400" />
                     <span>{order.amount?.toLocaleString()}</span>

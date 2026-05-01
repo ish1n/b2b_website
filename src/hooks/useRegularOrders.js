@@ -36,6 +36,7 @@ export function createEmptyRegularOrderForm() {
     status: "Confirmed",
     id: null,
     serviceBreakdown: [createRegularServiceLine()],
+    originalOrder: null,
   };
 }
 
