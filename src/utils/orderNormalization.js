@@ -46,6 +46,12 @@ const CANONICAL_PROPERTY_NAMES = {
   "airbnb viman nagar": "Airbnb Viman Nagar",
   "airbnb viman nagar ": "Airbnb Viman Nagar",
   "airbnb viman nagar, pune": "Airbnb Viman Nagar",
+  "meera hostel karve nagar": "Meera",
+  "samshursti hostel karve nagar": "Samshrushti",
+  "samshrushti hostel karve nagar": "Samshrushti",
+  "tulsi hostel bhavdan": "Tulsi",
+  "tulsi hostel bavdhan": "Tulsi",
+  "treebo trend hotel": "Treebo Trend Hotel",
 };
 
 // getTodayString imported from ./dateUtils
@@ -293,7 +299,7 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     if (!normalized.amount) {
       if (normalized.type === "student") {
         normalized.amount = (normalized.weight || 0) * STUDENT_RATE_PER_KG;
-      } else if (normalized.type === "linen" && normalized.details && typeof normalized.details === "object") {
+      } else if ((normalized.type === "linen" || normalized.type === "airbnb") && normalized.details && typeof normalized.details === "object") {
         let linenTotal = 0;
         Object.entries(normalized.details).forEach(([item, quantity]) => {
           const rate = ITEM_RATE_MAP[item] || 0;

@@ -19,13 +19,7 @@ const DEFAULT_HOSTEL_COLORS = {
   "Hostel 99": "#7C3AED", "Hostel 99 no-88": "#059669", "Hostel 99 no-3": "#D97706"
 };
 const FALLBACK_COLORS = ["#1976D2", "#7C3AED", "#059669", "#D97706", "#0891B2", "#BE185D", "#DC2626", "#4338CA"];
-const HIDDEN_HOSTEL_PROPERTIES = new Set([
-  "Aakansha Hostel Kothurd",
-  "Hostel99 koregaon park",
-  "Hostel99 Yerwada 1",
-  "Hostel99 Yerwada 2",
-  "Tara Hostel Kothurd",
-]);
+const HIDDEN_HOSTEL_PROPERTIES = new Set([]);
 
 function getPropertyColor(name, index) {
   return DEFAULT_HOSTEL_COLORS[name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];

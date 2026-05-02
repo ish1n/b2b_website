@@ -178,77 +178,85 @@ export default function ExpandedOverviewLayout({ orders = [] }) {
     .toISOString().split("T")[0];
 
   const liveB2b = useMemo(() => {
-    const studentOrders = orders.filter(o => o.type === "student");
-    const totalActiveStudents = studentOrders.reduce((s, o) => s + (o.studentCount || 0), 0);
-    const totalKgReceived = studentOrders.reduce((s, o) => s + (o.weight || 0), 0);
-    const totalOrders = studentOrders.length;
+    const b2bOrders = orders.filter(o => 
+      o.type === "student" || o.type === "linen" || o.type === "airbnb" || o.source === "b2b"
+    );
+    const totalActiveStudents = b2bOrders.reduce((s, o) => s + (o.studentCount || 0), 0);
+    const totalKgReceived = b2bOrders.reduce((s, o) => s + (o.weight || 0), 0);
+    const totalItemsReceived = b2bOrders.reduce((s, o) => s + (o.items || 0), 0);
+    const totalOrders = b2bOrders.length;
 
-    // Per-hostel breakdown
-    const hostelMap = {};
-    studentOrders.forEach(o => {
-      const name = o.property || "Unknown";
-      if (!hostelMap[name]) {
-        hostelMap[name] = {
+    // Per-property breakdown
+    const b2bMap = {};
+    b2bOrders.forEach(o => {
+      const name = o.property || o.tenant || o.partnerName || "Unknown";
+      if (!b2bMap[name]) {
+        b2bMap[name] = {
           name,
           students: 0,
           kg: 0,
+          items: 0,
           issues: 0,
           orders: 0,
+          revenue: 0,
           firstOrder: null,
+          type: o.type,
         };
       }
-      hostelMap[name].students += o.studentCount || 0;
-      hostelMap[name].kg += o.weight || 0;
-      hostelMap[name].orders += 1;
-      // Track earliest order for "first order" detail
-      if (!hostelMap[name].firstOrder || o.date < hostelMap[name].firstOrder.date) {
-        hostelMap[name].firstOrder = {
+      b2bMap[name].students += o.studentCount || 0;
+      b2bMap[name].kg += o.weight || 0;
+      b2bMap[name].items += o.items || 0;
+      b2bMap[name].orders += 1;
+      b2bMap[name].revenue += o.amount || 0;
+      
+      if (!b2bMap[name].firstOrder || o.date < b2bMap[name].firstOrder.date) {
+        b2bMap[name].firstOrder = {
           date: o.date,
-          customerName: o.customerName || o.property || "Unknown",
+          customerName: o.customerName || o.property || name,
           riderId: o.riderId || "—",
         };
       }
     });
 
-    // Count issues per hostel
-    orders.filter(o => o.type === "issue").forEach(o => {
-      const name = o.property || "Unknown";
-      if (hostelMap[name]) hostelMap[name].issues += 1;
+    // Count issues per property
+    orders.filter(o => o.type === "issue" || o.category === "ISSUES").forEach(o => {
+      const name = o.property || o.linkedHostel || "Unknown";
+      if (b2bMap[name]) b2bMap[name].issues += 1;
     });
 
-    const hostelBreakdown = Object.values(hostelMap)
-      .filter(h => h.students > 0 || h.kg > 0)
-      .sort((a, b) => b.kg - a.kg);
+    const b2bBreakdown = Object.values(b2bMap)
+      .sort((a, b) => b.revenue - a.revenue || b.orders - a.orders);
 
-    // Top 3 contribution
-    const top3 = hostelBreakdown.slice(0, 3).map(h => ({
+    // Top 3 contribution (by revenue now for a mixed metric, or keep KG for hostels)
+    const top3 = b2bBreakdown.slice(0, 3).map(h => ({
       name: h.name,
       kg: h.kg,
       pct: totalKgReceived > 0 ? ((h.kg / totalKgReceived) * 100).toFixed(1) : "0",
     }));
 
-    // Today's pickups
-    const todayPickupOrders = studentOrders.filter(o => o.date === todayStr);
-    const todayPickupNames = [...new Set(todayPickupOrders.map(o => o.property).filter(Boolean))];
+    // Today's activity
+    const todayB2bOrders = b2bOrders.filter(o => o.date === todayStr);
+    const todayB2bNames = [...new Set(todayB2bOrders.map(o => o.property || o.tenant || o.partnerName).filter(Boolean))];
 
     // Today's deliveries
-    const todayDeliveryOrders = studentOrders.filter(o => {
+    const todayDeliveryOrders = b2bOrders.filter(o => {
       const updatedDate = o.updatedAtRaw?.toDate
         ? o.updatedAtRaw.toDate().toISOString().split("T")[0]
         : typeof o.updatedAtRaw === "string" ? o.updatedAtRaw.split("T")[0] : null;
       return o.status === "Delivered" && (updatedDate === todayStr || o.date === todayStr);
     });
-    const todayDeliveryNames = [...new Set(todayDeliveryOrders.map(o => o.property).filter(Boolean))];
+    const todayDeliveryNames = [...new Set(todayDeliveryOrders.map(o => o.property || o.tenant || o.partnerName).filter(Boolean))];
 
     return {
       totalActiveStudents,
       totalKgReceived,
+      totalItemsReceived,
       totalOrders,
-      hostelBreakdown,
+      b2bBreakdown,
       top3,
-      todayPickups: { count: todayPickupNames.length, names: todayPickupNames },
+      todayPickups: { count: todayB2bNames.length, names: todayB2bNames },
       todayDeliveries: { count: todayDeliveryNames.length, names: todayDeliveryNames },
-      hasData: studentOrders.length > 0,
+      hasData: b2bOrders.length > 0,
     };
   }, [orders, todayStr]);
 
@@ -549,17 +557,19 @@ export default function ExpandedOverviewLayout({ orders = [] }) {
                   <p className="text-[22px] font-black text-purple-700 leading-none">{liveB2b.totalActiveStudents || "—"}</p>
                 </div>
                 <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100 text-center">
-                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total KG</p>
-                  <p className="text-[22px] font-black text-indigo-700 leading-none">{liveB2b.totalKgReceived > 0 ? liveB2b.totalKgReceived.toFixed(1) : "—"}</p>
+                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total KG / Items</p>
+                  <p className="text-[22px] font-black text-indigo-700 leading-none">
+                    {liveB2b.totalKgReceived > 0 ? liveB2b.totalKgReceived.toFixed(1) : liveB2b.totalItemsReceived > 0 ? liveB2b.totalItemsReceived : "—"}
+                  </p>
                 </div>
                 <div className="bg-violet-50 rounded-xl p-3 border border-violet-100 text-center">
-                  <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Hostels</p>
-                  <p className="text-[22px] font-black text-violet-700 leading-none">{liveB2b.hostelBreakdown.length}</p>
+                  <p className="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-1">Properties</p>
+                  <p className="text-[22px] font-black text-violet-700 leading-none">{liveB2b.b2bBreakdown.length}</p>
                 </div>
               </div>
 
               {/* Top 3 Contribution */}
-              {liveB2b.top3.length > 0 && (
+              {liveB2b.top3.length > 0 && liveB2b.totalKgReceived > 0 && (
                 <div className="bg-slate-50 rounded-xl border border-slate-100 p-4">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Top 3 Hostel Contribution (by KG)</p>
                   <div className="space-y-2.5">
@@ -585,27 +595,31 @@ export default function ExpandedOverviewLayout({ orders = [] }) {
                 </div>
               )}
 
-              {/* Hostel-wise Breakdown Table */}
+              {/* B2B-wise Breakdown Table */}
               <div className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
                 <div className="px-3 py-2 bg-slate-100 border-b border-slate-200">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Hostel-wise Breakdown</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">B2B Breakdown</p>
                 </div>
                 {liveB2b.hasData ? (
                   <div className="divide-y divide-slate-100 max-h-[220px] overflow-y-auto">
-                    {liveB2b.hostelBreakdown.map((h, i) => (
+                    {liveB2b.b2bBreakdown.map((h, i) => (
                       <div key={h.name} className="px-3 py-2.5">
                         <div className="flex justify-between items-start mb-1">
                           <div>
                             <p className="text-[12px] font-black text-slate-800">{h.name}</p>
                             {h.firstOrder && (
                               <p className="text-[9px] font-bold text-slate-400 mt-0.5">
-                                First: {h.firstOrder.date} · {h.firstOrder.customerName}
+                                Last: {h.firstOrder.date} · {h.firstOrder.customerName}
                               </p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="text-[11px] font-black text-purple-600">{h.kg > 0 ? `${h.kg.toFixed(1)} kg` : "—"}</p>
-                            <p className="text-[9px] font-bold text-slate-400">{h.students > 0 ? `${h.students} students` : h.orders + " orders"}</p>
+                            <p className="text-[11px] font-black text-purple-600">
+                              {h.kg > 0 ? `${h.kg.toFixed(1)} kg` : h.items > 0 ? `${h.items} items` : `₹${h.revenue.toFixed(0)}`}
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-400">
+                              {h.students > 0 ? `${h.students} students` : `${h.orders} orders`}
+                            </p>
                           </div>
                         </div>
                         {h.issues > 0 && (

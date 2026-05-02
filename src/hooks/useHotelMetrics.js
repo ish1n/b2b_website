@@ -3,7 +3,7 @@ import { ORDER_CATEGORIES, ORDER_TYPES } from "../constants/orders";
 
 const DEFAULT_HOTEL_COLORS = { "Airbnb Viman Nagar": "#D97706" };
 const FALLBACK_HOTEL_COLORS = ["#D97706", "#1976D2", "#7C3AED", "#059669", "#BE185D", "#0891B2"];
-const HIDDEN_HOTEL_RECORDS = new Set(["airbnb viman nagar::2026-03-12"]);
+const HIDDEN_HOTEL_RECORDS = new Set([]);
 
 function getHotelColor(name, index) {
   return DEFAULT_HOTEL_COLORS[name] || FALLBACK_HOTEL_COLORS[index % FALLBACK_HOTEL_COLORS.length];
@@ -19,7 +19,8 @@ function isHotelOrder(order) {
 
 function hasMeaningfulHotelData(order) {
   const detailCount = Object.values(order.details || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
-  return (order.amount || 0) > 0 || detailCount > 0;
+  // Show order if it has an amount OR if it has items logged (even if amount is 0)
+  return (order.amount || 0) > 0 || detailCount > 0 || (order.items || 0) > 0;
 }
 
 function isHiddenHotelRecord(order) {
