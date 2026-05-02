@@ -34,6 +34,7 @@ export function HostelAuthProvider({ children }) {
       unsubscribeEdits();
       unsubscribeB2bOrders();
       unsubscribeWebsiteOrders();
+      unsubscribeCartDetails();
 
       if (!firebaseUser) {
         setClient(null);
@@ -159,7 +160,14 @@ export function HostelAuthProvider({ children }) {
     });
 
     // 3. Base Data: B2B Orders
-    b2bOrders.forEach(order => primaryRecordsMap.set(order.id, order));
+    b2bOrders.forEach(order => {
+      const existing = primaryRecordsMap.get(order.id);
+      if (existing) {
+        primaryRecordsMap.set(order.id, { ...existing, ...order });
+      } else {
+        primaryRecordsMap.set(order.id, order);
+      }
+    });
     
     // 4. Overrides: Admin Edits (Regular/Issues)
     firestoreEdits.forEach(order => {
@@ -189,7 +197,8 @@ export function HostelAuthProvider({ children }) {
     return allOrdersMerged.filter((order) => {
       const propertyName = (order.property || "").toLowerCase();
       const linkedName = (order.linkedHostel || "").toLowerCase();
-      return normalizedAllowed.includes(propertyName) || linkedName === normalizedAllowed[0];
+      // Check if any of the manager's allowed properties match the order's property (partial match allowed)
+      return normalizedAllowed.some(allowed => propertyName.includes(allowed) || linkedName.includes(allowed));
     });
   }, [allOrdersMerged, client]);
 

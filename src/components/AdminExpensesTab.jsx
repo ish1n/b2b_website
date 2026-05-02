@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   DollarSign, TrendingUp, CalendarDays, Plus, X, Upload, Trash2, Eye,
-  FileText, Loader2, ImageIcon, PieChart as PieChartIcon, BarChart3, Download
+  FileText, Loader2, ImageIcon, PieChart as PieChartIcon, BarChart3, Download,
+  ChevronDown, ChevronRight, Split, ChevronUp
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -39,7 +40,7 @@ const MONTHS = [
 ];
 
 const emptyForm = {
-  amount: "", payee: "", description: "", category: "", date: "", file: null,
+  amount: "", payee: "", description: "", category: "", date: "", file: null, breakdown: [],
 };
 
 /* ─── Component ─── */
@@ -55,6 +56,17 @@ export default function AdminExpensesTab() {
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [monthFilter, setMonthFilter] = useState("All");
   const [catFilter, setCatFilter] = useState("All");
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleAmountChange = (value) => {
     if (isNegativeNumberInput(value)) return;
     setForm((prev) => ({ ...prev, amount: value }));
@@ -102,7 +114,7 @@ export default function AdminExpensesTab() {
   const filtered = useMemo(() => {
     let list = expenses;
     if (monthFilter !== "All") {
-      const mIdx = MONTHS.indexOf(monthFilter); // 1‑based
+      const mIdx = MONTHS.indexOf(monthFilter);
       list = list.filter((e) => {
         if (!e.date) return false;
         return new Date(e.date).getMonth() + 1 === mIdx;
@@ -170,6 +182,7 @@ export default function AdminExpensesTab() {
       description: exp.description || "",
       category: exp.category || "",
       date: exp.date || "",
+      breakdown: exp.breakdown || [],
       file: null,
     });
     setErrors({});
@@ -183,6 +196,19 @@ export default function AdminExpensesTab() {
     if (!form.description.trim()) e.description = "Description is required";
     if (!form.category) e.category = "Select a category";
     if (!form.date) e.date = "Date is required";
+
+    if (form.breakdown && form.breakdown.length > 0) {
+      let sum = 0;
+      let breakdownErrors = false;
+      form.breakdown.forEach((item) => {
+        if (!item.amount || isNaN(Number(item.amount)) || Number(item.amount) <= 0) breakdownErrors = true;
+        if (!item.to?.trim()) breakdownErrors = true;
+        sum += Number(item.amount) || 0;
+      });
+      if (breakdownErrors) e.breakdown = "All recipient fields are required and amount must be > 0";
+      else if (Math.abs(sum - Number(form.amount)) > 0.01) e.breakdown = `Split total (₹${sum.toFixed(2)}) must equal total paid (₹${Number(form.amount).toFixed(2)})`;
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -204,6 +230,7 @@ export default function AdminExpensesTab() {
         description: form.description.trim(),
         category: form.category,
         date: form.date,
+        breakdown: form.breakdown || [],
         ...(receiptUrl ? { receiptUrl } : {}),
         updatedAt: Timestamp.now(),
       };
@@ -241,6 +268,25 @@ export default function AdminExpensesTab() {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
+  };
+
+  const addBreakdownItem = () => setForm(prev => ({ ...prev, breakdown: [...prev.breakdown, { amount: "", to: "", purpose: "" }] }));
+  
+  const updateBreakdownItem = (index, field, value) => {
+    if (field === "amount" && isNegativeNumberInput(value)) return;
+    setForm(prev => {
+      const newBreakdown = [...prev.breakdown];
+      newBreakdown[index] = { ...newBreakdown[index], [field]: value };
+      return { ...prev, breakdown: newBreakdown };
+    });
+  };
+  
+  const removeBreakdownItem = (index) => {
+    setForm(prev => {
+      const newBreakdown = [...prev.breakdown];
+      newBreakdown.splice(index, 1);
+      return { ...prev, breakdown: newBreakdown };
+    });
   };
 
   /* ─── Render ─── */
@@ -281,50 +327,9 @@ export default function AdminExpensesTab() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="group bg-white rounded-xl border-t-4 border-t-blue-500 border-x border-b border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <DollarSign size={20} />
-            </div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Payments</div>
-          </div>
-          <div className="flex items-center gap-1 text-[28px] font-black text-[#0F172A] tracking-tight">
-            <BiRupee size={24} className="mb-1" />
-            <span>{kpis.total.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[12px] font-bold text-slate-400">{kpis.count} individual entries</span>
-          </div>
-        </div>
-
-        <div className="group bg-white rounded-xl border-t-4 border-t-amber-500 border-x border-b border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <TrendingUp size={20} />
-            </div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Top Outflow</div>
-          </div>
-          <p className="text-[20px] font-black text-[#0F172A] tracking-tight truncate mb-1">{kpis.topCat}</p>
-          <div className="flex items-center gap-2 mt-auto">
-            <span className="text-[12px] font-bold text-amber-600">Highest Category Spending</span>
-          </div>
-        </div>
-
-        <div className="group bg-white rounded-xl border-t-4 border-t-emerald-500 border-x border-b border-gray-100 p-6 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CalendarDays size={20} />
-            </div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Current Month</div>
-          </div>
-          <div className="flex items-center gap-1 text-[28px] font-black text-[#0F172A] tracking-tight">
-            <BiRupee size={24} className="mb-1" />
-            <span>{kpis.monthTotal.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[12px] font-bold text-emerald-600 uppercase tracking-wider">{new Date().toLocaleString("default", { month: "long" })} Run Rate</span>
-          </div>
-        </div>
+        <KpiCard icon={<DollarSign size={20}/>} label="Total Payments" value={`₹${kpis.total.toLocaleString()}`} sub={`${kpis.count} individual entries`} color="indigo" />
+        <KpiCard icon={<TrendingUp size={20}/>} label="Top Outflow" value={kpis.topCat} sub="Highest Category Spending" color="amber" />
+        <KpiCard icon={<CalendarDays size={20}/>} label="Current Month" value={`₹${kpis.monthTotal.toLocaleString()}`} sub={`${new Date().toLocaleString("default", { month: "long" })} Run Rate`} color="emerald" />
       </div>
 
       {/* Visual Analytics */}
@@ -370,7 +375,6 @@ export default function AdminExpensesTab() {
             <h3 className="text-[15px] font-black text-[#0F172A] tracking-tight flex items-center gap-2">
               <PieChartIcon size={18} className="text-amber-500" /> Sector Allocation
             </h3>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Top spending</div>
           </div>
           {pieData.length === 0 ? (
             <div className="h-[280px] flex items-center justify-center text-slate-300 font-bold">Waiting for input...</div>
@@ -430,7 +434,7 @@ export default function AdminExpensesTab() {
                 <th className="text-right text-[11px] font-black text-[#64748B] px-6 py-4 uppercase tracking-[0.1em]">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-20 text-center text-slate-300">
@@ -448,47 +452,92 @@ export default function AdminExpensesTab() {
                     </div>
                   </td>
                 </tr>
-              ) : filtered.map((e) => (
-                <tr key={e.id} className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
-                  <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{e.date}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-[14px] font-black text-[#0F172A] tracking-tight">{e.payee}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CAT_COLORS[e.category] || "#94a3b8") + "15", color: CAT_COLORS[e.category] || "#94a3b8" }}>
-                      {e.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-[13px] font-medium text-slate-600 italic truncate max-w-[250px]" title={e.description}>{e.description}</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-0.5 text-[15px] font-black text-[#0F172A] tracking-tight">
-                      <BiRupee size={14} className="mb-0.5" />
-                      <span>{e.amount?.toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {e.receiptUrl ? (
-                      <button onClick={() => setLightboxUrl(e.receiptUrl)} className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto hover:bg-indigo-100 transition-colors">
-                        <Eye size={16} />
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">missing</span>
+              ) : (
+                filtered.map((e) => (
+                  <React.Fragment key={e.id}>
+                    <tr className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group">
+                      <td className="px-6 py-4 text-[13px] font-bold text-slate-500">{e.date}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <p className="text-[14px] font-black text-[#0F172A] tracking-tight">
+                            {e.payee}
+                          </p>
+                          {e.breakdown?.length > 0 && (
+                            <>
+                              <span className="text-slate-300 text-[12px]">→</span>
+                              <span className="text-[11px] font-bold text-indigo-500">
+                                {e.breakdown.map(b => b.to || b.payee).join(', ')}
+                              </span>
+                              <button onClick={() => toggleRow(e.id)} className="p-1 rounded bg-indigo-50 text-indigo-400 hover:bg-indigo-100 transition-colors ml-1">
+                                {expandedRows.has(e.id) ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CAT_COLORS[e.category] || "#94a3b8") + "15", color: CAT_COLORS[e.category] || "#94a3b8" }}>
+                          {e.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-[13px] font-medium text-slate-600 italic truncate max-w-[250px]" title={e.description}>{e.description}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-0.5 text-[15px] font-black text-[#0F172A] tracking-tight">
+                          <BiRupee size={14} className="mb-0.5" />
+                          <span>{e.amount?.toLocaleString()}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {e.receiptUrl ? (
+                          <button onClick={() => setLightboxUrl(e.receiptUrl)} className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto hover:bg-indigo-100 transition-colors">
+                            <Eye size={16} />
+                          </button>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">missing</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEdit(e)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                            <FileText size={16} />
+                          </button>
+                          <button onClick={() => handleDelete(e)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {e.breakdown?.length > 0 && expandedRows.has(e.id) && (
+                      <tr className="bg-slate-50/50">
+                        <td colSpan="7" className="px-6 py-4">
+                          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                            <table className="w-full">
+                              <thead className="bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                  <th className="text-left text-[10px] font-black text-slate-400 px-4 py-2 uppercase tracking-widest">To (Recipient)</th>
+                                  <th className="text-left text-[10px] font-black text-slate-400 px-4 py-2 uppercase tracking-widest">For (Purpose)</th>
+                                  <th className="text-right text-[10px] font-black text-slate-400 px-4 py-2 uppercase tracking-widest">Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50">
+                                {e.breakdown.map((b, i) => (
+                                  <tr key={i}>
+                                    <td className="px-4 py-2 text-[12px] font-bold text-slate-700">{b.to || b.payee}</td>
+                                    <td className="px-4 py-2 text-[12px] font-medium text-slate-500">{b.purpose || '—'}</td>
+                                    <td className="px-4 py-2 text-[12px] font-black text-slate-800 text-right">₹{Number(b.amount).toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEdit(e)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-                        <FileText size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(e)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -510,6 +559,11 @@ export default function AdminExpensesTab() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-[14px] font-black text-[#0F172A] tracking-tight mb-1">{e.payee}</p>
+                  {e.breakdown?.length > 0 && (
+                    <p className="text-[10px] font-bold text-indigo-500 mt-0.5">
+                      → {e.breakdown.map(b => b.to || b.payee).join(', ')}
+                    </p>
+                  )}
                   <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider" style={{ backgroundColor: (CAT_COLORS[e.category] || "#94a3b8") + "15", color: CAT_COLORS[e.category] || "#94a3b8" }}>
                     {e.category}
                   </span>
@@ -523,6 +577,21 @@ export default function AdminExpensesTab() {
                 </div>
               </div>
               <p className="text-[12px] font-medium text-slate-600 italic line-clamp-2">{e.description}</p>
+                {e.breakdown?.length > 0 && (
+                <div className="bg-indigo-50/60 rounded-xl p-3 border border-indigo-100 mt-1 space-y-1.5">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1"><Split size={12}/> Payment Split</p>
+                  {e.breakdown.map((b, i) => (
+                    <div key={i} className="flex justify-between items-center text-[11px] border-b border-indigo-100/70 pb-1 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-4 h-4 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center text-[8px] font-black">{i + 1}</span>
+                        <span className="font-bold text-slate-700">{b.to || b.payee}</span>
+                        {b.purpose && <span className="text-slate-400">· {b.purpose}</span>}
+                      </div>
+                      <span className="font-black text-indigo-700">₹{Number(b.amount).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center justify-between pt-2">
                 <div className="flex gap-2">
                   {e.receiptUrl && (
@@ -545,7 +614,7 @@ export default function AdminExpensesTab() {
         </div>
       </div>
 
-      {/* ─── Receipt Lightbox ─── */}
+      {/* Receipt Lightbox */}
       {lightboxUrl && (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-0 sm:p-4" onClick={() => setLightboxUrl(null)}>
           <div className="relative max-w-2xl w-full h-full sm:h-auto bg-white sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -578,18 +647,18 @@ export default function AdminExpensesTab() {
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
                       <BiRupee size={22} />
                     </div>
-                  <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => handleAmountChange(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
+                    <input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => handleAmountChange(e.target.value)}
+                      className={`w-full pl-12 pr-4 py-4 rounded-xl text-[24px] font-black focus:outline-none border transition-all ${form.amount ? 'bg-blue-50/50 border-blue-200 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`} placeholder="0.00" />
                   </div>
                   {errors.amount && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.amount}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Transaction Recipient *</label>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Paid By (Payer) *</label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"><FileText size={18} /></div>
                     <input type="text" value={form.payee} onChange={(e) => setForm({ ...form, payee: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all uppercase placeholder:normal-case" placeholder="Vendor, Employee, or Entity" />
+                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[14px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none transition-all uppercase placeholder:normal-case" placeholder="e.g. Rahul, Petty Cash, Owner" />
                   </div>
                   {errors.payee && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.payee}</p>}
                 </div>
@@ -616,6 +685,87 @@ export default function AdminExpensesTab() {
                   <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:bg-white focus:border-blue-500 focus:outline-none resize-none transition-all" placeholder="Explain the business need for this payment..." />
                   {errors.description && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.description}</p>}
+                </div>
+
+                {/* Breakdown Section */}
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <Split size={14} className="text-indigo-400"/> Payment Breakdown (Optional)
+                      </label>
+                      {form.payee && form.amount && (
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          <span className="font-black text-indigo-600">{form.payee}</span> pays <span className="font-black text-slate-700">₹{Number(form.amount).toLocaleString()}</span> → split below
+                        </p>
+                      )}
+                    </div>
+                    <button onClick={(e) => { e.preventDefault(); addBreakdownItem(); }} className="flex items-center gap-1 text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-lg uppercase tracking-widest hover:bg-indigo-100 transition-colors">
+                      <Plus size={12} /> Add Recipient
+                    </button>
+                  </div>
+
+                  {form.breakdown && form.breakdown.length > 0 && (
+                    <div className="space-y-2 mb-2">
+                      {/* Running total indicator */}
+                      {(() => {
+                        const splitSum = form.breakdown.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+                        const total = Number(form.amount) || 0;
+                        const remaining = total - splitSum;
+                        const isExact = Math.abs(remaining) < 0.01;
+                        return (
+                          <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-black ${
+                            isExact ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            remaining < 0 ? 'bg-red-50 text-red-600 border border-red-200' :
+                            'bg-blue-50 text-blue-600 border border-blue-200'
+                          }`}>
+                            <span>{isExact ? '✓ Fully allocated' : remaining > 0 ? `₹${remaining.toFixed(2)} remaining` : `₹${Math.abs(remaining).toFixed(2)} over budget`}</span>
+                            <span>₹{splitSum.toFixed(2)} / ₹{total.toFixed(2)}</span>
+                          </div>
+                        );
+                      })()}
+
+                      {form.breakdown.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-white border border-slate-200 p-2.5 rounded-xl">
+                          <div className="flex items-center gap-1.5 text-slate-400 flex-shrink-0 text-[11px] font-black uppercase tracking-wider">
+                            <span className="w-5 h-5 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-[9px] font-black">{index + 1}</span>
+                            To
+                          </div>
+                          <input
+                            type="text"
+                            value={item.to}
+                            onChange={(e) => updateBreakdownItem(index, 'to', e.target.value)}
+                            className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700 focus:border-indigo-400 focus:outline-none focus:bg-white transition-all"
+                            placeholder="Recipient name (B, C…)"
+                          />
+                          <div className="relative flex-shrink-0 w-28">
+                            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold"><BiRupee size={13} /></div>
+                            <input
+                              type="number" min="0" step="0.01"
+                              value={item.amount}
+                              onChange={(e) => updateBreakdownItem(index, 'amount', e.target.value)}
+                              className="w-full pl-5 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700 focus:border-indigo-400 focus:outline-none focus:bg-white transition-all"
+                              placeholder="0"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            value={item.purpose}
+                            onChange={(e) => updateBreakdownItem(index, 'purpose', e.target.value)}
+                            className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[12px] font-medium text-slate-500 focus:border-indigo-400 focus:outline-none focus:bg-white transition-all hidden sm:block"
+                            placeholder="For… (optional)"
+                          />
+                          <button
+                            onClick={(e) => { e.preventDefault(); removeBreakdownItem(index); }}
+                            className="p-1.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {errors.breakdown && <p className="text-[10px] font-bold text-red-500 mt-1 uppercase tracking-wider">{errors.breakdown}</p>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-4 border-t border-slate-50">
@@ -649,7 +799,6 @@ export default function AdminExpensesTab() {
             </div>
           </div>
         </div>
-
       )}
     </div>
   );
