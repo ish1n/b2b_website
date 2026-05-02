@@ -23,6 +23,9 @@ const CATEGORIES = [
   "Out of the box",
   "Vendor payment",
   "Other",
+  "Dark Store OPEX",
+  "COMPANY OPEX",
+  "Marketing Expense",
 ];
 
 const CAT_COLORS = {
@@ -32,6 +35,9 @@ const CAT_COLORS = {
   "Out of the box": "#F43F5E",
   "Vendor payment": "#3B82F6",
   Other: "#64748B",
+  "Dark Store OPEX": "#8B5CF6",
+  "COMPANY OPEX": "#06B6D4",
+  "Marketing Expense": "#EC4899",
 };
 
 const MONTHS = [
@@ -271,7 +277,7 @@ export default function AdminExpensesTab() {
   };
 
   const addBreakdownItem = () => setForm(prev => ({ ...prev, breakdown: [...prev.breakdown, { amount: "", to: "", purpose: "" }] }));
-  
+
   const updateBreakdownItem = (index, field, value) => {
     if (field === "amount" && isNegativeNumberInput(value)) return;
     setForm(prev => {
@@ -280,7 +286,7 @@ export default function AdminExpensesTab() {
       return { ...prev, breakdown: newBreakdown };
     });
   };
-  
+
   const removeBreakdownItem = (index) => {
     setForm(prev => {
       const newBreakdown = [...prev.breakdown];
@@ -327,9 +333,9 @@ export default function AdminExpensesTab() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KpiCard icon={<DollarSign size={20}/>} label="Total Payments" value={`₹${kpis.total.toLocaleString()}`} sub={`${kpis.count} individual entries`} color="indigo" />
-        <KpiCard icon={<TrendingUp size={20}/>} label="Top Outflow" value={kpis.topCat} sub="Highest Category Spending" color="amber" />
-        <KpiCard icon={<CalendarDays size={20}/>} label="Current Month" value={`₹${kpis.monthTotal.toLocaleString()}`} sub={`${new Date().toLocaleString("default", { month: "long" })} Run Rate`} color="emerald" />
+        <KpiCard icon={<DollarSign size={20} />} label="Total Payments" value={`₹${kpis.total.toLocaleString()}`} sub={`${kpis.count} individual entries`} color="indigo" />
+        <KpiCard icon={<TrendingUp size={20} />} label="Top Outflow" value={kpis.topCat} sub="Highest Category Spending" color="amber" />
+        <KpiCard icon={<CalendarDays size={20} />} label="Current Month" value={`₹${kpis.monthTotal.toLocaleString()}`} sub={`${new Date().toLocaleString("default", { month: "long" })} Run Rate`} color="emerald" />
       </div>
 
       {/* Visual Analytics */}
@@ -577,9 +583,9 @@ export default function AdminExpensesTab() {
                 </div>
               </div>
               <p className="text-[12px] font-medium text-slate-600 italic line-clamp-2">{e.description}</p>
-                {e.breakdown?.length > 0 && (
+              {e.breakdown?.length > 0 && (
                 <div className="bg-indigo-50/60 rounded-xl p-3 border border-indigo-100 mt-1 space-y-1.5">
-                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1"><Split size={12}/> Payment Split</p>
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1"><Split size={12} /> Payment Split</p>
                   {e.breakdown.map((b, i) => (
                     <div key={i} className="flex justify-between items-center text-[11px] border-b border-indigo-100/70 pb-1 last:border-0 last:pb-0">
                       <div className="flex items-center gap-1.5">
@@ -692,7 +698,7 @@ export default function AdminExpensesTab() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <Split size={14} className="text-indigo-400"/> Payment Breakdown (Optional)
+                        <Split size={14} className="text-indigo-400" /> Payment Breakdown (Optional)
                       </label>
                       {form.payee && form.amount && (
                         <p className="text-[11px] text-slate-400 mt-0.5">
@@ -714,11 +720,10 @@ export default function AdminExpensesTab() {
                         const remaining = total - splitSum;
                         const isExact = Math.abs(remaining) < 0.01;
                         return (
-                          <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-black ${
-                            isExact ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                          <div className={`flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-black ${isExact ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                             remaining < 0 ? 'bg-red-50 text-red-600 border border-red-200' :
-                            'bg-blue-50 text-blue-600 border border-blue-200'
-                          }`}>
+                              'bg-blue-50 text-blue-600 border border-blue-200'
+                            }`}>
                             <span>{isExact ? '✓ Fully allocated' : remaining > 0 ? `₹${remaining.toFixed(2)} remaining` : `₹${Math.abs(remaining).toFixed(2)} over budget`}</span>
                             <span>₹{splitSum.toFixed(2)} / ₹{total.toFixed(2)}</span>
                           </div>

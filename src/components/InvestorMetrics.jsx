@@ -282,9 +282,9 @@ export default function InvestorMetrics() {
           <div className="xl:col-span-4">
             <SnapshotMetric
               label="Total Revenue"
-              tooltip="Combined revenue for the Jan-Mar 2026 summary window."
-              value={formatCurrencyCompact(metrics.totalRevenue)}
-              note={`Summary window: ${metrics.summaryPeriod}`}
+              tooltip="Cumulative revenue generated since operations began in Nov 2024."
+              value={formatCurrencyCompact(metrics.gmv)}
+              note="LTD Period: Nov 2024 – Apr 2026"
               icon={IndianRupee}
               tone="blue"
             />
@@ -300,9 +300,9 @@ export default function InvestorMetrics() {
             />
             <SnapshotMetric
               label="ARRR"
-              tooltip="Annualized Revenue Run Rate based on the Jan-Mar 2026 monthly average multiplied by 12."
+              tooltip={`Annualized Revenue Run Rate based on the ${metrics.summaryPeriod} monthly average multiplied by 12.`}
               value={formatCurrencyCompact(metrics.arrr)}
-              note="Annualized from Jan-Mar average"
+              note="Annualized from Feb-Apr average"
               icon={FiArrowUpRight}
               tone="amber"
             />
