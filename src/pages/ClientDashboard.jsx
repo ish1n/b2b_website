@@ -57,7 +57,7 @@ const CAT_ICONS = {
 };
 
 export default function ClientDashboard() {
-  const { client, orders, logout, addIssue } = useHostelAuth();
+  const { client, orders, logout, addIssue, profileNeedsSetup } = useHostelAuth();
   const navigate = useNavigate();
   // Helper to handle schema migration (properties -> partnernames)
   const clientProperties = useMemo(() => client?.properties || client?.partnernames || [], [client]);
@@ -213,6 +213,14 @@ export default function ClientDashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {profileNeedsSetup && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm">
+            <p className="text-[12px] font-black uppercase tracking-widest text-amber-700">Account setup pending</p>
+            <p className="mt-1 text-[13px] font-semibold text-amber-900">
+              Your account is missing <span className="font-black">partnernames</span> in Firestore. Ask admin to update your profile in <span className="font-black">b2b_managers</span> so you can see Treebo orders.
+            </p>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

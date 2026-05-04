@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { getDoc, doc, onSnapshot, collection, setDoc, query, where } from "firebase/firestore";
+import { getDoc, doc, onSnapshot, collection, setDoc } from "firebase/firestore";
 import { ORDER_CATEGORIES, ORDER_TYPES, ORDER_STATUSES } from "../constants/orders";
 import { normalizeOrder } from "../utils/orderNormalization";
+import { cleanFirestoreData } from "../utils/cleanFirestoreData";
 
 const HostelAuthContext = createContext(null);
 
@@ -24,6 +25,7 @@ export function HostelAuthProvider({ children }) {
   const [websiteOrders, setWebsiteOrders] = useState([]);
   const [cartOrders, setCartOrders] = useState([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [profileNeedsSetup, setProfileNeedsSetup] = useState(false);
 
   useEffect(() => {
     let unsubscribeEdits = () => { };
@@ -44,22 +46,47 @@ export function HostelAuthProvider({ children }) {
         setWebsiteOrders([]);
         setCartOrders([]);
         sessionStorage.removeItem("hostelClient");
+        setProfileNeedsSetup(false);
         return;
       }
 
       try {
+        let resolvedRole = "client";
         const userDoc = await getDoc(doc(db, "b2b_managers", firebaseUser.uid));
         if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const clientData = { uid: firebaseUser.uid, ...userData };
+          const userData = userDoc.data() || {};
+          resolvedRole = userData.role || "client";
+
+          const partnernames = userData.partnernames || userData.properties || [];
+          const clientData = {
+            uid: firebaseUser.uid,
+            role: resolvedRole,
+            email: userData.email || firebaseUser.email || "",
+            name: userData.name || (userData.email || firebaseUser.email || "Client"),
+            partnernames,
+            ...userData,
+          };
+
           setClient(clientData);
-          setIsAdmin(userData.role === "admin");
+          setIsAdmin(resolvedRole === "admin");
           sessionStorage.setItem("hostelClient", JSON.stringify(clientData));
+
+          const allowed = (clientData.partnernames || clientData.properties || []).filter(Boolean);
+          setProfileNeedsSetup(resolvedRole !== "admin" && allowed.length === 0);
         } else {
           console.warn("User profile not found in b2b_managers collection.");
+          setProfileNeedsSetup(true);
+        }
+
+        // NOTE: Firestore rules often restrict website/cart collections to admin users.
+        // Avoid subscribing for clients to prevent "Missing or insufficient permissions" errors.
+        if (resolvedRole !== "admin") {
+          setWebsiteOrders([]);
+          setCartOrders([]);
         }
       } catch (error) {
         console.error("Auth initialization error:", error.message);
+        setProfileNeedsSetup(true);
       }
 
       let loadedCount = 0;
@@ -92,37 +119,55 @@ export function HostelAuthProvider({ children }) {
         },
       );
 
-      unsubscribeWebsiteOrders = onSnapshot(
-        collection(db, "orders"),
-        (snapshot) => {
-          setWebsiteOrders(
-            snapshot.docs.map((docSnapshot) =>
-              normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "website")
-            )
-          );
-          checkAllLoaded();
-        },
-        (error) => {
-          console.error("Website Orders sync error:", error.message);
-          checkAllLoaded();
-        },
-      );
+      // Website + Cart orders are often permission-restricted for client accounts.
+      // Treebo (and other partners) should use `b2b_orders` for their order feed.
+      const sessionClient = (() => {
+        const saved = sessionStorage.getItem("hostelClient");
+        if (!saved) return null;
+        try { return JSON.parse(saved); } catch { return null; }
+      })();
 
-      unsubscribeCartDetails = onSnapshot(
-        collection(db, "cartdetails"),
-        (snapshot) => {
-          setCartOrders(
-            snapshot.docs.map((docSnapshot) =>
-              normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "cartdetails")
-            )
-          );
-          checkAllLoaded();
-        },
-        (error) => {
-          console.error("Cartdetails sync error:", error.message);
-          checkAllLoaded();
-        },
-      );
+      const roleFromSession = sessionClient?.role || null;
+
+      if (roleFromSession === "admin") {
+        unsubscribeWebsiteOrders = onSnapshot(
+          collection(db, "orders"),
+          (snapshot) => {
+            setWebsiteOrders(
+              snapshot.docs.map((docSnapshot) =>
+                normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "website")
+              )
+            );
+            checkAllLoaded();
+          },
+          (error) => {
+            console.error("Website Orders sync error:", error.message);
+            checkAllLoaded();
+          },
+        );
+
+        unsubscribeCartDetails = onSnapshot(
+          collection(db, "cartdetails"),
+          (snapshot) => {
+            setCartOrders(
+              snapshot.docs.map((docSnapshot) =>
+                normalizeOrder({ id: docSnapshot.id, ...docSnapshot.data() }, "cartdetails")
+              )
+            );
+            checkAllLoaded();
+          },
+          (error) => {
+            console.error("Cartdetails sync error:", error.message);
+            checkAllLoaded();
+          },
+        );
+      } else {
+        // Clients don't subscribe to `orders` / `cartdetails` to avoid permission errors.
+        setWebsiteOrders([]);
+        setCartOrders([]);
+        checkAllLoaded();
+        checkAllLoaded();
+      }
     });
 
     return () => {
@@ -197,18 +242,33 @@ export function HostelAuthProvider({ children }) {
     return allOrdersMerged.filter((order) => {
       const propertyName = (order.property || "").toLowerCase();
       const linkedName = (order.linkedHostel || "").toLowerCase();
+      const customerName = (order.customerName || "").toLowerCase();
+      const serviceName = (order.service || "").toLowerCase();
+      const address = (order.address || "").toLowerCase();
       // Check if any of the manager's allowed properties match the order's property (partial match allowed)
-      return normalizedAllowed.some(allowed => propertyName.includes(allowed) || linkedName.includes(allowed));
+      return normalizedAllowed.some((allowed) =>
+        propertyName.includes(allowed)
+        || linkedName.includes(allowed)
+        // For website/cart orders, the "property" can be generic. Matching extra fields lets partners like Treebo see their own orders.
+        || (order.source === "website" || order.source === "cartdetails"
+          ? (customerName.includes(allowed) || serviceName.includes(allowed) || address.includes(allowed))
+          : false)
+      );
     });
   }, [allOrdersMerged, client]);
 
   const addIssue = useCallback(async (newIssue) => {
     try {
-      await setDoc(doc(db, "b2b_admin_edits", String(newIssue.id)), normalizeOrder({
+      const normalized = normalizeOrder({
         ...newIssue,
         category: ORDER_CATEGORIES.ISSUES,
         type: ORDER_TYPES.ISSUE,
-      }, "admin"));
+      }, "admin");
+
+      await setDoc(
+        doc(db, "b2b_admin_edits", String(newIssue.id)),
+        cleanFirestoreData(normalized),
+      );
     } catch (error) {
       console.error("Error raising issue to Firestore:", error);
       setFirestoreEdits((current) => [...current.filter((issue) => issue.id !== newIssue.id), normalizeOrder(newIssue, "admin")]);
@@ -259,7 +319,7 @@ export function HostelAuthProvider({ children }) {
   }, []);
 
   return (
-    <HostelAuthContext.Provider value={{ client, orders, isAdmin, login, logout, setAuthenticatedUser, addIssue, isDataLoaded }}>
+    <HostelAuthContext.Provider value={{ client, orders, isAdmin, profileNeedsSetup, login, logout, setAuthenticatedUser, addIssue, isDataLoaded }}>
       {children}
     </HostelAuthContext.Provider>
   );

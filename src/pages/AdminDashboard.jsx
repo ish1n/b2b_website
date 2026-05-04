@@ -11,6 +11,7 @@ import AdminRegularTab from "../components/AdminRegularTab";
 import AdminIssuesTab from "../components/AdminIssuesTab";
 import AdminExpensesTab from "../components/AdminExpensesTab";
 import AdminAnalyticsTab from "../components/AdminAnalyticsTab";
+import AdminClientsTab from "../components/AdminClientsTab";
 import InvoiceGeneratorModal from "../components/InvoiceGeneratorModal";
 import AdminAddOrderModal from "../components/AdminAddOrderModal";
 import AdminPageActions from "../components/AdminPageActions";
@@ -50,8 +51,11 @@ export default function AdminDashboard() {
     handleDeleteData,
     handleEditIssue,
     handleEditOrder,
+    handleUpsertManager,
+    handleDeleteManager,
     loading,
     orders,
+    managers,
     screenStats,
     searchStats,
     stats,
@@ -123,6 +127,13 @@ export default function AdminDashboard() {
           screens={screenStats}
           searches={searchStats}
           totalUsers={totalUsers}
+        />
+      ),
+      clients: (
+        <AdminClientsTab
+          managers={managers}
+          onSaveManager={handleUpsertManager}
+          onDeleteManager={handleDeleteManager}
         />
       ),
     };
