@@ -153,7 +153,7 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
       activeSubscriptions = [
         onSnapshot(collection(db, "b2b_managers"), (snapshot) => {
           const managers = snapshot.docs
-            .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+            .map((docSnapshot) => ({ uid: docSnapshot.id, ...docSnapshot.data() }))
             .filter((manager) => manager.role !== "admin");
           setAllManagers(managers);
         }, (error) => console.error("Error fetching managers list:", error)),
@@ -201,6 +201,33 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
     [activeTab, allManagers, daysInRange, orders],
   );
   const clients = useMemo(() => allManagers.filter((manager) => manager.role !== "admin"), [allManagers]);
+  const managers = useMemo(() => allManagers, [allManagers]);
+
+  const handleUpsertManager = useCallback(async (manager) => {
+    try {
+      const uid = String(manager?.uid || "").trim();
+      if (!uid) throw new Error("Manager UID is required.");
+
+      const payload = cleanObject({ ...manager });
+      delete payload.uid;
+      await setDoc(doc(db, "b2b_managers", uid), payload, { merge: true });
+    } catch (error) {
+      console.error("Failed to save manager profile", error);
+      throw error;
+    }
+  }, []);
+
+  const handleDeleteManager = useCallback(async (uid) => {
+    if (!uid) return;
+    if (!window.confirm("Delete this client profile from Firestore? This does NOT delete the Firebase Auth user.")) return;
+
+    try {
+      await deleteDoc(doc(db, "b2b_managers", String(uid)));
+    } catch (error) {
+      console.error("Failed to delete manager profile", error);
+      throw error;
+    }
+  }, []);
 
   const handleAddOrder = useCallback(async (order) => {
     try {
@@ -286,10 +313,13 @@ export function useAdminDashboardData({ activeTab, baseOrders, dateFrom, dateTo 
     daysInRange,
     handleAddIssue,
     handleAddOrder,
+    handleDeleteManager,
     handleDeleteData,
     handleEditIssue,
     handleEditOrder,
+    handleUpsertManager,
     loading,
+    managers,
     orders,
     screenStats,
     searchStats,

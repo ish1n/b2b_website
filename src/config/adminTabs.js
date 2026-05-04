@@ -1,4 +1,4 @@
-import { FiActivity, FiAlertCircle, FiDollarSign, FiHome, FiInbox, FiLayout, FiPieChart } from "react-icons/fi";
+import { FiActivity, FiAlertCircle, FiDollarSign, FiHome, FiInbox, FiLayout, FiPieChart, FiUsers } from "react-icons/fi";
 
 // Centralized tab metadata keeps the sidebar, page title, and layout rules in sync.
 export const ADMIN_TAB_CONFIG = {
@@ -58,6 +58,16 @@ export const ADMIN_TAB_CONFIG = {
     title: "Business Analytics",
     navLabel: "Analytics",
     navIcon: FiPieChart,
+    showSidebar: true,
+    showHeaderActions: false,
+    showKpis: false,
+    kpiColumnsClass: "",
+  },
+  clients: {
+    key: "clients",
+    title: "Client Accounts",
+    navLabel: "Clients",
+    navIcon: FiUsers,
     showSidebar: true,
     showHeaderActions: false,
     showKpis: false,

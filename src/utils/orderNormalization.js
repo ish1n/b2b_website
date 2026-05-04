@@ -129,6 +129,19 @@ function getTypeForCategory(category) {
   return ORDER_TYPES.STUDENT;
 }
 
+function getWebsitePropertyCandidate(rawOrder) {
+  return (
+    rawOrder.property
+    || rawOrder.propertyName
+    || rawOrder.partner
+    || rawOrder.partnerName
+    || rawOrder.partnername
+    || rawOrder.hostel
+    || rawOrder.hostelName
+    || rawOrder.hotelName
+  );
+}
+
 const CART_SERVICE_ALIASES = {
   "Wash & Fold_regular": "Wash & Fold",
   "Loafers/Sneakers_regular": "Loafers/Sneakers",
@@ -206,8 +219,8 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     id: String(rawOrder.id || rawOrder.orderId || `${source}-${Date.now()}`),
     ...rawOrder,
     property,
-    createdAtRaw: rawOrder.createdAt,
-    updatedAtRaw: rawOrder.updatedAt,
+    ...(rawOrder.createdAt !== undefined ? { createdAtRaw: rawOrder.createdAt } : {}),
+    ...(rawOrder.updatedAt !== undefined ? { updatedAtRaw: rawOrder.updatedAt } : {}),
     date: normalizeDate(rawOrder.date || rawOrder.createdAt),
     amount: normalizeNumber(rawOrder.amount ?? rawOrder.totalPrice),
     items: normalizeNumber(rawOrder.items, itemsFromPartnerMap),
@@ -234,6 +247,14 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     normalized.customerNumber = rawOrder.userPhone || rawOrder.phoneNumber || rawOrder.customerPhone || "no contact";
     normalized.service = rawOrder.service || (Array.isArray(rawOrder.items) ? rawOrder.items.map((item) => item.name || item.title).filter(Boolean).join(", ") : "") || "Web Store Order";
     normalized.items = normalizeNumber(rawOrder.totalItems, Array.isArray(rawOrder.items) ? rawOrder.items.length : normalized.items);
+
+    // If the website order includes a business property/hotel name, use it so B2B clients can filter their own orders.
+    const websiteProperty = getWebsitePropertyCandidate(rawOrder);
+    if (websiteProperty && String(websiteProperty).trim()) {
+      normalized.property = normalizePropertyName(websiteProperty);
+      normalized.category = inferCategoryFromProperty(normalized.property);
+      normalized.type = getTypeForCategory(normalized.category);
+    }
   }
 
   if (source === "cartdetails") {
@@ -264,12 +285,20 @@ export function normalizeOrder(rawOrder = {}, source = "unknown") {
     if (cartCreatedDate) {
       normalized.date = normalizeDate(cartCreatedDate);
     }
-  normalized.customerName = (rawOrder.userName || rawOrder.customerName || "Regular Customer").trim();
-  normalized.customerNumber = rawOrder.userMobile || rawOrder.customerPhone || rawOrder.userPhone || "";
-  normalized.details = normalized.details || rawOrder.breakdown || {};
-  const addressCandidate = rawOrder.userEnteredAddress || rawOrder.location?.address || rawOrder.address || rawOrder.userAddress || "";
-  normalized.address = addressCandidate ? addressCandidate.trim() : "";
-  normalized.deliveryDate = rawOrder.deliveryDate || rawOrder.dropTime || "";
+    normalized.customerName = (rawOrder.userName || rawOrder.customerName || "Regular Customer").trim();
+    normalized.customerNumber = rawOrder.userMobile || rawOrder.customerPhone || rawOrder.userPhone || "";
+    normalized.details = normalized.details || rawOrder.breakdown || {};
+    const addressCandidate = rawOrder.userEnteredAddress || rawOrder.location?.address || rawOrder.address || rawOrder.userAddress || "";
+    normalized.address = addressCandidate ? addressCandidate.trim() : "";
+    normalized.deliveryDate = rawOrder.deliveryDate || rawOrder.dropTime || "";
+
+    // Some cart records can be created for B2B hotel/hostel partners; if so, respect the provided property name.
+    const cartProperty = getWebsitePropertyCandidate(rawOrder);
+    if (cartProperty && String(cartProperty).trim()) {
+      normalized.property = normalizePropertyName(cartProperty);
+      normalized.category = inferCategoryFromProperty(normalized.property);
+      normalized.type = getTypeForCategory(normalized.category);
+    }
   }
 
   if (source === "b2b") {
