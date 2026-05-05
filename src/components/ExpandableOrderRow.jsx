@@ -1,7 +1,7 @@
 // src/components/ExpandableOrderRow.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CATEGORIES } from "../data/hostelOrders";
+import { CATEGORIES, getCategoryLabel } from "../data/hostelOrders";
 import { FiChevronUp, FiChevronDown, FiArrowRight, FiShoppingBag, FiUsers } from "react-icons/fi";
 import { MdScale } from "react-icons/md";
 
@@ -9,6 +9,7 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const cat = CATEGORIES[order.category] || {};
+  const categoryLabel = getCategoryLabel(order.category, order.property);
 
   // 1. Helper function to render modern blue chips safely for all order types
   const renderItemChips = (order) => {
@@ -70,7 +71,7 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
             className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
             style={{ backgroundColor: cat.color + "18", color: cat.color }}
           >
-            {cat.label}
+            {categoryLabel}
           </span>
         </td>
         <td className="px-4 py-3">
@@ -126,7 +127,7 @@ export default function ExpandableOrderRow({ order, showProperty = false }) {
             {/* Key metrics row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
               <MetricCard label="Property" value={order.property} />
-              <MetricCard label="Category" value={cat.label || order.category} />
+              <MetricCard label="Category" value={categoryLabel || order.category} />
               <MetricCard label="Status" value={order.status || "Pending"}
                 badgeClass={
                   order.status === "Delivered" ? "text-emerald-700" :

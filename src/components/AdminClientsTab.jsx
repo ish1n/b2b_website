@@ -23,6 +23,7 @@ function buildEditableManager(source) {
     role: source?.role || "client",
     isGroup: Boolean(source?.isGroup) || cleanedPartnernames.length > 1,
     partnernames: cleanedPartnernames,
+    monthlyBilling: source?.monthlyBilling ?? "",
   };
 }
 
@@ -105,6 +106,10 @@ export default function AdminClientsTab({ managers, onSaveManager, onDeleteManag
       const name = String(draft.name || "").trim();
       const role = String(draft.role || "client").trim();
       const partnernames = normalizeList(draft.partnernames);
+      const monthlyBillingNumber = draft.monthlyBilling === "" ? undefined : Number(draft.monthlyBilling);
+      if (monthlyBillingNumber !== undefined && !Number.isFinite(monthlyBillingNumber)) {
+        throw new Error("Monthly billing must be a number.");
+      }
 
       if (!uid) throw new Error("Firebase Auth UID is required (document ID).");
       if (!email) throw new Error("Email is required.");
@@ -118,6 +123,7 @@ export default function AdminClientsTab({ managers, onSaveManager, onDeleteManag
         role,
         isGroup: draft.isGroup || partnernames.length > 1,
         partnernames,
+        monthlyBilling: monthlyBillingNumber,
         updatedAt: new Date().toISOString(),
       });
 
@@ -348,6 +354,19 @@ export default function AdminClientsTab({ managers, onSaveManager, onDeleteManag
                     Group account (multiple properties)
                   </label>
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] font-black uppercase tracking-widest text-slate-500">
+                  Monthly Billing (₹)
+                </label>
+                <input
+                  inputMode="numeric"
+                  value={draft.monthlyBilling}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, monthlyBilling: e.target.value }))}
+                  placeholder="e.g. 32000"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-[13px] font-semibold text-slate-800 outline-none focus:border-blue-500"
+                />
               </div>
 
               <div>

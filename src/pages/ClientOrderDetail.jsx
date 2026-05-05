@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useHostelAuth } from "../context/HostelAuthContext";
-import { CATEGORIES } from "../data/hostelOrders";
+import { CATEGORIES, getCategoryLabel } from "../data/hostelOrders";
 import {
   FiArrowLeft, FiCalendar, FiHash, FiMapPin, FiTag, FiPackage,
   FiAlertCircle, FiCheckCircle, FiUser, FiPhone, FiDownload,
@@ -62,13 +62,14 @@ export default function ClientOrderDetail() {
   }
 
   const cat = CATEGORIES[order.category] || { label: order.category, icon: "📁", color: "#6B7280" };
+  const categoryLabel = getCategoryLabel(order.category, order.property);
 
   // Build field list dynamically
   const fields = [
     { icon: <FiHash />, label: "Order ID", value: order.id },
     { icon: <FiCalendar />, label: "Date", value: order.date },
     { icon: <FiMapPin />, label: "Property", value: order.property },
-    { icon: <FiTag />, label: "Category", value: cat.label, badge: true, color: cat.color },
+    { icon: <FiTag />, label: "Category", value: categoryLabel, badge: true, color: cat.color },
     { 
       icon: <FiPackage />, 
       label: "Service", 
@@ -129,7 +130,7 @@ export default function ClientOrderDetail() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">{order.property}</h2>
-              <p className="text-sm text-gray-500">{cat.label} · {order.date}</p>
+              <p className="text-sm text-gray-500">{categoryLabel} · {order.date}</p>
             </div>
             <div className="ml-auto">
               <span
