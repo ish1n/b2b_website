@@ -107,20 +107,124 @@ export default function ClientDashboard() {
   const totalItems = filtered.reduce((s, o) => s + (o.items || 0), 0);
   const totalWeight = filtered.reduce((s, o) => s + (o.weight || 0), 0);
   const uniqueStatuses = [...new Set(orders.map((o) => o.status))];
+  const isTreeboClient =
+    String(client?.name || "").toLowerCase().includes("treebo")
+    || (clientProperties || []).some((p) => String(p || "").toLowerCase().includes("treebo"));
+
+  const monthlyBilling = isTreeboClient
+    ? 32000
+    : (Number.isFinite(Number(client?.monthlyBilling)) ? Number(client.monthlyBilling) : null);
+
+  const [showPiecesModal, setShowPiecesModal] = useState(false);
+
+  const getOrderItemsMap = useCallback((order) => {
+    if (order?.partnerItems && typeof order.partnerItems === "object") return order.partnerItems;
+    if (order?.details && typeof order.details === "object") return order.details;
+
+    if (typeof order?.details === "string") {
+      // Supports strings like: "Hand towel=9 | Single Bedsheet: 2, Duvet Cover: 6"
+      const normalized = order.details.replace(/\|/g, ",").replace(/=/g, ":");
+      const map = {};
+      normalized.split(",").forEach((chunk) => {
+        const part = String(chunk || "").trim();
+        if (!part) return;
+        const [rawName, rawQty] = part.split(":");
+        const name = String(rawName || "").trim();
+        const qty = Number(String(rawQty || "").trim());
+        if (!name) return;
+        if (!Number.isFinite(qty)) return;
+        map[name] = (map[name] || 0) + qty;
+      });
+      return map;
+    }
+
+    return {};
+  }, []);
+
+  const piecesBreakdown = useMemo(() => {
+    const totals = {
+      singleBedsheet: 0,
+      doubleBedsheet: 0,
+      pillowCover: 0,
+      singleDuvetCover: 0,
+      doubleDuvetCover: 0,
+      towel: 0,
+      handTowel: 0,
+      curtains: 0,
+      doorMats: 0,
+      other: 0,
+    };
+
+    const add = (key, qty) => {
+      if (!Number.isFinite(qty)) return;
+      totals[key] += qty;
+    };
+
+    filtered.forEach((order) => {
+      const itemsMap = getOrderItemsMap(order);
+      Object.entries(itemsMap || {}).forEach(([rawName, rawQty]) => {
+        const name = String(rawName || "").toLowerCase().trim();
+        const qty = Number(rawQty);
+        if (!Number.isFinite(qty) || qty <= 0) return;
+
+        if (name.includes("single") && name.includes("bedsheet")) return add("singleBedsheet", qty);
+        if ((name.includes("double") || name.includes("dbl")) && name.includes("bedsheet")) return add("doubleBedsheet", qty);
+        if (name.includes("pillow")) return add("pillowCover", qty);
+        if (name.includes("single") && name.includes("duvet")) return add("singleDuvetCover", qty);
+        if ((name.includes("double") || name.includes("dbl")) && name.includes("duvet")) return add("doubleDuvetCover", qty);
+        if (name.includes("hand towel")) return add("handTowel", qty);
+        if (name.includes("bath towel") || (name.includes("towel") && !name.includes("hand"))) return add("towel", qty);
+        if (name.includes("curtain")) return add("curtains", qty);
+        if (name.includes("door mat") || name.includes("doormat")) return add("doorMats", qty);
+
+        add("other", qty);
+      });
+    });
+
+    const totalPieces =
+      totals.singleBedsheet
+      + totals.doubleBedsheet
+      + totals.pillowCover
+      + totals.singleDuvetCover
+      + totals.doubleDuvetCover
+      + totals.towel
+      + totals.handTowel
+      + totals.curtains
+      + totals.doorMats
+      + totals.other;
+
+    return { totals, totalPieces };
+  }, [filtered, getOrderItemsMap]);
 
   // Category breakdown
   const categoryStats = useMemo(() => {
     const map = {};
     filtered.forEach((o) => {
-      if (!map[o.category]) map[o.category] = { count: 0, items: 0 };
+      if (!map[o.category]) map[o.category] = { count: 0, items: 0, airbnbCount: 0 };
       map[o.category].count++;
       map[o.category].items += o.items || 0;
+      if (String(o.property || "").toLowerCase().includes("airbnb")) {
+        map[o.category].airbnbCount++;
+      }
     });
-    return Object.entries(map).map(([key, val]) => ({
-      key,
-      ...(CATEGORIES[key] || { label: key, color: "#6B7280" }),
-      ...val,
-    }));
+
+    return Object.entries(map).map(([key, val]) => {
+      const base = CATEGORIES[key] || { label: key, color: "#6B7280" };
+      let label = base.label || key;
+
+      if (key === "AIRBNB") {
+        if (val.airbnbCount === 0) label = "Hotel Service";
+        else if (val.airbnbCount === val.count) label = "Airbnb Services";
+        else label = "Hotel/Airbnb Services";
+      }
+
+      return {
+        key,
+        ...base,
+        label,
+        ...val,
+      };
+    });
   }, [filtered]);
 
   const hasActiveFilters = propertyFilter !== "all" || statusFilter !== "all" || dateFrom || dateTo;
@@ -226,12 +330,20 @@ export default function ClientDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: "Total Orders", value: totalOrders, color: "#1976D2", bgColor: "bg-blue-50", Icon: FiPackage },
-            { label: "Total Items", value: totalItems.toLocaleString(), color: "#7C3AED", bgColor: "bg-purple-50", Icon: FiShoppingBag },
+            { label: "Total Pieces", value: piecesBreakdown.totalPieces.toLocaleString(), color: "#7C3AED", bgColor: "bg-purple-50", Icon: FiShoppingBag, onClick: () => setShowPiecesModal(true) },
             { label: "Total Weight", value: `${totalWeight.toFixed(1)} KG`, color: "#D97706", bgColor: "bg-orange-50", Icon: MdScale },
+            { label: "Monthly Billing", value: monthlyBilling !== null ? `₹${monthlyBilling.toLocaleString()}` : "—", color: "#059669", bgColor: "bg-emerald-50", Icon: BiRupee },
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              role={kpi.onClick ? "button" : undefined}
+              tabIndex={kpi.onClick ? 0 : undefined}
+              onClick={kpi.onClick}
+              onKeyDown={(e) => {
+                if (!kpi.onClick) return;
+                if (e.key === "Enter" || e.key === " ") kpi.onClick();
+              }}
+              className={`bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-start gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${kpi.onClick ? "cursor-pointer" : ""}`}
             >
               <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 p-3 ${kpi.bgColor}`}
@@ -245,6 +357,75 @@ export default function ClientDashboard() {
             </div>
           ))}
         </div>
+
+        {showPiecesModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPiecesModal(false)} />
+            <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl animate-slide-up">
+              <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/60 p-6">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Laundry Item Breakdown</h2>
+                  <p className="text-xs text-gray-500">Total pieces: {piecesBreakdown.totalPieces.toLocaleString()}</p>
+                </div>
+                <button onClick={() => setShowPiecesModal(false)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {[
+                  {
+                    title: "Bedsheets",
+                    rows: [
+                      ["Single Bed Bedsheets", piecesBreakdown.totals.singleBedsheet],
+                      ["Double Bed Bedsheets", piecesBreakdown.totals.doubleBedsheet],
+                    ],
+                  },
+                  {
+                    title: "Pillow Covers",
+                    rows: [["Pillow Covers", piecesBreakdown.totals.pillowCover]],
+                  },
+                  {
+                    title: "Duvet Covers",
+                    rows: [
+                      ["Single Bed Duvet Covers", piecesBreakdown.totals.singleDuvetCover],
+                      ["Double Bed Duvet Covers", piecesBreakdown.totals.doubleDuvetCover],
+                    ],
+                  },
+                  {
+                    title: "Towels",
+                    rows: [
+                      ["Towels", piecesBreakdown.totals.towel],
+                      ["Hand Towels", piecesBreakdown.totals.handTowel],
+                    ],
+                  },
+                  {
+                    title: "Others",
+                    rows: [
+                      ["Curtains", piecesBreakdown.totals.curtains],
+                      ["Door Mats", piecesBreakdown.totals.doorMats],
+                      ["Other / Unmapped", piecesBreakdown.totals.other],
+                    ],
+                  },
+                ].map((section) => (
+                  <div key={section.title} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{section.title}</p>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {section.rows.map(([label, value]) => (
+                        <div key={label} className="flex items-center justify-between px-5 py-3">
+                          <p className="text-sm font-semibold text-gray-700">{label}</p>
+                          <p className="text-sm font-bold text-gray-900">{Number(value || 0).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">

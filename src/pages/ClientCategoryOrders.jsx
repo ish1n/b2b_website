@@ -32,6 +32,7 @@ export default function ClientCategoryOrders() {
   const { categoryKey } = useParams();
   const { client, orders } = useHostelAuth();
   const navigate = useNavigate();
+  const pageLabelOverride = categoryKey === "AIRBNB" ? "Hotel Service" : null;
   const cat = CATEGORIES[categoryKey] || { label: categoryKey, icon: "📁", color: "#6B7280" };
   const clientProperties = useMemo(() => client?.properties || client?.partnernames || [], [client]);
   const isGroup = client?.isGroup && clientProperties.length > 1;
@@ -76,7 +77,7 @@ export default function ClientCategoryOrders() {
                 {CAT_ICONS[categoryKey] || <FiPackage />}
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">{cat.label}</h1>
+                <h1 className="text-lg font-bold text-gray-900">{pageLabelOverride || cat.label}</h1>
                 <p className="text-xs text-gray-500">{client?.name} · {filtered.length} orders</p>
               </div>
             </div>

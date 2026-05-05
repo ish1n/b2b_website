@@ -1,15 +1,24 @@
 // src/data/hostelOrders.js
 // All order data extracted from Andes_Daily_Record.xlsx
-// Categories: Linen Services, Student Laundry, B2C Retail, Airbnb, Bulk Laundry, Issues
+// Categories: Linen Services, Student Laundry, B2C Retail, Airbnb/Hotel, Bulk Laundry, Issues
 
 export const CATEGORIES = {
   LINEN: { key: "LINEN", label: "Linen Services (B2B)", color: "#7C3AED", icon: "🛏️" },
   STUDENT_LAUNDRY: { key: "STUDENT_LAUNDRY", label: "Student Laundry (B2B)", color: "#1976D2", icon: "👕" },
   B2C_RETAIL: { key: "B2C_RETAIL", label: "Retail Customers (B2C)", color: "#059669", icon: "🧺" },
-  AIRBNB: { key: "AIRBNB", label: "Airbnb Services", color: "#D97706", icon: "🏠" },
+  AIRBNB: { key: "AIRBNB", label: "Airbnb Services", color: "#D97706", icon: "🏨" },
   BULK_LAUNDRY: { key: "BULK_LAUNDRY", label: "Bulk Laundry", color: "#0891B2", icon: "⚙️" },
   ISSUES: { key: "ISSUES", label: "Issues & Complaints", color: "#DC2626", icon: "⚠️" },
 };
+
+export function getCategoryLabel(categoryKey, propertyName = "") {
+  if (categoryKey === CATEGORIES.AIRBNB.key) {
+    const normalized = String(propertyName || "").toLowerCase();
+    return normalized.includes("airbnb") ? "Airbnb Services" : "Hotel Service";
+  }
+
+  return CATEGORIES[categoryKey]?.label || categoryKey;
+}
 
 export function getCategoryForProperty(property) {
   const propLower = String(property).toLowerCase();
@@ -21,4 +30,3 @@ export function getCategoryForProperty(property) {
   if (property === "Issues") return CATEGORIES.ISSUES;
   return CATEGORIES.STUDENT_LAUNDRY;
 }
-
